@@ -1,87 +1,152 @@
-# Welcome to React Router!
+# Frontend - AiutoX ERP
 
-A modern, production-ready template for building full-stack React applications using React Router.
+Frontend React con React Router v7 para el sistema AiutoX ERP.
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/remix-run/react-router-templates/tree/main/default)
+## Requisitos
 
-## Features
+- Node.js 20+
+- npm o pnpm
 
-- 🚀 Server-side rendering
-- ⚡️ Hot Module Replacement (HMR)
-- 📦 Asset bundling and optimization
-- 🔄 Data loading and mutations
-- 🔒 TypeScript by default
-- 🎉 TailwindCSS for styling
-- 📖 [React Router docs](https://reactrouter.com/)
+## Setup
 
-## Getting Started
+1. Instalar dependencias:
+   ```bash
+   npm install
+   ```
 
-### Installation
+2. Configurar variables de entorno (opcional):
+   ```bash
+   # Crear .env.local si es necesario
+   VITE_API_BASE_URL=http://localhost:8000
+   ```
 
-Install the dependencies:
+3. Iniciar servidor de desarrollo:
+   ```bash
+   npm run dev
+   ```
+
+   Abre `http://localhost:5173`
+
+## Estructura
+
+- `app/components/`: Componentes UI reutilizables (shadcn/ui)
+- `app/features/`: Módulos funcionales (auth, inventory, etc.)
+- `app/routes/`: Rutas y páginas (React Router)
+- `app/stores/`: Stores Zustand (estado global)
+- `app/lib/`: Utilidades y cliente API
+  - `app/lib/api/client.ts`: Cliente HTTP con axios e interceptores
+  - `app/lib/utils.ts`: Utilidades (cn, etc.)
+- `app/hooks/`: Custom hooks (useAuth, useApi, etc.)
+- `app/i18n/`: Soporte multilenguaje (fase 2)
+- `app/__tests__/`: Tests unitarios y E2E
+
+## Desarrollo
+
+### Scripts Disponibles
 
 ```bash
-npm install
+# Desarrollo
+npm run dev              # Servidor de desarrollo
+npm run build            # Build para producción
+npm run start            # Servidor de producción
+
+# Calidad de código
+npm run lint             # Ejecutar ESLint
+npm run lint:fix          # Corregir errores de ESLint
+npm run format            # Formatear con Prettier
+npm run format:check      # Verificar formato
+npm run typecheck         # Verificar tipos TypeScript
+
+# Tests
+npm run test             # Tests unitarios (Vitest)
+npm run test:ui          # Tests con UI interactiva
+npm run test:e2e         # Tests E2E (Playwright)
+npm run test:e2e:ui      # Tests E2E con UI
 ```
 
-### Development
-
-Start the development server with HMR:
+### Instalar Componentes shadcn/ui
 
 ```bash
-npm run dev
+npx shadcn@latest add button
+npx shadcn@latest add input
+npx shadcn@latest add card
+# etc.
 ```
 
-Your application will be available at `http://localhost:5173`.
+## Stack Tecnológico
 
-## Building for Production
+- **React 19** + **TypeScript**
+- **React Router v7** (SSR)
+- **Vite 7** (build tool)
+- **Tailwind CSS v4** (estilos)
+- **shadcn/ui** (componentes UI)
+- **Zustand** (estado global)
+- **axios** (cliente HTTP)
+- **zod** + **react-hook-form** (validación de formularios)
+- **Vitest** + **React Testing Library** (tests unitarios)
+- **Playwright** (tests E2E)
+- **vite-plugin-pwa** (PWA)
 
-Create a production build:
+## Reglas y Estándares
+
+Ver documentación en `rules/`:
+- `naming.md`: Convenciones de nombres
+- `dev-style.md`: Estilo de desarrollo
+- `ux-frontend.md`: Reglas UX y frontend
+- `tests.md`: Estándares de testing
+
+## API Integration
+
+El cliente API está configurado en `app/lib/api/client.ts`:
+- Base URL: `VITE_API_BASE_URL` o `http://localhost:8000`
+- Prefijo: `/api/v1`
+- Interceptores automáticos para:
+  - Agregar token de autenticación
+  - Manejo de errores 401 (redirect a login)
+
+## Estado Global (Zustand)
+
+Stores disponibles:
+- `authStore`: Autenticación y usuario actual
+
+Ejemplo de uso:
+```typescript
+import { useAuthStore } from "~/stores/authStore";
+
+const { user, isAuthenticated, setAuth, clearAuth } = useAuthStore();
+```
+
+## Tests
+
+### Tests Unitarios
+
+Ubicación: `app/**/__tests__/**/*.{test,spec}.{ts,tsx}`
+
+```bash
+npm run test
+```
+
+### Tests E2E
+
+Ubicación: `app/__tests__/e2e/`
+
+```bash
+npm run test:e2e
+```
+
+## PWA
+
+La aplicación está configurada como PWA con `vite-plugin-pwa`:
+- Service Worker automático
+- Caché de assets
+- Instalable en dispositivos
+
+## Build para Producción
 
 ```bash
 npm run build
 ```
 
-## Deployment
-
-### Docker Deployment
-
-To build and run using Docker:
-
-```bash
-docker build -t my-app .
-
-# Run the container
-docker run -p 3000:3000 my-app
-```
-
-The containerized application can be deployed to any platform that supports Docker, including:
-
-- AWS ECS
-- Google Cloud Run
-- Azure Container Apps
-- Digital Ocean App Platform
-- Fly.io
-- Railway
-
-### DIY Deployment
-
-If you're familiar with deploying Node applications, the built-in app server is production-ready.
-
-Make sure to deploy the output of `npm run build`
-
-```
-├── package.json
-├── package-lock.json (or pnpm-lock.yaml, or bun.lockb)
-├── build/
-│   ├── client/    # Static assets
-│   └── server/    # Server-side code
-```
-
-## Styling
-
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
-
----
-
-Built with ❤️ using React Router.
+El build genera:
+- `build/client/`: Assets estáticos
+- `build/server/`: Código del servidor (SSR)
