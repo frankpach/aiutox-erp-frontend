@@ -9,6 +9,9 @@ import {
 
 import type { Route } from "./+types/root";
 import "./app.css";
+import { ErrorPage } from "~/components/public/ErrorPage";
+import NotFoundPage from "~/routes/not-found";
+import UnauthorizedPage from "~/routes/unauthorized";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -21,6 +24,8 @@ export const links: Route.LinksFunction = () => [
     rel: "stylesheet",
     href: "https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap",
   },
+  { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+  { rel: "apple-touch-icon", href: "/logo.png" },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -46,30 +51,61 @@ export default function App() {
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  let message = "Oops!";
-  let details = "An unexpected error occurred.";
-  let stack: string | undefined;
-
   if (isRouteErrorResponse(error)) {
-    message = error.status === 404 ? "404" : "Error";
-    details =
-      error.status === 404
-        ? "The requested page could not be found."
-        : error.statusText || details;
-  } else if (import.meta.env.DEV && error && error instanceof Error) {
-    details = error.message;
-    stack = error.stack;
+    // Handle 404 - redirect to not-found page
+    if (error.status === 404) {
+      return <NotFoundPage />;
+    }
+
+    // Handle 403 - redirect to unauthorized page
+    if (error.status === 403) {
+      return <UnauthorizedPage />;
+    }
+
+    // Other HTTP errors
+    const statusText = error.statusText || "Ha ocurrido un error al cargar la página.";
+    return (
+      <ErrorPage
+        code={error.status}
+        title="Error"
+        message={statusText}
+        actionLabel="Recargar Página"
+        actionOnClick={() => window.location.reload()}
+      />
+    );
   }
 
+  // Runtime errors
+  const errorMessage =
+    error && error instanceof Error
+      ? error.message
+      : "Ha ocurrido un error inesperado.";
+
+  // Show stack trace only in development
+  const stack =
+    import.meta.env.DEV && error && error instanceof Error ? error.stack : undefined;
+
   return (
-    <main className="pt-16 p-4 container mx-auto">
-      <h1>{message}</h1>
-      <p>{details}</p>
-      {stack && (
-        <pre className="w-full p-4 overflow-x-auto">
-          <code>{stack}</code>
-        </pre>
-      )}
-    </main>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
+      <div className="w-full max-w-2xl space-y-6">
+        <ErrorPage
+          code={500}
+          title="Error del Sistema"
+          message={errorMessage}
+          actionLabel="Recargar Página"
+          actionOnClick={() => window.location.reload()}
+        />
+        {stack && (
+          <details className="mt-4">
+            <summary className="cursor-pointer text-sm text-[#3C3A47]">
+              Detalles técnicos (solo en desarrollo)
+            </summary>
+            <pre className="mt-2 p-4 bg-gray-100 rounded text-xs overflow-x-auto">
+              <code>{stack}</code>
+            </pre>
+          </details>
+        )}
+      </div>
+    </div>
   );
 }

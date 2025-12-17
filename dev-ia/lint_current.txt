@@ -1,0 +1,1 @@
+/mnt/c/nvm4w/nodejs/npm: 15: exec: node: not found

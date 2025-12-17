@@ -5,6 +5,11 @@ import tsconfigPaths from "vite-tsconfig-paths";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
+  server: {
+    host: "127.0.0.1", // Use IPv4 only to avoid ::1 issues
+    port: 3000, // Changed port to avoid permission issues
+    strictPort: false, // Allow fallback to next available port
+  },
   plugins: [
     tailwindcss(),
     reactRouter(),
