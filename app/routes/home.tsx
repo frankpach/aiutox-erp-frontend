@@ -1,13 +1,17 @@
 import type { Route } from "./+types/home";
-import { Welcome } from "../welcome/welcome";
+import { Navigate } from "react-router";
 
 export function meta(_args: Route.MetaArgs) {
   return [
-    { title: "New React Router App" },
-    { name: "description", content: "Welcome to React Router!" },
+    { title: "AiutoX ERP" },
+    { name: "description", content: "Sistema ERP AiutoX" },
   ];
 }
 
+/**
+ * Root route redirects to /login
+ * This is a temporary redirect until we implement the main dashboard
+ */
 export default function Home() {
-  return <Welcome />;
+  return <Navigate to="/login" replace />;
 }

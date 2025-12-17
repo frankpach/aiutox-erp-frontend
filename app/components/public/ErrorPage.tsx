@@ -54,7 +54,7 @@ export function ErrorPage({
 
   // Default action
   const defaultActionLabel = actionLabel || (code === 404 ? "Volver al inicio" : "Volver");
-  const defaultActionHref = actionHref || (code === 404 ? "/" : undefined);
+  const defaultActionHref = actionHref || (code === 404 ? "/login" : undefined);
   const defaultActionOnClick =
     actionOnClick || (code === 404 ? undefined : () => navigate(-1));
 

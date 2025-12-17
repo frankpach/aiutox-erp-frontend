@@ -41,7 +41,7 @@ export default function LoginPage() {
 
   // Redirect if already authenticated
   if (isAuthenticated) {
-    const redirectTo = searchParams.get("redirect") || "/";
+    const redirectTo = searchParams.get("redirect") || "/login";
     navigate(redirectTo, { replace: true });
     return null;
   }
@@ -54,8 +54,8 @@ export default function LoginPage() {
       const result = await login(data);
 
       if (result.success) {
-        // Redirect to original route or home
-        const redirectTo = searchParams.get("redirect") || "/";
+        // Redirect to original route or login
+        const redirectTo = searchParams.get("redirect") || "/login";
         navigate(redirectTo, { replace: true });
       } else {
         // Handle login error

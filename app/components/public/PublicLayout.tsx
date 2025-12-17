@@ -26,7 +26,7 @@ export function PublicLayout({
       <div className="w-full max-w-md space-y-8">
         {/* Logo/Header */}
         <div className="text-center">
-          <Link to="/" className="inline-block">
+          <Link to="/login" className="inline-block">
             <img
               src="/logo.png"
               alt="AiutoX ERP"
@@ -53,7 +53,7 @@ export function PublicLayout({
         {/* Footer Links */}
         <div className="text-center text-sm text-[#3C3A47]">
           <Link
-            to="/"
+            to="/login"
             className="text-[#2EA3F2] hover:text-[#023E87] transition-colors"
           >
             Volver al inicio

@@ -100,6 +100,16 @@ test.describe("Public Pages - Basic Rendering", () => {
     await expect(page.getByText("404").first()).toBeVisible();
     await expect(page.getByRole("heading", { name: /página no encontrada/i })).toBeVisible();
   });
+
+  test("should redirect root path (/) to /login", async ({ page }) => {
+    await page.goto("/");
+    await page.waitForLoadState("networkidle");
+
+    // Should be redirected to login page
+    await expect(page).toHaveURL(/.*login/);
+    await expect(page.getByLabel(/email/i)).toBeVisible();
+    await expect(page.getByLabel(/contraseña/i)).toBeVisible();
+  });
 });
 
 test.describe("Public Pages - Navigation", () => {
@@ -141,7 +151,7 @@ test.describe("Public Pages - Navigation", () => {
     await expect(page).toHaveURL(/.*forgot-password/);
   });
 
-  test("should navigate from 404 to home", async ({ page }) => {
+  test("should navigate from 404 to login", async ({ page }) => {
     await page.goto("/not-found");
     await page.waitForLoadState("networkidle");
 
@@ -149,8 +159,8 @@ test.describe("Public Pages - Navigation", () => {
     await page.getByRole("link", { name: /volver al inicio/i }).click();
     await page.waitForLoadState("networkidle");
 
-    // Should be on home page
-    await expect(page).toHaveURL(/\/$/);
+    // Should be on login page
+    await expect(page).toHaveURL(/.*login/);
   });
 });
 

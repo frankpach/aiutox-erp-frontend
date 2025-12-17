@@ -135,7 +135,7 @@ export default function VerifyEmailPage() {
             <Link to="/login">Volver al inicio de sesión</Link>
           </Button>
           <Button asChild variant="outline" className="w-full">
-            <Link to="/">Ir al inicio</Link>
+            <Link to="/login">Ir al inicio</Link>
           </Button>
         </div>
       </div>

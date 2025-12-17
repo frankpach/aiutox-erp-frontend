@@ -22,7 +22,7 @@ export default function NotFoundPage() {
       title="Página no encontrada"
       message="La página que buscas no existe o ha sido movida."
       actionLabel="Volver al inicio"
-      actionHref="/"
+      actionHref="/login"
     />
   );
 }
