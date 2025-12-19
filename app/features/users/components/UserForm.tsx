@@ -11,6 +11,7 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
+import { sanitizeString, sanitizeEmail, sanitizeUrl } from "~/lib/security/sanitize";
 import {
   Select,
   SelectContent,
@@ -89,7 +90,21 @@ export function UserForm({
   const onSubmitForm = async (
     data: UserCreateFormData | UserUpdateFormData
   ) => {
-    await onSubmit(data as UserCreate | UserUpdate);
+    // Sanitize inputs before submission
+    const sanitizedData = {
+      ...data,
+      email: sanitizeEmail(data.email),
+      first_name: data.first_name ? sanitizeString(data.first_name) : null,
+      last_name: data.last_name ? sanitizeString(data.last_name) : null,
+      middle_name: data.middle_name ? sanitizeString(data.middle_name) : null,
+      job_title: data.job_title ? sanitizeString(data.job_title) : null,
+      department: data.department ? sanitizeString(data.department) : null,
+      avatar_url: data.avatar_url ? sanitizeUrl(data.avatar_url) : null,
+      bio: data.bio ? sanitizeString(data.bio) : null,
+      notes: data.notes ? sanitizeString(data.notes) : null,
+    };
+    
+    await onSubmit(sanitizedData as UserCreate | UserUpdate);
   };
 
   return (

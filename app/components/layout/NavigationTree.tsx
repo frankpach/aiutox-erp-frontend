@@ -9,7 +9,7 @@
  * Filtra automáticamente por permisos del usuario.
  */
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link, useLocation } from "react-router";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { FolderIcon } from "@hugeicons/core-free-icons";
@@ -99,7 +99,7 @@ interface ModuleNodeComponentProps {
 function ModuleNodeComponent({
   module,
   isCollapsed,
-  categoryName,
+  categoryName: _categoryName,
 }: ModuleNodeComponentProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const location = useLocation();

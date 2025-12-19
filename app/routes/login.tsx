@@ -15,6 +15,8 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { loginSchema, type LoginFormData } from "~/lib/validations/auth.schema";
 import { Loader2 } from "lucide-react";
+import { checkRateLimit, getRemainingRequests } from "~/lib/security/rateLimit";
+import { sanitizeEmail } from "~/lib/security/sanitize";
 
 export function meta() {
   return [
@@ -50,8 +52,29 @@ export default function LoginPage() {
     setIsLoading(true);
     setError(null);
 
+    // Rate limiting: max 5 login attempts per minute
+    if (!checkRateLimit("login", { maxRequests: 5, windowMs: 60000 })) {
+      const remaining = getRemainingRequests("login", { maxRequests: 5, windowMs: 60000 });
+      setError(
+        `Demasiados intentos de inicio de sesión. Por favor espera un momento. Intentos restantes: ${remaining}`
+      );
+      setIsLoading(false);
+      return;
+    }
+
+    // Sanitize email input
+    const sanitizedEmail = sanitizeEmail(data.email);
+    if (!sanitizedEmail) {
+      setError("Email inválido");
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      const result = await login(data);
+      const result = await login({
+        ...data,
+        email: sanitizedEmail,
+      });
 
       if (result.success) {
         // Redirect to original route or home

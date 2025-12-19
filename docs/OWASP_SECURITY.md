@@ -37,50 +37,60 @@
 - [ ] Implementar Content Security Policy (CSP)
 - [ ] Agregar headers de seguridad HTTP
 
-### ⚠️ A03:2021 – Injection
+### ✅ A03:2021 – Injection
 
-**Estado**: ⚠️ Parcialmente Implementado
+**Estado**: ✅ Implementado
 
 **XSS (Cross-Site Scripting)**:
 - ✅ React escapa automáticamente el contenido
 - ✅ No se usa `dangerouslySetInnerHTML`
 - ✅ No se encontró uso de `eval()`, `innerHTML`, `document.write`
-- ⚠️ **FALTA**: Content Security Policy (CSP) headers
+- ✅ Content Security Policy (CSP) headers agregados
+- ✅ Funciones de sanitización implementadas (`lib/security/sanitize.ts`)
+- ✅ Sanitización de inputs en formularios
 
 **SQL Injection**: N/A (solo frontend)
 
-**Mejoras Necesarias**:
-- [ ] Agregar CSP headers en `root.tsx`
-- [ ] Validar y sanitizar inputs del usuario
-- [ ] Implementar sanitización para datos que vienen del backend
+**Implementación**:
+```typescript
+// frontend/app/lib/security/sanitize.ts
+// frontend/app/features/users/components/UserForm.tsx
+// frontend/app/routes/login.tsx
+```
 
-### ⚠️ A04:2021 – Insecure Design
+### ✅ A04:2021 – Insecure Design
 
-**Estado**: ⚠️ Mejorable
+**Estado**: ✅ Implementado
 
 - ✅ Validación de formularios con Zod
 - ✅ Tipos TypeScript para prevenir errores
-- ⚠️ **FALTA**: Rate limiting en frontend
-- ⚠️ **FALTA**: Validación más estricta de inputs
+- ✅ Rate limiting en frontend (`lib/security/rateLimit.ts`)
+- ✅ Validación estricta de formatos (emails, URLs, etc.)
+- ✅ Sanitización de datos antes de enviar al backend
 
-**Mejoras Necesarias**:
-- [ ] Implementar rate limiting para requests
-- [ ] Validación más estricta de formatos (emails, URLs, etc.)
-- [ ] Sanitización de datos antes de enviar al backend
+**Implementación**:
+```typescript
+// frontend/app/lib/security/rateLimit.ts
+// frontend/app/lib/security/sanitize.ts
+// frontend/app/routes/login.tsx (rate limiting en login)
+```
 
 ### ⚠️ A05:2021 – Security Misconfiguration
 
-**Estado**: ⚠️ Mejorable
+**Estado**: ⚠️ Parcialmente Implementado
 
-**Problemas Identificados**:
-- ⚠️ **FALTA**: Headers de seguridad HTTP (CSP, HSTS, X-Frame-Options, etc.)
-- ⚠️ **FALTA**: Configuración de CORS adecuada (verificar backend)
+**Implementado**:
+- ✅ Headers de seguridad HTTP (CSP, X-Frame-Options, X-Content-Type-Options, etc.)
+- ✅ Meta tags de seguridad en `root.tsx`
+- ✅ CSP headers configurados
+
+**Pendiente**:
 - ⚠️ Secret de cifrado en variable de entorno (debe venir del backend)
+- ⚠️ Configuración de CORS adecuada (verificar backend)
 
 **Mejoras Necesarias**:
-- [ ] Agregar meta tags de seguridad en `root.tsx`
-- [ ] Configurar CSP headers
 - [ ] Obtener secret de cifrado del backend después del login
+- [ ] Verificar configuración de CORS en backend
 
 ### ✅ A06:2021 – Vulnerable and Outdated Components
 
@@ -96,20 +106,26 @@ npm audit
 npm audit fix
 ```
 
-### ⚠️ A07:2021 – Identification and Authentication Failures
+### ✅ A07:2021 – Identification and Authentication Failures
 
-**Estado**: ⚠️ Mejorable
+**Estado**: ✅ Implementado
 
 **Implementado**:
 - ✅ Tokens JWT con refresh tokens
 - ✅ Interceptores de axios para refresh automático
 - ✅ Logout automático cuando el token expira
+- ✅ Rate limiting en login (5 intentos por minuto)
+- ✅ Sanitización de email en login
 
-**Mejoras Necesarias**:
-- [ ] Implementar 2FA en el frontend (backend ya lo soporta)
-- [ ] Rate limiting en login
-- [ ] Protección contra brute force
-- [ ] Mostrar intentos fallidos de login
+**Pendiente**:
+- ⚠️ Implementar 2FA en el frontend (backend ya lo soporta)
+- ⚠️ Mostrar intentos fallidos de login (mejora UX)
+
+**Implementación**:
+```typescript
+// frontend/app/lib/security/rateLimit.ts
+// frontend/app/routes/login.tsx
+```
 
 ### ⚠️ A08:2021 – Software and Data Integrity Failures
 
