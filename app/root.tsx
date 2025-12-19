@@ -5,6 +5,7 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLocation,
 } from "react-router";
 
 import type { Route } from "./+types/root";
@@ -12,6 +13,9 @@ import "./app.css";
 import { ErrorPage } from "~/components/public/ErrorPage";
 import NotFoundPage from "~/routes/not-found";
 import UnauthorizedPage from "~/routes/unauthorized";
+import { AppShell } from "~/components/layout";
+import { useAuthStore } from "~/stores/authStore";
+import { ToastProvider } from "~/components/common/Toast";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -34,6 +38,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        {/* Security Headers */}
+        <meta httpEquiv="X-Content-Type-Options" content="nosniff" />
+        <meta httpEquiv="X-Frame-Options" content="DENY" />
+        <meta httpEquiv="X-XSS-Protection" content="1; mode=block" />
+        <meta httpEquiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
+        <meta httpEquiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=()" />
+        {/* Content Security Policy - Basic */}
+        <meta
+          httpEquiv="Content-Security-Policy"
+          content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' http://localhost:8000 https:; frame-ancestors 'none';"
+        />
         <Meta />
         <Links />
       </head>
@@ -46,8 +61,47 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
+/**
+ * Lista de rutas públicas que NO deben usar AppShell
+ */
+const PUBLIC_ROUTES = [
+  "/login",
+  "/forgot-password",
+  "/reset-password",
+  "/verify-email",
+  "/maintenance",
+  "/unauthorized",
+];
+
 export default function App() {
-  return <Outlet />;
+  const location = useLocation();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
+  // Determinar si la ruta actual es pública
+  const isPublicRoute = PUBLIC_ROUTES.some((route) =>
+    location.pathname === route || location.pathname.startsWith(`${route}/`)
+  );
+
+  // Si es ruta pública, renderizar sin AppShell
+  if (isPublicRoute) {
+    return <Outlet />;
+  }
+
+  // Si no está autenticado y no es ruta pública, el ProtectedRoute se encargará del redirect
+  // Pero aún así no usamos AppShell aquí
+  if (!isAuthenticated) {
+    return <Outlet />;
+  }
+
+  // Rutas protegidas y autenticadas usan AppShell
+  return (
+    <>
+      <AppShell>
+        <Outlet />
+      </AppShell>
+      <ToastProvider />
+    </>
+  );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
@@ -63,13 +117,13 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
     }
 
     // Other HTTP errors
-    const statusText = error.statusText || "Ha ocurrido un error al cargar la página.";
+    const statusText = error.statusText || "Ha ocurrido un error al cargar la pÃ¡gina.";
     return (
       <ErrorPage
         code={error.status}
         title="Error"
         message={statusText}
-        actionLabel="Recargar Página"
+        actionLabel="Recargar PÃ¡gina"
         actionOnClick={() => window.location.reload()}
       />
     );
@@ -92,13 +146,13 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
           code={500}
           title="Error del Sistema"
           message={errorMessage}
-          actionLabel="Recargar Página"
+          actionLabel="Recargar PÃ¡gina"
           actionOnClick={() => window.location.reload()}
         />
         {stack && (
           <details className="mt-4">
             <summary className="cursor-pointer text-sm text-[#3C3A47]">
-              Detalles técnicos (solo en desarrollo)
+              Detalles tÃ©cnicos (solo en desarrollo)
             </summary>
             <pre className="mt-2 p-4 bg-gray-100 rounded text-xs overflow-x-auto">
               <code>{stack}</code>

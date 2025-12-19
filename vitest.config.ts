@@ -1,9 +1,23 @@
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import tsconfigPaths from "vite-tsconfig-paths";
+import path from "path";
 
 export default defineConfig({
   plugins: [react(), tsconfigPaths()],
+  resolve: {
+    alias: {
+      // Polyfill for react-dom/test-utils in React 19
+      // @testing-library/react still tries to import from react-dom/test-utils
+      // which is deprecated. We redirect it to our polyfill.
+      "react-dom/test-utils": path.resolve(
+        __dirname,
+        "./app/__tests__/polyfills/react-dom-test-utils.ts"
+      ),
+      // NOTE: We don't alias "react" here because it would create circular dependencies.
+      // Instead, we configure React.act in setup.ts before @testing-library/react loads.
+    },
+  },
   test: {
     globals: true,
     environment: "jsdom",

@@ -1,5 +1,6 @@
 import type { Route } from "./+types/home";
 import { Navigate } from "react-router";
+import { useAuthStore } from "~/stores/authStore";
 
 export function meta(_args: Route.MetaArgs) {
   return [
@@ -9,9 +10,18 @@ export function meta(_args: Route.MetaArgs) {
 }
 
 /**
- * Root route redirects to /login
- * This is a temporary redirect until we implement the main dashboard
+ * Root route
+ * - If not authenticated: redirect to /login
+ * - If authenticated: show dashboard (for now, redirect to /users as placeholder)
  */
 export default function Home() {
-  return <Navigate to="/login" replace />;
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // TODO: Implementar dashboard real
+  // Por ahora, redirigir a /users como placeholder
+  return <Navigate to="/users" replace />;
 }

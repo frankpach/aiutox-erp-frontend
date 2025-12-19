@@ -1,5 +1,6 @@
 import axios, { type AxiosInstance, type AxiosError, type InternalAxiosRequestConfig } from "axios";
 import type { RefreshTokenResponse } from "./types/auth.types";
+import { useAuthStore } from "../../stores/authStore";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
@@ -33,6 +34,7 @@ const processQueue = (error: Error | null, token: string | null = null) => {
 
 /**
  * Refresh access token using refresh token
+ * Updates both localStorage and authStore for consistency
  */
 const refreshAccessToken = async (): Promise<string | null> => {
   const refreshToken = localStorage.getItem("refresh_token");
@@ -56,12 +58,26 @@ const refreshAccessToken = async (): Promise<string | null> => {
     );
 
     const { access_token } = response.data;
+
+    // Update localStorage
     localStorage.setItem("auth_token", access_token);
+
+    // Update authStore for consistency
+    const authStore = useAuthStore.getState();
+    authStore.setRefreshToken(refreshToken); // Keep refresh token
+    // Update token in store (we need to update the token field directly)
+    useAuthStore.setState({ token: access_token });
+
     return access_token;
   } catch {
     // Refresh token expired or invalid
     localStorage.removeItem("auth_token");
     localStorage.removeItem("refresh_token");
+
+    // Clear authStore
+    const authStore = useAuthStore.getState();
+    authStore.clearAuth();
+
     return null;
   }
 };

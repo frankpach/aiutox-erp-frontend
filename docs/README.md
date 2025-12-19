@@ -1,35 +1,55 @@
-# Frontend Documentation - AiutoX ERP
+# Frontend Documentation
 
-## 🚀 Quick Start
+## Índice
 
-### Requirements
-- Node.js 20+
-- npm or pnpm
+- [Sistema de Módulos Autodiscoverable](./MODULE_SYSTEM.md)
+- [Gestión de Usuarios](./USER_MANAGEMENT.md)
+- [Seguridad y Cifrado](./SECURITY.md)
 
-### Setup
-1. Navigate to `frontend/`.
-2. Run `npm install`.
-3. Run `npm run dev` to start the Vite development server.
+## Estructura del Proyecto
 
-## 📂 Structure
-- `app/components/`: Reusable UI components (shadcn/ui).
-- `app/features/`: Feature-specific modules (auth, inventory, etc.).
-- `app/hooks/`: Global custom hooks (useAuth, useApi, etc.).
-- `app/stores/`: Zustand state stores (authStore, etc.).
-- `app/lib/`: Utilities and API clients.
-  - `app/lib/api/client.ts`: HTTP client with axios and interceptors
-  - `app/lib/utils.ts`: Utility functions (cn, etc.)
-- `app/routes/`: Routes and pages (React Router v7).
-- `app/__tests__/`: Unit and E2E tests.
-
-## 📏 Rules & Standards
-> **CRITICAL**: Before contributing, read:
-> - [Naming Conventions](../../rules/naming.md)
-> - [Dev Style](../../rules/dev-style.md)
-> - [UX Rules](../../rules/ux-frontend.md)
-
-## 🧪 Linting
-Run linting:
-```bash
-../../scripts/lint-frontend.sh
 ```
+frontend/app/
+├── lib/
+│   ├── modules/          # Sistema de módulos autodiscoverable
+│   ├── storage/          # Cifrado y cache local
+│   └── api/              # API services
+├── stores/               # Zustand stores
+├── hooks/                # React hooks
+├── components/
+│   ├── layout/           # Layout components (Sidebar, NavigationTree)
+│   └── common/           # Componentes comunes (Toast, ConfirmDialog)
+└── features/
+    └── users/            # Feature: Gestión de usuarios
+```
+
+## Características Principales
+
+### Sistema de Módulos Autodiscoverable
+
+- Descubrimiento automático desde backend
+- Navegación jerárquica de 3 niveles
+- Filtrado por permisos y tenant
+- Cache cifrado con TTL de 30 días
+
+### Gestión de Usuarios
+
+- CRUD completo de usuarios
+- Gestión de organizaciones y contactos
+- Métodos de contacto polimórficos
+- Roles personalizados con permisos granulares
+- Delegación temporal de permisos
+
+### Seguridad
+
+- Cifrado AES-GCM para datos locales
+- TTL de 30 días para datos cacheados
+- Limpieza automática de datos expirados
+- Filtrado multi-tenant
+
+## Guías de Uso
+
+Ver documentación específica en:
+- [MODULE_SYSTEM.md](./MODULE_SYSTEM.md) - Sistema de módulos
+- [USER_MANAGEMENT.md](./USER_MANAGEMENT.md) - Gestión de usuarios
+- [SECURITY.md](./SECURITY.md) - Seguridad y cifrado

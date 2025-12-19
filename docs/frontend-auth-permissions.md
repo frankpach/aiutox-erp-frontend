@@ -278,3 +278,4 @@ app/
 - API Contract: `rules/api-contract.md`
 - Backend Auth: `docs/modules/auth.md`
 
+

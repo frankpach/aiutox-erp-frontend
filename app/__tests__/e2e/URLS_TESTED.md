@@ -170,3 +170,4 @@ Este documento lista todas las URLs que fueron probadas en los tests E2E de pág
 - Los tests verifican tanto el renderizado como la navegación entre páginas
 - Se incluyen tests de validación de formularios y diseño responsive
 - Los tests usan selectores específicos para evitar falsos positivos
+

@@ -104,3 +104,4 @@ export function canShareFilters(currentUser: User | null): boolean {
   return permissions.includes("views.share");
 }
 
+

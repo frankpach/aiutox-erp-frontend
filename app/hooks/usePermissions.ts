@@ -1,6 +1,8 @@
 /**
  * Hooks for permission and role checking
  * Provides utilities to check user permissions and roles throughout the app
+ *
+ * Extended with multi-tenant and multi-module support
  */
 
 import { useMemo } from "react";
@@ -12,26 +14,30 @@ import { useAuthStore } from "~/stores/authStore";
 export function usePermissions() {
   const user = useAuthStore((state) => state.user);
 
+  const hasPermission = useMemo(() => {
+    return (permission: string) => {
+      if (!user?.permissions) return false;
+      // Check exact permission or wildcard permissions
+      return (
+        user.permissions.includes(permission) ||
+        user.permissions.includes("*") ||
+        user.permissions.some((p) => {
+          // Support module.* pattern (e.g., "inventory.*" matches "inventory.view")
+          if (p.endsWith(".*")) {
+            const module = p.slice(0, -2);
+            return permission.startsWith(`${module}.`);
+          }
+          return false;
+        })
+      );
+    };
+  }, [user?.permissions]);
+
   return useMemo(
     () => ({
       permissions: user?.permissions || [],
       roles: user?.roles || [],
-      hasPermission: (permission: string) => {
-        if (!user?.permissions) return false;
-        // Check exact permission or wildcard permissions
-        return (
-          user.permissions.includes(permission) ||
-          user.permissions.includes("*") ||
-          user.permissions.some((p) => {
-            // Support module.* pattern (e.g., "inventory.*" matches "inventory.view")
-            if (p.endsWith(".*")) {
-              const module = p.slice(0, -2);
-              return permission.startsWith(`${module}.`);
-            }
-            return false;
-          })
-        );
-      },
+      hasPermission,
       hasRole: (role: string) => {
         if (!user?.roles) return false;
         return user.roles.includes(role);
@@ -60,21 +66,48 @@ export function usePermissions() {
       hasAllPermissions: (permissions: string[]) => {
         if (!user?.permissions) return false;
         return permissions.every((p) => {
-          return (
-            user.permissions?.includes(p) ||
-            user.permissions?.includes("*") ||
-            user.permissions?.some((userPerm) => {
-              if (userPerm.endsWith(".*")) {
-                const module = userPerm.slice(0, -2);
-                return p.startsWith(`${module}.`);
-              }
-              return false;
-            })
-          );
+          return hasPermission(p);
         });
       },
+      /**
+       * Check if user has permission for a specific module
+       * @param moduleId - Module identifier
+       * @param permission - Permission string (e.g., "view", "create")
+       * @param tenantId - Optional tenant ID (defaults to current user's tenant)
+       */
+      hasModulePermission: (
+        moduleId: string,
+        permission: string,
+        tenantId?: string
+      ) => {
+        if (!user?.permissions) return false;
+        const fullPermission = `${moduleId}.${permission}`;
+        // Check if tenant matches (if specified)
+        if (tenantId && user.tenant_id !== tenantId) {
+          return false;
+        }
+        return hasPermission(fullPermission);
+      },
+      /**
+       * Get permissions for a specific module
+       * @param moduleId - Module identifier
+       * @param tenantId - Optional tenant ID
+       */
+      getModulePermissions: (moduleId: string, tenantId?: string) => {
+        if (!user?.permissions) return [];
+        // Check if tenant matches (if specified)
+        if (tenantId && user.tenant_id !== tenantId) {
+          return [];
+        }
+        return user.permissions.filter(
+          (p) =>
+            p === `${moduleId}.*` ||
+            p.startsWith(`${moduleId}.`) ||
+            p === "*"
+        );
+      },
     }),
-    [user]
+    [user, hasPermission]
   );
 }
 
@@ -113,4 +146,5 @@ export function useHasAnyRole(roles: string[]): boolean {
   const { hasAnyRole } = usePermissions();
   return hasAnyRole(roles);
 }
+
 

@@ -95,7 +95,7 @@ import { SearchIcon } from '@hugeicons/core-free-icons';
 
 1. **Plan Maestro UI**: `frontend/dev-ia/PLAN_MAESTRO_UI_FRONTEND.md` - Plan completo de desarrollo frontend (mejorado)
 2. **Frontend Doc**: `docs/11-frontend.md` - Documentación técnica frontend (stack tecnológico completo)
-3. **Backend Estado**: `docs/archive/ESTADO_MODULOS_TRANSVERSALES_2025-12-10.md` - Estado real del backend (o buscar el más reciente en `docs/archive/`)
+3. **Backend Estado**: `docs/` - Estado real del backend (o buscar el más reciente en `docs/archive/`)
 4. **API Contract**: `rules/api-contract.md` - Contrato de API
 5. **UX Rules**: `rules/ux-frontend.md` - Principios UX y frontend
 
@@ -113,10 +113,10 @@ import { SearchIcon } from '@hugeicons/core-free-icons';
 
 ### Paso 1: Analizar Estado Actual
 
-1. **Buscar archivo `last_ui_{datetime}.md` más reciente:**
+1. **Buscar archivo `front_dev_process_{datetime}.md` más reciente:**
    ```bash
-   # Buscar en frontend/dev-ia/ el archivo más reciente con patrón last_ui_*.md
-   # Formato esperado: last_ui_YYYYMMDD_HHMMSS.md
+   # Buscar en frontend/dev-ia/ el archivo más reciente con patrón front_dev_process_*.md
+   # Formato esperado: front_dev_process_YYYYMMDD_HHMMSS.md
    ```
 
 2. **Leer y analizar el archivo de seguimiento:**
@@ -136,7 +136,7 @@ import { SearchIcon } from '@hugeicons/core-free-icons';
    ```
 
 4. **Verificar estado del backend:**
-   - Consultar `docs/archive/ESTADO_MODULOS_TRANSVERSALES_*.md` (más reciente)
+   - Consultar `docs/` y `frontend/docs/`
    - Verificar endpoints disponibles para el módulo siguiente
    - Verificar permisos necesarios
 
@@ -232,11 +232,11 @@ import { SearchIcon } from '@hugeicons/core-free-icons';
 
 ### Paso 4: Crear Nuevo Archivo de Seguimiento
 
-1. **Crear archivo `last_ui_{datetime}.md`:**
+1. **Crear archivo `front_dev_process_{datetime}.md`:**
    ```bash
    cd frontend/dev-ia
    $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
-   New-Item -ItemType File -Path "last_ui_$timestamp.md"
+   New-Item -ItemType File -Path "front_dev_process_$timestamp.md"
    ```
 
 2. **Inicializar con plantilla completa:**
@@ -263,7 +263,7 @@ import { SearchIcon } from '@hugeicons/core-free-icons';
 ```
 AL CARGAR PROMPT
   ↓
-1. Buscar last_ui_*.md más reciente
+1. Buscar front_dev_process_*.md más reciente
   ↓
 2. Analizar estado actual (leer archivo + ejecutar verificaciones)
   ↓
@@ -273,7 +273,7 @@ AL CARGAR PROMPT
   ↓
 4. Generar plan próxima fase (2 días)
   ↓
-5. Crear nuevo last_ui_{datetime}.md
+5. Crear nuevo front_dev_process_{datetime}.md
   ↓
 6. Ejecutar verificación inicial
   ↓
@@ -285,7 +285,7 @@ AL FINALIZAR FASE (100% completada y probada)
   ↓
 1. Actualizar archivo de seguimiento final
   ↓
-2. Mover last_ui_{datetime}.md a archive/
+2. Mover front_dev_process_{datetime}.md a archive/
   ↓
 3. Borrar archivos temporales (*.txt)
   ↓
@@ -382,9 +382,9 @@ Antes de comenzar cualquier tarea, verifica:
    ```bash
    cd frontend/dev-ia
    $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
-   New-Item -ItemType File -Path "last_ui_$timestamp.md"
+   New-Item -ItemType File -Path "front_dev_process_$timestamp.md"
    ```
-   **Nota:** Usar formato `last_ui_` para consistencia con metodología del backend.
+   **Nota:** Usar formato `front_dev_process_` para consistencia con metodología del backend.
 
 2. **Inicializar contenido del archivo de seguimiento:**
    - Usar la plantilla mejorada proporcionada más abajo
@@ -399,7 +399,7 @@ Antes de comenzar cualquier tarea, verifica:
    - Documentar en archivo de seguimiento si backend está listo o pendiente
 
 4. **Crear/actualizar plan específico:**
-   - Si no existe `frontend\dev-ia\PLAN_MAESTRO_UI_FRONTEND.md` en `.cursor/plans/`, crearlo
+   - Si no existe `frontend/dev-ia/PLAN_MAESTRO_UI_FRONTEND.md` en `.cursor/plans/`, crearlo
    - Definir fases claras del desarrollo
    - Incluir checklist por fase (no avanzar sin completar)
 
@@ -511,12 +511,12 @@ npm run test:e2e > dev-ia/e2e_initial.txt 2>&1
    }
    ```
 
-2. **Mover archivo `last_ui_{datetime}.md` a `archive/`:**
+2. **Mover archivo `front_dev_process_{datetime}.md` a `archive/`:**
    ```powershell
    # Buscar archivo más reciente
-   $latestFile = Get-ChildItem -Path . -Filter "last_ui_*.md" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+   $latestFile = Get-ChildItem -Path . -Filter "front_dev_process_*.md" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
    if ($latestFile) {
-       Move-Item -Path $latestFile.FullName -Destination "archive\$($latestFile.Name)"
+       Move-Item -Path $latestFile.FullName -Destination "archive/$($latestFile.Name)"
    }
    ```
 
@@ -531,7 +531,7 @@ npm run test:e2e > dev-ia/e2e_initial.txt 2>&1
 
    # Borrar archivos temporales:
    Remove-Item -Path "*.txt" -ErrorAction SilentlyContinue  # typecheck_*.txt, lint_*.txt, test_*.txt, etc.
-   Remove-Item -Path "last_ui_*.md" -ErrorAction SilentlyContinue  # Ya movido a archive
+   Remove-Item -Path "front_dev_process_*.md" -ErrorAction SilentlyContinue  # Ya movido a archive
    ```
 
 4. **Verificar que solo quedan los archivos esenciales:**
@@ -550,8 +550,8 @@ npm run test:e2e > dev-ia/e2e_initial.txt 2>&1
 ```
 frontend/dev-ia/
 ├── archive/                          # Archivos de seguimiento archivados
-│   ├── last_ui_20251216_152020.md
-│   ├── last_ui_20250117_143022.md
+│   ├── front_dev_process_20251216_152020.md
+│   ├── front_dev_process_20250117_143022.md
 │   └── ...
 ├── create_tracking_file.ps1         # Script de creación
 ├── PLAN_MAESTRO_UI_FRONTEND.md      # Plan maestro
@@ -562,14 +562,14 @@ frontend/dev-ia/
 **⚠️ IMPORTANTE:**
 - Este proceso debe ejecutarse **solo cuando la fase está 100% completada y probada**
 - No borrar archivos si la fase aún está en progreso
-- El archivo `last_ui_{datetime}.md` debe moverse a `archive/` para mantener historial
+- El archivo `front_dev_process_{datetime}.md` debe moverse a `archive/` para mantener historial
 - Los archivos `.txt` temporales (typecheck, lint, test) deben borrarse siempre
 
 ---
 
 ## 📝 Plantilla de Archivo de Seguimiento
 
-**Nombre del archivo:** `last_ui_{YYYYMMDD_HHMMSS}.md`
+**Nombre del archivo:** `front_dev_process_{YYYYMMDD_HHMMSS}.md`
 
 **Contenido inicial:** Ver plantilla completa en `docs/ai-prompts/Master_Development_Frontend_promp.md` (sección "Plantilla de Archivo de Seguimiento")
 
@@ -660,7 +660,7 @@ app/features/{module}/
 ```powershell
 # 1. Crear archivo de seguimiento automáticamente
 cd frontend/dev-ia
-.\create_tracking_file.ps1 -FeatureName "SavedFilters" -Module "users" -PlanPath ".cursor/plans/savedfilters_users_implementation_*.plan.md"
+./create_tracking_file.ps1 -FeatureName "SavedFilters" -Module "users" -PlanPath ".cursor/plans/savedfilters_users_implementation_*.plan.md"
 
 # 2. Ejecutar verificación inicial
 cd ..
@@ -677,7 +677,7 @@ npm run test > "dev-ia/test_initial.txt" 2>&1
 # 1. Crear archivo de seguimiento
 cd frontend/dev-ia
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
-$filename = "last_ui_$timestamp.md"
+$filename = "front_dev_process_$timestamp.md"
 New-Item -ItemType File -Path $filename
 
 # 2. Inicializar contenido (usar plantilla arriba)
@@ -763,13 +763,13 @@ Una feature se considera completada cuando:
 
 ### Documentación Principal
 - `frontend/dev-ia/PLAN_MAESTRO_UI_FRONTEND.md` - Plan maestro mejorado
-- `docs/ai-prompts/Master_Development_Frontend_promp.md` - Prompt maestro frontend (VERSIÓN OFICIAL)
 - `docs/11-frontend.md` - Documentación técnica frontend
 - `docs/50-ai-development.md` - Guía de desarrollo con IA (aplicable)
 
 ### Metodología Backend (Referencia)
 - `backend/tests/analysis/PLAN_MEJORADO_TESTS.md` - Plan mejorado de tests (inspiración)
-- `docs/archive/` - Historial de correcciones y mejoras del backend
+- `docs/` - Documentacion del proyecto
+- NO usar contextos de `docs/archive/`
 
 ### Reglas y Estándares
 - `rules/naming.md` - Convenciones de nombres
@@ -783,7 +783,7 @@ Una feature se considera completada cuando:
 
 ### 1. Documentación Progresiva
 **Del backend:** Archivos `last_test_{datetime}.md` evitan pérdida de contexto
-**Aplicado a frontend:** Archivos `last_ui_{datetime}.md` con plantilla mejorada
+**Aplicado a frontend:** Archivos `front_dev_process_{datetime}.md` con plantilla mejorada
 
 ### 2. Seguimiento de Intentos
 **Del backend:** Registro de intentos de corrección detecta ciclos temprano
@@ -810,10 +810,14 @@ Una feature se considera completada cuando:
 ## 📋 Checklist Maestro para Nueva Feature (Repetible y Automatizable)
 
 ### Pre-Desarrollo
-- [ ] Leer documentación relevante (`docs/11-frontend.md`, `docs/archive/ESTADO_MODULOS_TRANSVERSALES_2025-12-10.md` o el más reciente)
+- [ ] Leer documentación relevante (`docs/11-frontend.md`, `docs/brand`,
+      `docs/diagrams/`, `docs/modules/`, `docs/00-overview.md`, `docs/01-architecture.md`,
+      `docs/02-environments.md`, `docs/10-backend.md`, `docs/12-migrations.md`,
+      `docs/20-dev-setup.md`, `docs/30-ci-cd-api-direct.md`, `docs/30-ci-cd.md`,
+      `docs/40-coolify-deploy.md`, `docs/50-ai-development.md`)
 - [ ] Verificar backend disponible y documentado
 - [ ] Consultar plan de implementación si existe
-- [ ] Crear archivo de seguimiento `last_ui_{datetime}.md`
+- [ ] Crear archivo de seguimiento `front_dev_process_{datetime}.md`
 - [ ] Ejecutar verificación inicial (typecheck, lint, tests)
 
 ### Desarrollo
@@ -831,8 +835,15 @@ Una feature se considera completada cuando:
 - [ ] Ejecutar tests (cobertura >70%)
 - [ ] Verificar accesibilidad
 - [ ] Verificar responsive
-- [ ] Clasificar y documentar TODOS los warnings
-- [ ] Documentar lecciones aprendidas
+- [ ] Clasificar y documentar TODOS los warning
+- [ ] Documentar la informacion relenante (`docs/11-frontend.md`, `docs/brand/`,
+      `docs/diagrams/`, `docs/modules/`, `docs/00-overview.md`, `docs/01-architecture.md`,
+      `docs/02-environments.md`, `docs/10-backend.md`, `docs/12-migrations.md`,
+      `docs/20-dev-setup.md`, `docs/30-ci-cd-api-direct.md`, `docs/30-ci-cd.md`,
+      `docs/40-coolify-deploy.md`, `docs/50-ai-development.md`)
+- [ ] Documentar lecciones aprendidas actualizando las rules relevantes en
+      `rules/` con los aprendizajes autorizados por el operador humano, solicitar
+      siempre autorizacion.
 - [ ] Actualizar archivo de seguimiento con métricas finales
 
 ### Automatización Futura
@@ -849,4 +860,4 @@ Una feature se considera completada cuando:
 
 **Última actualización:** 2025-01-13
 **Versión de metodología:** 2.0 (Mejorada con lecciones del backend)
-**Nota:** Para la versión completa y actualizada, consultar `docs/ai-prompts/Master_Development_Frontend_promp.md`
+

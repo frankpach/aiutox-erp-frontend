@@ -1,0 +1,122 @@
+/**
+ * API services for module management endpoints
+ *
+ * Handles module discovery and metadata retrieval from backend
+ */
+
+import apiClient from "./client";
+import type {
+  StandardResponse,
+  StandardListResponse,
+} from "./types/common.types";
+import type {
+  ModuleListItem,
+  ModuleInfoResponse,
+} from "../modules/types";
+
+/**
+ * Get list of all available modules
+ * GET /api/v1/config/modules
+ *
+ * Requires: config.view permission
+ */
+export async function getModules(): Promise<
+  StandardListResponse<ModuleListItem>
+> {
+  const response = await apiClient.get<StandardListResponse<ModuleListItem>>(
+    "/config/modules"
+  );
+  return response.data;
+}
+
+/**
+ * Get detailed information about a specific module
+ * GET /api/v1/config/modules/{module_id}
+ *
+ * Requires: config.view permission
+ *
+ * @param moduleId - Module identifier (e.g., 'products', 'auth')
+ */
+export async function getModuleMetadata(
+  moduleId: string
+): Promise<StandardResponse<ModuleInfoResponse>> {
+  const response = await apiClient.get<StandardResponse<ModuleInfoResponse>>(
+    `/config/modules/${moduleId}`
+  );
+  return response.data;
+}
+
+/**
+ * Get module permissions for a specific module
+ * GET /api/v1/auth/permissions?module_id={module_id}&tenant_id={tenant_id}
+ *
+ * @param moduleId - Module identifier (optional)
+ * @param tenantId - Tenant ID (optional, for filtering)
+ */
+export async function getModulePermissions(
+  moduleId?: string,
+  tenantId?: string
+): Promise<StandardListResponse<unknown>> {
+  const params = new URLSearchParams();
+  if (moduleId) {
+    params.append("module_id", moduleId);
+  }
+  if (tenantId) {
+    params.append("tenant_id", tenantId);
+  }
+
+  const queryString = params.toString();
+  const url = `/auth/permissions${queryString ? `?${queryString}` : ""}`;
+
+  const response = await apiClient.get<StandardListResponse<unknown>>(url);
+  return response.data;
+}
+
+/**
+ * Get all permissions grouped by module
+ * GET /api/v1/auth/permissions
+ *
+ * @param tenantId - Tenant ID (optional, for filtering)
+ */
+export async function getAllPermissions(
+  tenantId?: string
+): Promise<StandardListResponse<unknown>> {
+  const params = new URLSearchParams();
+  if (tenantId) {
+    params.append("tenant_id", tenantId);
+  }
+
+  const queryString = params.toString();
+  const url = `/auth/permissions${queryString ? `?${queryString}` : ""}`;
+
+  const response = await apiClient.get<StandardListResponse<unknown>>(url);
+  return response.data;
+}
+
+/**
+ * Get user permissions for a specific module
+ * GET /api/v1/auth/modules/{module}/permissions/{user_id}
+ *
+ * @param moduleId - Module identifier
+ * @param userId - User ID
+ * @param tenantId - Tenant ID (optional)
+ */
+export async function getUserModulePermissions(
+  moduleId: string,
+  userId: string,
+  tenantId?: string
+): Promise<StandardResponse<unknown>> {
+  const params = new URLSearchParams();
+  if (tenantId) {
+    params.append("tenant_id", tenantId);
+  }
+
+  const queryString = params.toString();
+  const url = `/auth/modules/${moduleId}/permissions/${userId}${
+    queryString ? `?${queryString}` : ""
+  }`;
+
+  const response = await apiClient.get<StandardResponse<unknown>>(url);
+  return response.data;
+}
+

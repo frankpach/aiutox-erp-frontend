@@ -57,3 +57,4 @@ npx playwright test --headed
 - Para tests con API real, modifica `helpers/api-mock.ts` o desactiva el mocking
 - Los selectores están diseñados para ser flexibles (español/inglés)
 
+

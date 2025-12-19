@@ -246,3 +246,4 @@ Una feature se considera completada cuando:
 ---
 
 **Última actualización:** 2025-12-16
+

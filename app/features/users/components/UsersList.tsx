@@ -1,11 +1,20 @@
 /**
  * UsersList Component
- * Displays a list of users with SavedFilters integration.
+ * Displays a list of users with SavedFilters integration, pagination, and actions.
  */
 
 import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router";
 import { Button } from "~/components/ui/button";
-import { Save } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
+import { Save, MoreVertical, Eye, Edit, Trash2, Shield } from "lucide-react";
+import { ConfirmDialog } from "~/components/common/ConfirmDialog";
+import { showToast } from "~/components/common/Toast";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 import { SavedFilters } from "../../views/components/SavedFilters";
 import { FilterEditorModal } from "../../views/components/FilterEditorModal";
@@ -13,8 +22,9 @@ import { FilterManagementModal } from "../../views/components/FilterManagementMo
 import { userFieldsConfig } from "../../views/config/userFields";
 import { useSavedFilters } from "../../views/hooks/useSavedFilters";
 import { useFilterUrlSync } from "../../views/hooks/useFilterUrlSync";
-import { getUsers, type User, type UsersListParams } from "../api/users.api";
-import type { StandardListResponse, SavedFilter, SavedFilterCreate } from "../../views/types/savedFilter.types";
+import { useUsers, useDeleteUser } from "../hooks/useUsers";
+import type { User } from "../types/user.types";
+import type { SavedFilter, SavedFilterCreate } from "../../views/types/savedFilter.types";
 
 export interface UsersListProps {
   onManageFiltersClick?: () => void;
@@ -24,25 +34,21 @@ export interface UsersListProps {
  * UsersList component with SavedFilters integration
  */
 export function UsersList({ onManageFiltersClick }: UsersListProps) {
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const [pagination, setPagination] = useState<{
-    total: number;
-    page: number;
-    page_size: number;
-    total_pages: number;
-  }>({
-    total: 0,
-    page: 1,
-    page_size: 20,
-    total_pages: 0,
-  });
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(20);
+  const [search, setSearch] = useState("");
+  const [isActiveFilter, setIsActiveFilter] = useState<boolean | undefined>(
+    undefined
+  );
 
   const [editorOpen, setEditorOpen] = useState(false);
   const [managementOpen, setManagementOpen] = useState(false);
   const [editingFilter, setEditingFilter] = useState<SavedFilter | null>(null);
   const [_savingCurrentFilter, setSavingCurrentFilter] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    open: boolean;
+    userId: string | null;
+  }>({ open: false, userId: null });
   const { t } = useTranslation();
 
   const { filterId, updateFilterId } = useFilterUrlSync();
@@ -52,6 +58,17 @@ export function UsersList({ onManageFiltersClick }: UsersListProps) {
     refreshFilters,
     createFilter,
   } = useSavedFilters("users", true);
+
+  // Use the new useUsers hook
+  const { users, loading, error, pagination, refresh } = useUsers({
+    page,
+    page_size: pageSize,
+    search: search || undefined,
+    is_active: isActiveFilter,
+    saved_filter_id: filterId || undefined,
+  });
+
+  const { remove: deleteUser, loading: deleting } = useDeleteUser();
 
   // Apply default filter on mount if no filter in URL
   useEffect(() => {
@@ -63,41 +80,31 @@ export function UsersList({ onManageFiltersClick }: UsersListProps) {
     }
   }, [filterId, getDefaultFilter, updateFilterId]);
 
-  const loadUsers = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const params: UsersListParams = {
-        page: pagination.page,
-        page_size: pagination.page_size,
-        saved_filter_id: filterId || undefined,
-      };
-
-      const response: StandardListResponse<User> = await getUsers(params);
-      setUsers(response.data);
-      setPagination({
-        total: response.meta.total,
-        page: response.meta.page,
-        page_size: response.meta.page_size,
-        total_pages: response.meta.total_pages,
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to load users"));
-    } finally {
-      setLoading(false);
-    }
-  }, [filterId, pagination.page, pagination.page_size]);
-
-  // Load users when filter changes
-  useEffect(() => {
-    loadUsers();
-  }, [loadUsers]);
-
   const handleApplyFilter = (newFilterId: string | null) => {
     updateFilterId(newFilterId);
     // Reset to page 1 when filter changes
-    setPagination((prev) => ({ ...prev, page: 1 }));
+    setPage(1);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    setDeleteConfirm({ open: true, userId });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm.userId) return;
+
+    const success = await deleteUser(deleteConfirm.userId);
+    if (success) {
+      showToast("Usuario eliminado exitosamente", "success");
+      refresh();
+    } else {
+      showToast("Error al eliminar el usuario", "error");
+    }
+    setDeleteConfirm({ open: false, userId: null });
   };
 
   const handleSaveCurrentFilter = () => {
@@ -190,6 +197,35 @@ export function UsersList({ onManageFiltersClick }: UsersListProps) {
         </div>
       )}
 
+      {/* Search and Filters */}
+      <div className="flex items-center gap-4">
+        <input
+          type="text"
+          placeholder={t("users.search") || "Buscar usuarios..."}
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+        />
+        <select
+          value={isActiveFilter === undefined ? "all" : isActiveFilter ? "active" : "inactive"}
+          onChange={(e) => {
+            const value = e.target.value;
+            setIsActiveFilter(
+              value === "all" ? undefined : value === "active"
+            );
+            setPage(1);
+          }}
+          className="flex h-10 w-[150px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        >
+          <option value="all">{t("users.allStatus") || "Todos"}</option>
+          <option value="active">{t("users.active") || "Activos"}</option>
+          <option value="inactive">{t("users.inactive") || "Inactivos"}</option>
+        </select>
+      </div>
+
       {/* Users Table */}
       {!loading && !error && (
         <>
@@ -197,8 +233,8 @@ export function UsersList({ onManageFiltersClick }: UsersListProps) {
             <div className="rounded-md border p-8 text-center">
               <p className="text-muted-foreground">
                 {filterId
-                  ? t("users.noUsersWithFilter")
-                  : t("users.noUsers")}
+                  ? t("users.noUsersWithFilter") || "No se encontraron usuarios con el filtro aplicado"
+                  : t("users.noUsers") || "No hay usuarios"}
               </p>
             </div>
           ) : (
@@ -207,10 +243,12 @@ export function UsersList({ onManageFiltersClick }: UsersListProps) {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b bg-muted/50">
-                      <th className="px-4 py-3 text-left text-sm font-medium">{t("users.email")}</th>
-                      <th className="px-4 py-3 text-left text-sm font-medium">{t("users.name")}</th>
-                      <th className="px-4 py-3 text-left text-sm font-medium">{t("users.status")}</th>
-                      <th className="px-4 py-3 text-left text-sm font-medium">{t("users.created")}</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium">{t("users.email") || "Email"}</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium">{t("users.name") || "Nombre"}</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium">{t("users.jobTitle") || "Cargo"}</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium">{t("users.status") || "Estado"}</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium">{t("users.created") || "Creado"}</th>
+                      <th className="px-4 py-3 text-right text-sm font-medium">{t("users.actions") || "Acciones"}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -218,7 +256,10 @@ export function UsersList({ onManageFiltersClick }: UsersListProps) {
                       <tr key={user.id} className="border-b hover:bg-muted/50">
                         <td className="px-4 py-3 text-sm">{user.email}</td>
                         <td className="px-4 py-3 text-sm">
-                          {user.full_name || "—"}
+                          {user.full_name || `${user.first_name || ""} ${user.last_name || ""}`.trim() || "—"}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-muted-foreground">
+                          {user.job_title || "—"}
                         </td>
                         <td className="px-4 py-3 text-sm">
                           <span
@@ -228,11 +269,48 @@ export function UsersList({ onManageFiltersClick }: UsersListProps) {
                                 : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
                             }`}
                           >
-                            {user.is_active ? t("users.active") : t("users.inactive")}
+                            {user.is_active ? t("users.active") || "Activo" : t("users.inactive") || "Inactivo"}
                           </span>
                         </td>
                         <td className="px-4 py-3 text-sm text-muted-foreground">
                           {new Date(user.created_at).toLocaleDateString()}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem asChild>
+                                <Link to={`/users/${user.id}`} className="flex items-center gap-2">
+                                  <Eye className="h-4 w-4" />
+                                  {t("users.view") || "Ver"}
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem asChild>
+                                <Link to={`/users/${user.id}/edit`} className="flex items-center gap-2">
+                                  <Edit className="h-4 w-4" />
+                                  {t("users.edit") || "Editar"}
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem asChild>
+                                <Link to={`/users/${user.id}/roles`} className="flex items-center gap-2">
+                                  <Shield className="h-4 w-4" />
+                                  {t("users.manageRoles") || "Gestionar Roles"}
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleDeleteUser(user.id)}
+                                disabled={deleting}
+                                className="text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                {t("users.delete") || "Eliminar"}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </td>
                       </tr>
                     ))}
@@ -241,40 +319,30 @@ export function UsersList({ onManageFiltersClick }: UsersListProps) {
               </div>
 
               {/* Pagination */}
-              {pagination.total_pages > 1 && (
+              {pagination && pagination.total_pages > 1 && (
                 <div className="flex items-center justify-between">
                   <div className="text-sm text-muted-foreground">
-                    {t("users.showing")} {users.length} {t("users.of")} {pagination.total} {t("users.users")}
+                    {t("users.showing") || "Mostrando"} {users.length} {t("users.of") || "de"} {pagination.total} {t("users.users") || "usuarios"}
                   </div>
                   <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() =>
-                        setPagination((prev) => ({
-                          ...prev,
-                          page: Math.max(1, prev.page - 1),
-                        }))
-                      }
-                      disabled={pagination.page === 1}
+                      onClick={() => handlePageChange(Math.max(1, page - 1))}
+                      disabled={page === 1}
                     >
-                      {t("users.previous")}
+                      {t("users.previous") || "Anterior"}
                     </Button>
                     <span className="text-sm">
-                      Página {pagination.page} de {pagination.total_pages}
+                      {t("users.page") || "Página"} {page} {t("users.of") || "de"} {pagination.total_pages}
                     </span>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() =>
-                        setPagination((prev) => ({
-                          ...prev,
-                          page: Math.min(prev.total_pages, prev.page + 1),
-                        }))
-                      }
-                      disabled={pagination.page >= pagination.total_pages}
+                      onClick={() => handlePageChange(Math.min(pagination.total_pages, page + 1))}
+                      disabled={page >= pagination.total_pages}
                     >
-                      {t("users.next")}
+                      {t("users.next") || "Siguiente"}
                     </Button>
                   </div>
                 </div>
@@ -283,6 +351,22 @@ export function UsersList({ onManageFiltersClick }: UsersListProps) {
           )}
         </>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteConfirm.open}
+        onClose={() => setDeleteConfirm({ open: false, userId: null })}
+        onConfirm={confirmDelete}
+        title={t("users.confirmDeleteTitle") || "Eliminar Usuario"}
+        description={
+          t("users.confirmDelete") ||
+          "¿Estás seguro de que deseas eliminar este usuario? Esta acción no se puede deshacer."
+        }
+        confirmText={t("users.delete") || "Eliminar"}
+        cancelText={t("users.cancel") || "Cancelar"}
+        variant="destructive"
+        loading={deleting}
+      />
 
       {/* Filter Editor Modal */}
       <FilterEditorModal
@@ -308,6 +392,7 @@ export function UsersList({ onManageFiltersClick }: UsersListProps) {
     </div>
   );
 }
+
 
 
 

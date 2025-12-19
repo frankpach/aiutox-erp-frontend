@@ -126,7 +126,7 @@ import { SearchIcon } from '@hugeicons/core-free-icons';
 **Inspirado en la metodología perfeccionada del backend** (`backend/tests/analysis/PLAN_MEJORADO_TESTS.md`):
 
 1. **Inicialización:**
-   - Crear archivo `last_ui_{datetime}.md` en `frontend/dev-ia/` con plantilla completa
+   - Crear archivo `front_dev_process_{datetime}.md` en `frontend/dev-ia/` con plantilla completa
    - Verificar estado del backend del módulo a implementar (`docs/ESTADO_MODULOS_TRANSVERSALES.md`)
    - Crear/actualizar plan específico `.plan.md` en `.cursor/plans/` si no existe
    - Ejecutar verificación inicial completa (lint, typecheck, tests existentes)
@@ -166,7 +166,7 @@ import { SearchIcon } from '@hugeicons/core-free-icons';
 ```
 INICIO
   ↓
-Crear last_ui_{datetime}.md
+Crear front_dev_process_{datetime}.md
   ↓
 Verificar backend del módulo
   ↓
@@ -195,7 +195,7 @@ Generar reporte final
   ├─ NO → Continuar desarrollo
   └─ SÍ → Limpieza y Archivado
       ↓
-  1. Mover last_ui_{datetime}.md a archive/
+  1. Mover front_dev_process_{datetime}.md a archive/
   2. Borrar archivos temporales (*.txt)
   3. Verificar estructura final
   ↓
@@ -210,17 +210,17 @@ FIN
 
 **Al iniciar el desarrollo de una feature/módulo frontend, crear archivo:**
 ```
-frontend/dev-ia/last_ui_{datetime}.md
+frontend/dev-ia/front_dev_process_{datetime}.md
 ```
 
-**Formato del nombre:** `last_ui_YYYYMMDD_HHMMSS.md` (ejemplo: `last_ui_20250113_143022.md`)
+**Formato del nombre:** `front_dev_process_YYYYMMDD_HHMMSS.md` (ejemplo: `front_dev_process_20250113_143022.md`)
 
 **Comando para crear archivo:**
 ```bash
 cd frontend/dev-ia
 # Crear archivo con timestamp
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
-New-Item -ItemType File -Path "last_ui_$timestamp.md"
+New-Item -ItemType File -Path "front_dev_process_$timestamp.md"
 ```
 
 **Contenido inicial del archivo (Plantilla Mejorada):**
@@ -767,7 +767,7 @@ Cuando un nuevo agente/persona retome el trabajo frontend:
 
 ### Paso 2: Identificar Trabajo en Curso
 
-1. Ver último archivo de seguimiento: `frontend/dev-ia/last_ui_*.md` (más reciente)
+1. Ver último archivo de seguimiento: `frontend/dev-ia/front_dev_process_*.md` (más reciente)
 2. Identificar feature/módulo en progreso
 3. Leer plan asociado: `.cursor/plans/[feature]_implementation_*.plan.md`
 4. Identificar fase actual y TODOs pendientes
@@ -852,10 +852,10 @@ npm run build
    }
    ```
 
-2. **Mover archivo `last_ui_{datetime}.md` a `archive/`:**
+2. **Mover archivo `front_dev_process_{datetime}.md` a `archive/`:**
    ```powershell
    # Buscar archivo más reciente
-   $latestFile = Get-ChildItem -Path . -Filter "last_ui_*.md" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+   $latestFile = Get-ChildItem -Path . -Filter "front_dev_process_*.md" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
    if ($latestFile) {
        Move-Item -Path $latestFile.FullName -Destination "archive\$($latestFile.Name)"
        Write-Host "Archivo movido a archive: $($latestFile.Name)" -ForegroundColor Green
@@ -873,7 +873,7 @@ npm run build
 
    # Borrar archivos temporales:
    Remove-Item -Path "*.txt" -ErrorAction SilentlyContinue  # typecheck_*.txt, lint_*.txt, test_*.txt, etc.
-   Remove-Item -Path "last_ui_*.md" -ErrorAction SilentlyContinue  # Ya movido a archive
+   Remove-Item -Path "front_dev_process_*.md" -ErrorAction SilentlyContinue  # Ya movido a archive
    Write-Host "Archivos temporales borrados" -ForegroundColor Green
    ```
 
@@ -891,8 +891,8 @@ npm run build
 ```
 frontend/dev-ia/
 ├── archive/                          # Archivos de seguimiento archivados
-│   ├── last_ui_20251216_152020.md
-│   ├── last_ui_20250117_143022.md
+│   ├── front_dev_process_20251216_152020.md
+│   ├── front_dev_process_20250117_143022.md
 │   └── ...
 ├── create_tracking_file.ps1         # Script de creación
 ├── PLAN_MAESTRO_UI_FRONTEND.md      # Plan maestro
@@ -921,15 +921,15 @@ if (-not (Test-Path "archive")) {
     Write-Host "Carpeta archive creada" -ForegroundColor Green
 }
 
-# Mover archivos last_ui_*.md a archive
-$uiFiles = Get-ChildItem -Path . -Filter "last_ui_*.md" -ErrorAction SilentlyContinue
+# Mover archivos front_dev_process_*.md a archive
+$uiFiles = Get-ChildItem -Path . -Filter "front_dev_process_*.md" -ErrorAction SilentlyContinue
 if ($uiFiles) {
     foreach ($file in $uiFiles) {
         Move-Item -Path $file.FullName -Destination "archive\$($file.Name)" -Force
         Write-Host "Archivo movido a archive: $($file.Name)" -ForegroundColor Green
     }
 } else {
-    Write-Host "No se encontraron archivos last_ui_*.md para archivar" -ForegroundColor Yellow
+    Write-Host "No se encontraron archivos front_dev_process_*.md para archivar" -ForegroundColor Yellow
 }
 
 # Borrar archivos temporales
@@ -964,7 +964,7 @@ cd frontend/dev-ia
 
 1. **Solo ejecutar cuando la fase está 100% completada y probada**
 2. **No borrar archivos si la fase aún está en progreso**
-3. **El archivo `last_ui_{datetime}.md` debe moverse a `archive/` para mantener historial**
+3. **El archivo `front_dev_process_{datetime}.md` debe moverse a `archive/` para mantener historial**
 4. **Los archivos `.txt` temporales (typecheck, lint, test) deben borrarse siempre**
 5. **Mantener siempre los 4 archivos esenciales:**
    - `create_tracking_file.ps1`
@@ -1061,7 +1061,7 @@ npm run test:e2e > e2e_output.txt 2>&1
 
 **Paso 3: Actualizar Archivo de Seguimiento**
 
-**Ubicación:** `frontend/dev-ia/last_ui_{datetime}.md`
+**Ubicación:** `frontend/dev-ia/front_dev_process_{datetime}.md`
 
 **Actualizar secciones:**
 1. **Actualizar "Seguimiento de Progreso por Feature":**
@@ -1147,13 +1147,13 @@ npx shadcn@latest add
 
 ```bash
 # Ver progreso actual
-cat frontend/dev-ia/last_ui_*.md | grep -A 5 "Seguimiento de Progreso"
+cat frontend/dev-ia/front_dev_process_*.md | grep -A 5 "Seguimiento de Progreso"
 
 # Ver errores pendientes
-cat frontend/dev-ia/last_ui_*.md | grep -A 10 "Errores Pendientes"
+cat frontend/dev-ia/front_dev_process_*.md | grep -A 10 "Errores Pendientes"
 
 # Ver última feature procesada
-cat frontend/dev-ia/last_ui_*.md | grep "### Feature:" | tail -1
+cat frontend/dev-ia/front_dev_process_*.md | grep "### Feature:" | tail -1
 
 # Contar archivos TypeScript
 find app -name "*.ts" -o -name "*.tsx" | wc -l
@@ -1260,7 +1260,7 @@ grep -r "texto en español" app/features --include="*.tsx" --include="*.ts"
 # 1. Crear archivo de seguimiento
 cd frontend/dev-ia
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
-New-Item -ItemType File -Path "last_ui_$timestamp.md"
+New-Item -ItemType File -Path "front_dev_process_$timestamp.md"
 
 # 2. Verificar estado inicial
 cd ..
@@ -1269,7 +1269,7 @@ npm run lint
 npm run test
 
 # 3. Ver último archivo de seguimiento creado
-ls -lt dev-ia/last_ui_*.md | Select-Object -First 1
+ls -lt dev-ia/front_dev_process_*.md | Select-Object -First 1
 
 # 4. Continuar con la primera feature del plan
 ```
@@ -1294,7 +1294,7 @@ npm run lint
 npm run test app/features/views/types/
 
 # 5. Actualizar documento de seguimiento
-# (Editar last_ui_*.md)
+# (Editar front_dev_process_*.md)
 
 # 6. Continuar con Fase 2
 # [Implementar código]
@@ -1306,13 +1306,13 @@ npm run test app/features/views/types/
 
 ```bash
 # Ver progreso actual
-cat frontend/dev-ia/last_ui_*.md | grep -A 5 "Seguimiento de Progreso"
+cat frontend/dev-ia/front_dev_process_*.md | grep -A 5 "Seguimiento de Progreso"
 
 # Ver errores pendientes
-cat frontend/dev-ia/last_ui_*.md | grep -A 10 "Errores Pendientes"
+cat frontend/dev-ia/front_dev_process_*.md | grep -A 10 "Errores Pendientes"
 
 # Ver última feature procesada
-cat frontend/dev-ia/last_ui_*.md | grep "### Feature:" | tail -1
+cat frontend/dev-ia/front_dev_process_*.md | grep "### Feature:" | tail -1
 
 # Contar componentes creados
 find app/features -name "*.tsx" | wc -l
@@ -1349,7 +1349,7 @@ find app/features -name "*.tsx" | wc -l
 
 ### 1. Documentación Progresiva
 **Del backend:** Archivos `last_test_{datetime}.md` evitan pérdida de contexto
-**Aplicado a frontend:** Archivos `last_ui_{datetime}.md` con plantilla mejorada
+**Aplicado a frontend:** Archivos `front_dev_process_{datetime}.md` con plantilla mejorada
 
 ### 2. Seguimiento de Intentos
 **Del backend:** Registro de intentos de corrección detecta ciclos temprano
@@ -1371,3 +1371,4 @@ find app/features -name "*.tsx" | wc -l
 
 **Última actualización:** [Se actualizará automáticamente después de cada feature/módulo]
 **Versión de metodología:** 2.0 (Mejorada con lecciones del backend)
+

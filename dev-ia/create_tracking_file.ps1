@@ -184,14 +184,15 @@ $content = @"
 # Crear archivo
 Set-Content -Path $filepath -Value $content -Encoding UTF8
 
-Write-Host "✅ Archivo de seguimiento creado: $filename" -ForegroundColor Green
-Write-Host "📝 Ubicación: $filepath" -ForegroundColor Cyan
+Write-Host "[OK] Archivo de seguimiento creado: $filename" -ForegroundColor Green
+Write-Host "[INFO] Ubicacion: $filepath" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "Próximos pasos:" -ForegroundColor Yellow
-Write-Host "1. Editar el archivo y completar información inicial" -ForegroundColor White
-Write-Host "2. Ejecutar verificación inicial:" -ForegroundColor White
-Write-Host "   cd .." -ForegroundColor Gray
-Write-Host "   npm run typecheck > dev-ia/typecheck_initial.txt 2>&1" -ForegroundColor Gray
-Write-Host "   npm run lint > dev-ia/lint_initial.txt 2>&1" -ForegroundColor Gray
-Write-Host "   npm run test > dev-ia/test_initial.txt 2>&1" -ForegroundColor Gray
-Write-Host "3. Registrar resultados en el archivo de seguimiento" -ForegroundColor White
+Write-Host "Proximos pasos:" -ForegroundColor Yellow
+Write-Host "1. Editar el archivo y completar informacion inicial" -ForegroundColor White
+Write-Host "2. Ejecutar verificacion inicial:" -ForegroundColor White
+Write-Host '   cd ..' -ForegroundColor Gray
+Write-Host '   npm run typecheck > dev-ia/typecheck_initial.txt 2>&1' -ForegroundColor Gray
+Write-Host '   npm run lint > dev-ia/lint_initial.txt 2>&1' -ForegroundColor Gray
+Write-Host '   npm run test > dev-ia/test_initial.txt 2>&1' -ForegroundColor Gray
+Write-Host '3. Registrar resultados en el archivo de seguimiento' -ForegroundColor White
+
