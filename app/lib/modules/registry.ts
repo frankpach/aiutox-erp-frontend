@@ -31,6 +31,7 @@ import {
   clearModuleCache,
 } from "../storage/moduleCache";
 import { useAuthStore } from "../../stores/authStore";
+import { navigationItems } from "../../config/navigation";
 
 /**
  * Module Registry class
@@ -297,6 +298,7 @@ class ModuleRegistry {
    *
    * Organizes modules into 3-level hierarchy:
    * Category → Module → Items
+   * Also integrates static navigation items from navigation.ts
    */
   getNavigationTree(): NavigationTree {
     // Return cached tree if available
@@ -307,7 +309,92 @@ class ModuleRegistry {
     const categories = new Map<string, CategoryNode>();
     const allItems: NavigationItem[] = [];
 
-    // Group modules by category
+    // 1. Add static navigation items from navigation.ts
+    for (const navItem of navigationItems) {
+      // Handle top-level items without children (e.g., "Dashboard")
+      if (!navItem.children || navItem.children.length === 0) {
+        // Skip creating category for standalone items - they'll be added directly to a "Root" category
+        // For now, we'll add them to a special category that renders as direct links
+        const categoryName = "_root"; // Special category for top-level items
+        let categoryNode = categories.get(categoryName);
+        if (!categoryNode) {
+          categoryNode = {
+            name: categoryName,
+            order: -1, // Before all other categories
+            modules: new Map(),
+          };
+          categories.set(categoryName, categoryNode);
+        }
+
+        // Create a module node for this item (but it will render as a direct link, not expandable)
+        const moduleNode: ModuleNode = {
+          id: navItem.id,
+          name: navItem.label,
+          order: 0,
+          items: [
+            {
+              id: navItem.id,
+              label: navItem.label,
+              to: navItem.to!,
+              icon: navItem.icon,
+              permission: navItem.permission,
+              order: 0,
+            },
+          ],
+          mainRoute: navItem.to,
+          permission: navItem.permission,
+        };
+
+        categoryNode.modules.set(navItem.id, moduleNode);
+        allItems.push(...moduleNode.items);
+      } else {
+        // Handle items with children (e.g., "Configuración")
+        // ✅ FIXED: Children are direct items in the category, NO intermediate module
+        const categoryName = navItem.label;
+        let categoryNode = categories.get(categoryName);
+        if (!categoryNode) {
+          categoryNode = {
+            name: categoryName,
+            order: 1000, // Last category
+            modules: new Map(),
+          };
+          categories.set(categoryName, categoryNode);
+        }
+
+        // ✅ Create a special "direct" module that will be rendered as direct items
+        // The id ending in "-direct" signals NavigationTree to render items directly
+        const directModuleId = `${categoryName.toLowerCase()}-direct`;
+        const directModule: ModuleNode = {
+          id: directModuleId,
+          name: "", // ✅ Empty name - won't be displayed
+          order: 0,
+          items: navItem.children.map((child) => ({
+            id: child.id,
+            label: child.label,
+            to: child.to!,
+            icon: child.icon,
+            permission: child.permission,
+            order: 0,
+          })),
+          mainRoute: navItem.children[0]?.to,
+          permission: undefined, // Category-level permission check
+        };
+
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/bd91a56b-aa7d-44fb-ac11-0977789d60c5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'registry.ts:365',message:'registry: creating direct module',data:{categoryName,directModuleId,itemsCount:directModule.items.length,itemLabels:directModule.items.map(i=>i.label),itemPermissions:directModule.items.map(i=>i.permission)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
+
+        categoryNode.modules.set(directModuleId, directModule);
+        allItems.push(...directModule.items);
+
+        // Store requiresAnyPermission for the category if present
+        if (navItem.requiresAnyPermission) {
+          (categoryNode as any).requiresAnyPermission = navItem.requiresAnyPermission;
+        }
+      }
+    }
+
+    // 2. Group modules from backend by category
     for (const module of this.modules.values()) {
       if (!module.enabled || !module.navigation) {
         continue;
@@ -408,6 +495,7 @@ class ModuleRegistry {
     this.modules.clear();
     this.navigationTree = null;
     this.isInitialized = false;
+    // clearModuleCache is synchronous, no await needed
     clearModuleCache(userId);
   }
 
@@ -421,4 +509,10 @@ class ModuleRegistry {
 
 // Export singleton instance
 export const moduleRegistry = new ModuleRegistry();
+
+
+
+
+
+
 

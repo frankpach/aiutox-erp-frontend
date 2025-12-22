@@ -5,7 +5,7 @@
  * Extended with multi-tenant and multi-module support
  */
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useAuthStore } from "~/stores/authStore";
 
 /**
@@ -147,4 +147,103 @@ export function useHasAnyRole(roles: string[]): boolean {
   return hasAnyRole(roles);
 }
 
+/**
+ * Hook to get permissions by module from backend
+ *
+ * This hook fetches permissions from the backend API, optionally filtered by module and tenant.
+ * Useful when you need to display all available permissions or check permissions for a different tenant.
+ *
+ * @param moduleId - Optional module ID to filter permissions
+ * @param tenantId - Optional tenant ID to filter permissions
+ */
+export function usePermissionsByModule(moduleId?: string, tenantId?: string) {
+  const [permissions, setPermissions] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    const fetchPermissions = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const { getModulePermissions } = await import("~/lib/api/modules.api");
+        const response = await getModulePermissions(moduleId, tenantId);
+        const permissionStrings = response.data.map((p: any) => p.permission || p);
+        setPermissions(permissionStrings);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err : new Error("Failed to load permissions")
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPermissions();
+  }, [moduleId, tenantId]);
+
+  return { permissions, loading, error };
+}
+
+/**
+ * Hook to get all permissions grouped by module
+ *
+ * Fetches all permissions from backend and groups them by module.
+ *
+ * @param tenantId - Optional tenant ID to filter permissions
+ */
+export function useAllPermissionsByModule(tenantId?: string) {
+  const [permissionGroups, setPermissionGroups] = useState<
+    Array<{ moduleId: string; moduleName: string; permissions: string[] }>
+  >([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    const fetchPermissions = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const { getAllPermissions } = await import("~/lib/api/modules.api");
+        const response = await getAllPermissions(tenantId);
+
+        // Group permissions by module
+        const groupsMap = new Map<
+          string,
+          { moduleId: string; moduleName: string; permissions: string[] }
+        >();
+
+        for (const perm of response.data) {
+          const permissionString = typeof perm === "string" ? perm : (perm as any).permission || "";
+          const moduleId = permissionString.split(".")[0] || "unknown";
+          const moduleName = moduleId.charAt(0).toUpperCase() + moduleId.slice(1);
+
+          if (!groupsMap.has(moduleId)) {
+            groupsMap.set(moduleId, {
+              moduleId,
+              moduleName,
+              permissions: [],
+            });
+          }
+
+          groupsMap.get(moduleId)!.permissions.push(permissionString);
+        }
+
+        setPermissionGroups(Array.from(groupsMap.values()));
+      } catch (err) {
+        setError(
+          err instanceof Error ? err : new Error("Failed to load permissions")
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPermissions();
+  }, [tenantId]);
+
+  return { permissionGroups, loading, error };
+}
 

@@ -87,8 +87,8 @@ test.describe("Login and Layout Flow", () => {
     await page.click('button[type="submit"]');
 
     // Wait for navigation after login
-    // Should redirect to home (/) or users page
-    await page.waitForURL(/\/(home|users|dashboard|\?redirect=|$)/, { timeout: 15000 });
+    // Should redirect to dashboard when no redirect param exists
+    await page.waitForURL(/\/dashboard/, { timeout: 15000 });
     await page.waitForLoadState("networkidle");
 
     console.log(`Current URL after login: ${page.url()}`);
@@ -120,8 +120,8 @@ test.describe("Login and Layout Flow", () => {
     await page.fill('input[type="password"]', ADMIN_PASSWORD);
     await page.click('button[type="submit"]');
 
-    // Wait for navigation
-    await page.waitForURL(/\/(home|users|dashboard|\?redirect=|$)/, { timeout: 10000 });
+    // Wait for navigation to dashboard
+    await page.waitForURL(/\/dashboard/, { timeout: 10000 });
     await page.waitForLoadState("networkidle");
 
     // Verify sidebar navigation items
@@ -150,8 +150,8 @@ test.describe("Login and Layout Flow", () => {
     await page.fill('input[type="password"]', ADMIN_PASSWORD);
     await page.click('button[type="submit"]');
 
-    // Wait for navigation
-    await page.waitForURL(/\/(home|users|dashboard|\?redirect=|$)/, { timeout: 10000 });
+    // Wait for navigation to dashboard
+    await page.waitForURL(/\/dashboard/, { timeout: 10000 });
     await page.waitForLoadState("networkidle");
 
     // Click on user menu
@@ -172,8 +172,8 @@ test.describe("Login and Layout Flow", () => {
     await page.fill('input[type="password"]', ADMIN_PASSWORD);
     await page.click('button[type="submit"]');
 
-    // Wait for navigation
-    await page.waitForURL(/\/(home|users|dashboard|\?redirect=|$)/, { timeout: 10000 });
+    // Wait for navigation to dashboard
+    await page.waitForURL(/\/dashboard/, { timeout: 10000 });
     await page.waitForLoadState("networkidle");
 
     // Open user menu
@@ -211,6 +211,12 @@ test.describe("Login and Layout Flow", () => {
     expect(page.url()).toContain("/login");
   });
 });
+
+
+
+
+
+
 
 
 

@@ -15,12 +15,12 @@ test.describe("Module Discovery", () => {
     await page.goto("/login");
 
     // Login
-    await page.fill('input[name="email"]', "admin@aiutox.com");
-    await page.fill('input[name="password"]', "password");
+    await page.fill('input[type="email"]', "admin@aiutox.com");
+    await page.fill('input[type="password"]', "password");
     await page.click('button[type="submit"]');
 
-    // Wait for navigation
-    await page.waitForURL(/\/(dashboard|users)/);
+    // Wait for navigation to dashboard
+    await page.waitForURL(/\/dashboard/, { timeout: 15000 });
   });
 
   test("should load modules on app startup", async ({ page }) => {

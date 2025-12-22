@@ -15,13 +15,13 @@ test.describe("User Management", () => {
     // Navigate to login page
     await page.goto("/login");
 
-    // Login (adjust selectors based on your login form)
-    await page.fill('input[name="email"]', "admin@aiutox.com");
-    await page.fill('input[name="password"]', "password");
+    // Login
+    await page.fill('input[type="email"]', "admin@aiutox.com");
+    await page.fill('input[type="password"]', "password");
     await page.click('button[type="submit"]');
 
     // Wait for navigation to dashboard
-    await page.waitForURL(/\/(dashboard|users)/);
+    await page.waitForURL(/\/dashboard/, { timeout: 15000 });
   });
 
   test("should display users list", async ({ page }) => {

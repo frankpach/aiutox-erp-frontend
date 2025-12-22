@@ -97,12 +97,19 @@ export function ContactMethodForm({
     }
   }, [method]);
 
-  const onSubmitForm = async (data: unknown) => {
-    await onSubmit(data as ContactMethodFormProps["onSubmit"] extends (
-      data: infer T
-    ) => Promise<void>
-      ? T
-      : never);
+  const onSubmitForm = async (data: {
+    method_type?: ContactMethodType;
+    value?: string | null;
+    label?: string | null;
+    is_primary?: boolean | null;
+    address_line1?: string | null;
+    address_line2?: string | null;
+    city?: string | null;
+    state_province?: string | null;
+    postal_code?: string | null;
+    country?: string | null;
+  }) => {
+    await onSubmit(data);
   };
 
   const isAddress = methodType === "address";
@@ -266,4 +273,10 @@ export function ContactMethodForm({
     </form>
   );
 }
+
+
+
+
+
+
 

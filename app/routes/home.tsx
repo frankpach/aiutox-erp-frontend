@@ -21,7 +21,6 @@ export default function Home() {
     return <Navigate to="/login" replace />;
   }
 
-  // TODO: Implementar dashboard real
-  // Por ahora, redirigir a /users como placeholder
-  return <Navigate to="/users" replace />;
+  // Redirect to dashboard
+  return <Navigate to="/dashboard" replace />;
 }

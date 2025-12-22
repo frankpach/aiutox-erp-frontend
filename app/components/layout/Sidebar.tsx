@@ -1,9 +1,11 @@
 import { useEffect } from "react";
-import { useLocation } from "react-router";
 import { useAuthStore } from "~/stores/authStore";
-import { useModulesStore, initializeModules } from "~/stores/modulesStore";
+import { useModulesStore } from "~/stores/modulesStore";
 import { NavigationTree } from "./NavigationTree";
+import { TenantSwitcher } from "./TenantSwitcher";
 import { cn } from "~/lib/utils";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "~/components/ui/button";
 
 /**
  * Sidebar - Barra lateral de navegación
@@ -23,7 +25,7 @@ export function Sidebar({
   isOpen = true,
   onClose,
   isCollapsed = false,
-  onToggleCollapse: _onToggleCollapse,
+  onToggleCollapse,
 }: SidebarProps) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const { isInitialized, loadModules } = useModulesStore();
@@ -52,6 +54,7 @@ export function Sidebar({
         document.removeEventListener("mousedown", handleClickOutside);
       };
     }
+    return undefined;
   }, [isOpen, onClose]);
 
   return (
@@ -72,18 +75,39 @@ export function Sidebar({
           "fixed lg:static inset-y-0 left-0 z-50",
           "w-64 bg-gray-50 border-r border-gray-200",
           "flex flex-col",
-          "transition-all duration-300 ease-in-out",
+          "transition-[width,transform] duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]",
           "lg:translate-x-0",
           isOpen ? "translate-x-0" : "-translate-x-full",
-          isCollapsed && "lg:w-16 lg:transition-all lg:duration-300"
+          isCollapsed && "lg:w-20"
         )}
         role="navigation"
         aria-label="Navegación principal"
       >
-        {/* Logo/Header (opcional, solo desktop) */}
-        {!isCollapsed && (
-          <div className="h-16 px-4 flex items-center border-b border-gray-200">
-            <span className="text-lg font-bold text-[#023E87]">AiutoX</span>
+        {/* Logo/Header */}
+        <div className="h-16 px-4 flex items-center justify-center border-b border-gray-200 bg-white overflow-hidden">
+          <div className="flex items-center gap-3 w-full min-w-0">
+            <img
+              src="/logo-icon.png"
+              alt="AiutoX Logo"
+              className="h-10 w-10 object-contain flex-shrink-0 transition-all duration-200"
+            />
+            <img
+              src="/logo-name.png"
+              alt="AiutoX"
+              className={cn(
+                "h-6 object-contain transition-all duration-200",
+                isCollapsed
+                  ? "opacity-0 w-0 invisible"
+                  : "opacity-100 w-auto visible"
+              )}
+            />
+          </div>
+        </div>
+
+        {/* Tenant Switcher */}
+        {isAuthenticated && (
+          <div className="px-2 py-3 border-b border-gray-200 bg-white">
+            <TenantSwitcher isCollapsed={isCollapsed} />
           </div>
         )}
 
@@ -92,18 +116,42 @@ export function Sidebar({
           {isAuthenticated ? (
             <NavigationTree isCollapsed={isCollapsed} />
           ) : (
-            <div className="px-4 py-8 text-center text-sm text-gray-500">
-              Inicia sesión para ver la navegación
+            <div className={cn(
+              "px-4 py-8 text-center text-sm text-gray-500",
+              isCollapsed && "px-2"
+            )}>
+              {isCollapsed ? "🔒" : "Inicia sesión para ver la navegación"}
             </div>
           )}
         </nav>
 
-        {/* User Info (opcional, parte inferior) */}
-        {/* Se puede agregar información del usuario aquí si se desea */}
+        {/* Botón de colapsar/expandir (solo desktop) */}
+        <div className="hidden lg:flex items-center justify-center py-3 border-t border-gray-200 bg-white">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onToggleCollapse}
+            className="h-8 w-8"
+            aria-label={isCollapsed ? "Expandir menú" : "Colapsar menú"}
+            title={isCollapsed ? "Expandir menú" : "Colapsar menú"}
+          >
+            {isCollapsed ? (
+              <ChevronRight className="h-5 w-5 text-[#023E87]" />
+            ) : (
+              <ChevronLeft className="h-5 w-5 text-[#023E87]" />
+            )}
+          </Button>
+        </div>
       </aside>
     </>
   );
 }
+
+
+
+
+
+
 
 
 

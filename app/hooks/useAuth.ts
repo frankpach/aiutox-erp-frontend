@@ -28,12 +28,31 @@ export function useAuth() {
 
   const login = useCallback(
     async (credentials: LoginCredentials) => {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/bd91a56b-aa7d-44fb-ac11-0977789d60c5', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          location: 'useAuth.ts:login',
+          message: 'login function called',
+          data: { email: credentials.email },
+          timestamp: Date.now(),
+          sessionId: 'login-debug'
+        })
+      }).catch(() => {});
+      // #endregion
       try {
         // Login returns StandardResponse[TokenResponse]
+        console.log("Attempting login to:", `${import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"}/api/v1/auth/login`);
         const loginResponse = await apiClient.post<
           StandardResponse<TokenResponse>
         >("/auth/login", credentials);
         const tokenData = loginResponse.data.data;
+
+        // Store token in localStorage BEFORE calling /me endpoint
+        // This ensures the axios interceptor can attach it to the request
+        localStorage.setItem("auth_token", tokenData.access_token);
+        localStorage.setItem("refresh_token", tokenData.refresh_token);
 
         // Get user info from /me endpoint
         const meResponse = await apiClient.get<StandardResponse<UserMeResponse>>(
@@ -54,8 +73,25 @@ export function useAuth() {
 
         // Store both tokens using setAuth (which handles localStorage)
         setAuth(user, tokenData.access_token, tokenData.refresh_token);
+
+        // Fetch encryption secret after successful login
+        try {
+          const { useEncryptionStore } = await import("~/stores/encryptionStore");
+          await useEncryptionStore.getState().fetchSecret();
+        } catch (error) {
+          // Log but don't fail login if secret fetch fails
+          console.warn("Failed to fetch encryption secret after login:", error);
+        }
+
         return { success: true };
       } catch (error) {
+        // Log error for debugging
+        console.error("Login error:", error);
+        if (error && typeof error === "object" && "response" in error) {
+          const axiosError = error as { response?: { status?: number; data?: unknown } };
+          console.error("Login error status:", axiosError.response?.status);
+          console.error("Login error data:", axiosError.response?.data);
+        }
         return { success: false, error };
       }
     },

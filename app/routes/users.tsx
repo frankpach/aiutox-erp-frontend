@@ -78,7 +78,7 @@ export default function UsersPage() {
           <UserFormModal
             open={showCreateModal}
             onClose={() => setShowCreateModal(false)}
-            onSubmit={handleCreateUser}
+            onSubmit={handleCreateUser as (data: UserCreate | UserUpdate) => Promise<void>}
             loading={creating}
           />
         </div>

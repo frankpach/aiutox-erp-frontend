@@ -58,7 +58,7 @@ export const useModulesStore = create<ModulesState>((set, get) => ({
       // Discover modules from backend (with cache)
       const modules = await moduleRegistry.discoverModules();
 
-      // Build navigation tree
+      // Build navigation tree (includes static items from navigation.ts)
       const navigationTree = moduleRegistry.getNavigationTree();
 
       // Update state
@@ -71,10 +71,25 @@ export const useModulesStore = create<ModulesState>((set, get) => ({
       });
     } catch (error) {
       console.error("Failed to load modules:", error);
-      set({
-        isLoading: false,
-        error: error instanceof Error ? error : new Error("Failed to load modules"),
-      });
+
+      // ✅ IMPORTANTE: Incluso si falla, construir árbol con items estáticos
+      try {
+        const navigationTree = moduleRegistry.getNavigationTree();
+        set({
+          modules: [], // Sin módulos del backend
+          navigationTree, // Pero SÍ con items estáticos de navigation.ts
+          isLoading: false,
+          isInitialized: true,
+          error: error instanceof Error ? error : new Error("Failed to load modules"),
+        });
+      } catch (treeError) {
+        // Si hasta esto falla, al menos marcar como inicializado
+        set({
+          isLoading: false,
+          isInitialized: true, // ← Marcar como inicializado para no reintentar
+          error: error instanceof Error ? error : new Error("Failed to load modules"),
+        });
+      }
     }
   },
 
@@ -148,4 +163,10 @@ export async function initializeModules(): Promise<void> {
   // Load modules
   await store.loadModules();
 }
+
+
+
+
+
+
 

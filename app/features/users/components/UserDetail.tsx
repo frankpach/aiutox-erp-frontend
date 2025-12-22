@@ -17,6 +17,7 @@ import { Button } from "~/components/ui/button";
 import { ArrowLeft, Edit, Shield } from "lucide-react";
 import { ConfirmDialog } from "~/components/common/ConfirmDialog";
 import { showToast } from "~/components/common/Toast";
+import { LoadingSpinner } from "~/components/common/LoadingSpinner";
 import { useUser, useUpdateUser, useDeleteUser } from "../hooks/useUsers";
 import { UserForm } from "./UserForm";
 import { UserOrganizations } from "./UserOrganizations";
@@ -77,7 +78,7 @@ export function UserDetail() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="text-muted-foreground">Cargando usuario...</div>
+        <LoadingSpinner size="lg" text="Cargando usuario..." />
       </div>
     );
   }
@@ -98,34 +99,38 @@ export function UserDetail() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
           <Link to="/users">
             <Button variant="ghost" size="sm">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Volver
+              <span className="hidden sm:inline">Volver</span>
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold">
+            <h1 className="text-2xl font-bold sm:text-3xl">
               {user.full_name || user.email}
             </h1>
-            <p className="text-muted-foreground">{user.email}</p>
+            <p className="text-sm text-muted-foreground sm:text-base">{user.email}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
             onClick={() => setEditing(!editing)}
             disabled={updating}
+            size="sm"
+            className="w-full sm:w-auto"
           >
             <Edit className="h-4 w-4 mr-2" />
-            {editing ? "Cancelar Edición" : "Editar"}
+            {editing ? "Cancelar" : "Editar"}
           </Button>
           <Button
             variant="destructive"
             onClick={handleDelete}
             disabled={deleting}
+            size="sm"
+            className="w-full sm:w-auto"
           >
             Eliminar
           </Button>
@@ -304,4 +309,10 @@ export function UserDetail() {
     </div>
   );
 }
+
+
+
+
+
+
 

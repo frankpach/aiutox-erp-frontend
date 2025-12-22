@@ -120,3 +120,43 @@ export async function getUserModulePermissions(
   return response.data;
 }
 
+/**
+ * Enable a module for the current tenant
+ * PUT /api/v1/config/modules/{module_id}/enable
+ *
+ * Requires: config.edit permission
+ *
+ * @param moduleId - Module identifier
+ */
+export async function enableModule(
+  moduleId: string
+): Promise<StandardResponse<{ module_id: string; enabled: boolean; message: string }>> {
+  const response = await apiClient.put<
+    StandardResponse<{ module_id: string; enabled: boolean; message: string }>
+  >(`/config/modules/${moduleId}/enable`);
+  return response.data;
+}
+
+/**
+ * Disable a module for the current tenant
+ * PUT /api/v1/config/modules/{module_id}/disable
+ *
+ * Requires: config.edit permission
+ *
+ * @param moduleId - Module identifier
+ */
+export async function disableModule(
+  moduleId: string
+): Promise<StandardResponse<{ module_id: string; enabled: boolean; message: string }>> {
+  const response = await apiClient.put<
+    StandardResponse<{ module_id: string; enabled: boolean; message: string }>
+  >(`/config/modules/${moduleId}/disable`);
+  return response.data;
+}
+
+
+
+
+
+
+

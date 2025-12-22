@@ -95,6 +95,17 @@ export interface UserUpdate {
 }
 
 /**
+ * Parameters for listing users
+ */
+export interface UsersListParams {
+  page?: number;
+  page_size?: number;
+  search?: string;
+  is_active?: boolean;
+  tenant_id?: string;
+}
+
+/**
  * Tenant types
  */
 
@@ -371,4 +382,10 @@ export interface UserPermissionsSummary {
   // All effective permissions (union of all above)
   effective_permissions: string[];
 }
+
+
+
+
+
+
 

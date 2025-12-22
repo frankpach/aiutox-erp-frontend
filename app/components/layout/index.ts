@@ -6,6 +6,14 @@ export { Footer } from "./Footer";
 export { NavItem } from "./NavItem";
 export { UserMenu } from "./UserMenu";
 export { SidebarToggle } from "./SidebarToggle";
+export { TenantSwitcher } from "./TenantSwitcher";
+
+
+
+
+
+
+
 
 
 

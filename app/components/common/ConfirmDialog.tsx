@@ -41,9 +41,12 @@ export function ConfirmDialog({
   variant = "default",
   loading = false,
 }: ConfirmDialogProps) {
-  const handleConfirm = () => {
-    onConfirm();
-    onClose();
+  const handleConfirm = async () => {
+    await onConfirm();
+    // Only close if not loading (loading state should be managed by parent)
+    if (!loading) {
+      onClose();
+    }
   };
 
   return (
@@ -71,4 +74,10 @@ export function ConfirmDialog({
     </AlertDialog>
   );
 }
+
+
+
+
+
+
 

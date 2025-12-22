@@ -16,6 +16,7 @@ import UnauthorizedPage from "~/routes/unauthorized";
 import { AppShell } from "~/components/layout";
 import { useAuthStore } from "~/stores/authStore";
 import { ToastProvider } from "~/components/common/Toast";
+import { PWAUpdatePrompt } from "~/components/common/PWAUpdatePrompt";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -29,15 +30,24 @@ export const links: Route.LinksFunction = () => [
     href: "https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap",
   },
   { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
-  { rel: "apple-touch-icon", href: "/logo.png" },
+  { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+  { rel: "manifest", href: "/manifest.webmanifest" },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="es">
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+        {/* PWA Meta Tags */}
+        <meta name="theme-color" content="#3C3A47" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="AiutoX ERP" />
+        <meta name="description" content="Sistema ERP modular y extensible para gestión empresarial" />
+
         {/* Security Headers */}
         <meta httpEquiv="X-Content-Type-Options" content="nosniff" />
         <meta httpEquiv="X-Frame-Options" content="DENY" />
@@ -49,7 +59,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             In production, consider using nonces or hashes for stricter CSP */}
         <meta
           httpEquiv="Content-Security-Policy"
-          content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' http://localhost:8000 https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
+          content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' http://localhost:8000 https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; worker-src 'self' blob:;"
         />
         <Meta />
         <Links />
@@ -86,13 +96,23 @@ export default function App() {
 
   // Si es ruta pública, renderizar sin AppShell
   if (isPublicRoute) {
-    return <Outlet />;
+    return (
+      <>
+        <Outlet />
+        <PWAUpdatePrompt />
+      </>
+    );
   }
 
   // Si no está autenticado y no es ruta pública, el ProtectedRoute se encargará del redirect
   // Pero aún así no usamos AppShell aquí
   if (!isAuthenticated) {
-    return <Outlet />;
+    return (
+      <>
+        <Outlet />
+        <PWAUpdatePrompt />
+      </>
+    );
   }
 
   // Rutas protegidas y autenticadas usan AppShell
@@ -102,6 +122,7 @@ export default function App() {
         <Outlet />
       </AppShell>
       <ToastProvider />
+      <PWAUpdatePrompt />
     </>
   );
 }

@@ -43,6 +43,9 @@ const refreshAccessToken = async (): Promise<string | null> => {
   }
 
   try {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/bd91a56b-aa7d-44fb-ac11-0977789d60c5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'client.ts:45',message:'refreshAccessToken: creating refreshClient',data:{hasRefreshToken:!!refreshToken},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
     // Create a new axios instance without interceptors to avoid infinite loop
     const refreshClient = axios.create({
       baseURL: `${API_BASE_URL}/api/v1`,
@@ -51,11 +54,17 @@ const refreshAccessToken = async (): Promise<string | null> => {
       },
       timeout: 30000,
     });
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/bd91a56b-aa7d-44fb-ac11-0977789d60c5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'client.ts:54',message:'refreshAccessToken: calling post',data:{refreshClientType:typeof refreshClient.post,isFunction:typeof refreshClient.post==='function'},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
 
     const response = await refreshClient.post<RefreshTokenResponse>(
       "/auth/refresh",
       { refresh_token: refreshToken }
     );
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/bd91a56b-aa7d-44fb-ac11-0977789d60c5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'client.ts:58',message:'refreshAccessToken: post response received',data:{hasResponse:!!response,hasData:!!response?.data,responseType:response?.constructor?.name},timestamp:Date.now(),sessionId:'debug-session',runId:'run23',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
 
     const { access_token } = response.data;
 
@@ -64,18 +73,27 @@ const refreshAccessToken = async (): Promise<string | null> => {
 
     // Update authStore for consistency
     const authStore = useAuthStore.getState();
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/bd91a56b-aa7d-44fb-ac11-0977789d60c5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'client.ts:75',message:'authStore.getState result',data:{hasSetRefreshToken:typeof authStore?.setRefreshToken==='function',authStoreKeys:authStore?Object.keys(authStore):[]},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'F'})}).catch(()=>{});
+    // #endregion
     authStore.setRefreshToken(refreshToken); // Keep refresh token
     // Update token in store (we need to update the token field directly)
     useAuthStore.setState({ token: access_token });
 
     return access_token;
-  } catch {
+  } catch (error) {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/bd91a56b-aa7d-44fb-ac11-0977789d60c5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'client.ts:84',message:'refreshAccessToken: error caught',data:{errorMessage:error instanceof Error?error.message:String(error),errorType:error?.constructor?.name},timestamp:Date.now(),sessionId:'debug-session',runId:'run23',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
     // Refresh token expired or invalid
     localStorage.removeItem("auth_token");
     localStorage.removeItem("refresh_token");
 
     // Clear authStore
     const authStore = useAuthStore.getState();
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/bd91a56b-aa7d-44fb-ac11-0977789d60c5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'client.ts:91',message:'calling clearAuth',data:{hasClearAuth:typeof authStore?.clearAuth==='function'},timestamp:Date.now(),sessionId:'debug-session',runId:'run5',hypothesisId:'I'})}).catch(()=>{});
+    // #endregion
     authStore.clearAuth();
 
     return null;
@@ -113,6 +131,9 @@ apiClient.interceptors.response.use(
             if (originalRequest.headers && token) {
               originalRequest.headers.Authorization = `Bearer ${token}`;
             }
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/bd91a56b-aa7d-44fb-ac11-0977789d60c5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'client.ts:131',message:'queued request: calling apiClient',data:{isCallable:typeof apiClient==='function',hasRequest:typeof (apiClient as any).request==='function'},timestamp:Date.now(),sessionId:'debug-session',runId:'run5',hypothesisId:'H'})}).catch(()=>{});
+            // #endregion
             return apiClient(originalRequest);
           })
           .catch((err) => {
@@ -124,6 +145,9 @@ apiClient.interceptors.response.use(
       isRefreshing = true;
 
       try {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/bd91a56b-aa7d-44fb-ac11-0977789d60c5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'client.ts:147',message:'about to call refreshAccessToken',data:{isRefreshing},timestamp:Date.now(),sessionId:'debug-session',runId:'run25',hypothesisId:'N'})}).catch(()=>{});
+        // #endregion
         const newToken = await refreshAccessToken();
         if (newToken) {
           processQueue(null, newToken);
@@ -131,6 +155,9 @@ apiClient.interceptors.response.use(
             originalRequest.headers.Authorization = `Bearer ${newToken}`;
           }
           isRefreshing = false;
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/bd91a56b-aa7d-44fb-ac11-0977789d60c5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'client.ts:149',message:'refresh success: calling apiClient',data:{isCallable:typeof apiClient==='function',hasRequest:typeof (apiClient as any).request==='function'},timestamp:Date.now(),sessionId:'debug-session',runId:'run5',hypothesisId:'H'})}).catch(()=>{});
+          // #endregion
           return apiClient(originalRequest);
         } else {
           // Refresh failed - redirect to login

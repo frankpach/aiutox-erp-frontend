@@ -14,6 +14,11 @@ export default defineConfig({
         __dirname,
         "./app/__tests__/polyfills/react-dom-test-utils.ts"
       ),
+      // Mock for virtual:pwa-register/react in tests
+      "virtual:pwa-register/react": path.resolve(
+        __dirname,
+        "./app/__mocks__/virtual-pwa-register-react.ts"
+      ),
       // NOTE: We don't alias "react" here because it would create circular dependencies.
       // Instead, we configure React.act in setup.ts before @testing-library/react loads.
     },
@@ -29,6 +34,25 @@ export default defineConfig({
       "**/build/**",
       "**/app/__tests__/e2e/**", // Exclude Playwright E2E tests
     ],
+    // Parallel execution configuration
+    pool: "threads",
+    poolOptions: {
+      threads: {
+        singleThread: false,
+        minThreads: 1,
+        maxThreads: 2, // Reducido a 2 para evitar EMFILE en Windows
+      },
+    },
+    // File-level parallelism - ejecutar archivos de test en paralelo
+    fileParallelism: true,
+    // Test-level parallelism dentro de cada archivo
+    sequence: {
+      shuffle: false, // Mantener orden para debugging
+      concurrent: true, // Ejecutar tests dentro de un archivo en paralelo cuando sea seguro
+    },
+    // Test timeouts
+    testTimeout: 10000,
+    hookTimeout: 10000,
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],

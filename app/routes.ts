@@ -8,9 +8,19 @@ export default [
   route("/verify-email", "routes/verify-email.tsx"),
   route("/maintenance", "routes/maintenance.tsx"),
   route("/unauthorized", "routes/unauthorized.tsx"),
+  route("/dashboard", "routes/dashboard.tsx"),
   route("/users", "routes/users.tsx"),
   route("/users/:id", "routes/users.$id.tsx"),
   route("/users/:id/roles", "routes/users.$id.roles.tsx"),
   route("/users/:id/permissions", "routes/users.$id.permissions.tsx"),
+  // Config routes
+  route("/config/theme", "routes/config.theme.tsx"),
+  route("/config/modules", "routes/config.modules.tsx"),
+  route("/config/general", "routes/config.general.tsx"),
+  route("/config/roles", "routes/config.roles.tsx"),
+  route("/config/notifications", "routes/config.notifications.tsx"),
+  route("/config/integrations", "routes/config.integrations.tsx"),
+  route("/config/import-export", "routes/config.import-export.tsx"),
+  route("/config/audit", "routes/config.audit.tsx"),
   route("*", "routes/not-found.tsx"), // Catch-all para 404
 ] satisfies RouteConfig;

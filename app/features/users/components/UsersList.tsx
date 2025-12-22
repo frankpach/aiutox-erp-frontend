@@ -15,6 +15,13 @@ import {
 import { Save, MoreVertical, Eye, Edit, Trash2, Shield } from "lucide-react";
 import { ConfirmDialog } from "~/components/common/ConfirmDialog";
 import { showToast } from "~/components/common/Toast";
+import { UserListSkeleton } from "~/components/common/UserListSkeleton";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "~/components/ui/tooltip";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 import { SavedFilters } from "../../views/components/SavedFilters";
 import { FilterEditorModal } from "../../views/components/FilterEditorModal";
@@ -148,10 +155,11 @@ export function UsersList({ onManageFiltersClick }: UsersListProps) {
     : null;
 
   return (
-    <div className="space-y-4">
+    <TooltipProvider>
+      <div className="space-y-4">
       {/* Filters and Actions Bar */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
           <SavedFilters
             module="users"
             fields={userFieldsConfig}
@@ -167,7 +175,7 @@ export function UsersList({ onManageFiltersClick }: UsersListProps) {
               className="gap-2"
             >
               <Save className="h-4 w-4" />
-              {t("savedFilters.saveCurrent")}
+              <span className="hidden sm:inline">{t("savedFilters.saveCurrent")}</span>
             </Button>
           )}
         </div>
@@ -175,8 +183,8 @@ export function UsersList({ onManageFiltersClick }: UsersListProps) {
 
       {/* Loading State */}
       {loading && (
-        <div className="flex items-center justify-center py-12">
-          <div className="text-muted-foreground">{t("users.loading")}</div>
+        <div className="space-y-4">
+          <UserListSkeleton rows={pageSize} />
         </div>
       )}
 
@@ -189,7 +197,7 @@ export function UsersList({ onManageFiltersClick }: UsersListProps) {
           <Button
             variant="outline"
             size="sm"
-            onClick={loadUsers}
+            onClick={() => refresh()}
             className="mt-2"
           >
             {t("users.retry")}
@@ -198,7 +206,7 @@ export function UsersList({ onManageFiltersClick }: UsersListProps) {
       )}
 
       {/* Search and Filters */}
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
         <input
           type="text"
           placeholder={t("users.search") || "Buscar usuarios..."}
@@ -207,7 +215,7 @@ export function UsersList({ onManageFiltersClick }: UsersListProps) {
             setSearch(e.target.value);
             setPage(1);
           }}
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:max-w-md"
         />
         <select
           value={isActiveFilter === undefined ? "all" : isActiveFilter ? "active" : "inactive"}
@@ -218,7 +226,7 @@ export function UsersList({ onManageFiltersClick }: UsersListProps) {
             );
             setPage(1);
           }}
-          className="flex h-10 w-[150px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:w-[150px]"
         >
           <option value="all">{t("users.allStatus") || "Todos"}</option>
           <option value="active">{t("users.active") || "Activos"}</option>
@@ -239,26 +247,26 @@ export function UsersList({ onManageFiltersClick }: UsersListProps) {
             </div>
           ) : (
             <>
-              <div className="rounded-md border">
-                <table className="w-full">
+              <div className="rounded-md border overflow-x-auto">
+                <table className="w-full min-w-[640px]">
                   <thead>
                     <tr className="border-b bg-muted/50">
                       <th className="px-4 py-3 text-left text-sm font-medium">{t("users.email") || "Email"}</th>
-                      <th className="px-4 py-3 text-left text-sm font-medium">{t("users.name") || "Nombre"}</th>
-                      <th className="px-4 py-3 text-left text-sm font-medium">{t("users.jobTitle") || "Cargo"}</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium hidden md:table-cell">{t("users.name") || "Nombre"}</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium hidden lg:table-cell">{t("users.jobTitle") || "Cargo"}</th>
                       <th className="px-4 py-3 text-left text-sm font-medium">{t("users.status") || "Estado"}</th>
-                      <th className="px-4 py-3 text-left text-sm font-medium">{t("users.created") || "Creado"}</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium hidden xl:table-cell">{t("users.created") || "Creado"}</th>
                       <th className="px-4 py-3 text-right text-sm font-medium">{t("users.actions") || "Acciones"}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {users.map((user) => (
                       <tr key={user.id} className="border-b hover:bg-muted/50">
-                        <td className="px-4 py-3 text-sm">{user.email}</td>
-                        <td className="px-4 py-3 text-sm">
+                        <td className="px-4 py-3 text-sm font-medium">{user.email}</td>
+                        <td className="px-4 py-3 text-sm hidden md:table-cell">
                           {user.full_name || `${user.first_name || ""} ${user.last_name || ""}`.trim() || "—"}
                         </td>
-                        <td className="px-4 py-3 text-sm text-muted-foreground">
+                        <td className="px-4 py-3 text-sm text-muted-foreground hidden lg:table-cell">
                           {user.job_title || "—"}
                         </td>
                         <td className="px-4 py-3 text-sm">
@@ -272,16 +280,25 @@ export function UsersList({ onManageFiltersClick }: UsersListProps) {
                             {user.is_active ? t("users.active") || "Activo" : t("users.inactive") || "Inactivo"}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-sm text-muted-foreground">
+                        <td className="px-4 py-3 text-sm text-muted-foreground hidden xl:table-cell">
                           {new Date(user.created_at).toLocaleDateString()}
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
+                          <TooltipProvider>
+                            <DropdownMenu>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="sm">
+                                      <MoreVertical className="h-4 w-4" />
+                                      <span className="sr-only">Acciones</span>
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Acciones del usuario</p>
+                                </TooltipContent>
+                              </Tooltip>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem asChild>
                                 <Link to={`/users/${user.id}`} className="flex items-center gap-2">
@@ -311,6 +328,7 @@ export function UsersList({ onManageFiltersClick }: UsersListProps) {
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
+                          </TooltipProvider>
                         </td>
                       </tr>
                     ))}
@@ -390,9 +408,7 @@ export function UsersList({ onManageFiltersClick }: UsersListProps) {
         onEditFilter={handleEditFilter}
       />
     </div>
+    </TooltipProvider>
   );
 }
-
-
-
 

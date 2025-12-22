@@ -9,6 +9,7 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Badge } from "~/components/ui/badge";
 import { TenantFilter } from "~/components/common/TenantFilter";
+import { LoadingSpinner } from "~/components/common/LoadingSpinner";
 import { useUserPermissions, usePermissionsByModule } from "../hooks/useUserPermissions";
 import { ModulePermissionsView } from "./ModulePermissionsView";
 import type { User } from "../types/user.types";
@@ -36,8 +37,8 @@ export function UserPermissionsManager({
 
   if (loading || loadingGroups) {
     return (
-      <div className="text-sm text-muted-foreground">
-        Cargando permisos...
+      <div className="flex items-center justify-center py-8">
+        <LoadingSpinner size="md" text="Cargando permisos..." />
       </div>
     );
   }
@@ -48,10 +49,10 @@ export function UserPermissionsManager({
   );
 
   // Group delegated permissions by module
-  const delegatedByModule = new Map<string, typeof permissions.delegated_permissions>();
+  const delegatedByModule = new Map<string, Array<typeof permissions.delegated_permissions[0]>>();
   if (permissions?.delegated_permissions) {
     for (const delegated of permissions.delegated_permissions) {
-      const module = delegated.permission.split(".")[0];
+      const module = delegated.permission?.split(".")[0] || "unknown";
       if (!delegatedByModule.has(module)) {
         delegatedByModule.set(module, []);
       }
@@ -173,4 +174,10 @@ export function UserPermissionsManager({
     </div>
   );
 }
+
+
+
+
+
+
 

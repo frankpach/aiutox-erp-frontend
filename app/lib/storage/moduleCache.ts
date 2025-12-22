@@ -26,15 +26,34 @@ const MODULE_CACHE_PREFIX = "modules";
 const MODULE_LIST_CACHE_PREFIX = "module_list";
 
 /**
- * Get encryption secret from environment or use default
+ * Get encryption secret from backend store
  *
- * In production, this should come from a secure source
+ * Falls back to environment variable for development if backend is unavailable
  */
-function getSecret(): string {
-  // In a real app, this should be stored securely (e.g., from backend on login)
-  // For now, we'll use a combination of user agent and a constant
-  // This is not ideal but works for development
-  return import.meta.env.VITE_ENCRYPTION_SECRET || "default-secret-change-in-production";
+async function getSecret(): Promise<string> {
+  // Try to get secret from backend store
+  const { useEncryptionStore } = await import("~/stores/encryptionStore");
+  const store = useEncryptionStore.getState();
+
+  // Fetch secret if not cached or expired
+  const secret = await store.fetchSecret();
+
+  if (secret) {
+    return secret;
+  }
+
+  // Fallback to environment variable (development only)
+  // In production, this should never be used
+  const fallbackSecret = import.meta.env.VITE_ENCRYPTION_SECRET;
+  if (fallbackSecret) {
+    console.warn("Using fallback encryption secret from environment. This should only happen in development.");
+    return fallbackSecret;
+  }
+
+  // Last resort: throw error
+  throw new Error(
+    "Encryption secret not available. Please ensure you are authenticated and the backend is accessible."
+  );
 }
 
 /**
@@ -66,7 +85,7 @@ export async function cacheModuleData(
   modules: FrontendModule[]
 ): Promise<void> {
   const tenantId = getTenantId();
-  const secret = getSecret();
+  const secret = await getSecret();
   const key = `${MODULE_CACHE_PREFIX}:${userId}`;
 
   await setEncrypted(key, modules, tenantId, secret);
@@ -82,7 +101,7 @@ export async function getCachedModuleData(
   userId: string
 ): Promise<FrontendModule[] | null> {
   const tenantId = getTenantId();
-  const secret = getSecret();
+  const secret = await getSecret();
   const key = `${MODULE_CACHE_PREFIX}:${userId}`;
 
   return getEncrypted<FrontendModule[]>(key, tenantId, secret);
@@ -99,7 +118,7 @@ export async function cacheModuleList(
   moduleList: ModuleListItem[]
 ): Promise<void> {
   const tenantId = getTenantId();
-  const secret = getSecret();
+  const secret = await getSecret();
   const key = `${MODULE_LIST_CACHE_PREFIX}:${userId}`;
 
   await setEncrypted(key, moduleList, tenantId, secret);
@@ -115,7 +134,7 @@ export async function getCachedModuleList(
   userId: string
 ): Promise<ModuleListItem[] | null> {
   const tenantId = getTenantId();
-  const secret = getSecret();
+  const secret = await getSecret();
   const key = `${MODULE_LIST_CACHE_PREFIX}:${userId}`;
 
   return getEncrypted<ModuleListItem[]>(key, tenantId, secret);
@@ -143,8 +162,14 @@ export function clearModuleCache(userId: string): void {
  */
 export async function clearExpiredCache(): Promise<number> {
   const tenantId = getTenantId();
-  const secret = getSecret();
+  const secret = await getSecret();
 
   return clearExpiredEncrypted(tenantId, secret);
 }
+
+
+
+
+
+
 

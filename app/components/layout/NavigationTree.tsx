@@ -52,13 +52,13 @@ function NavigationItemComponent({
     <Link
       to={item.to}
       className={cn(
-        "flex items-center gap-2 px-4 py-2 text-sm font-medium",
-        "transition-all duration-200 ease-in-out",
+        "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md mx-2",
+        "transition-all duration-150 ease-[cubic-bezier(0.4,0,0.2,1)]",
         "hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[#023E87] focus:ring-offset-2",
         isActive
-          ? "bg-[#023E87]/10 text-[#023E87] border-r-2 border-[#023E87]"
+          ? "bg-[#023E87]/10 text-[#023E87]"
           : "text-[#121212] hover:text-[#023E87]",
-        isCollapsed && "justify-center"
+        isCollapsed && "justify-center px-2"
       )}
       style={{ paddingLeft: isCollapsed ? undefined : `${paddingLeft}px` }}
       aria-current={isActive ? "page" : undefined}
@@ -71,17 +71,21 @@ function NavigationItemComponent({
           size={18}
           color={isActive ? "#023E87" : "#121212"}
           strokeWidth={1.5}
+          className="transition-colors duration-150"
         />
       )}
-      {!isCollapsed && (
-        <>
-          <span className="flex-1 truncate">{item.label}</span>
-          {item.badge !== undefined && item.badge > 0 && (
-            <span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-semibold text-white bg-[#023E87] rounded-full">
-              {item.badge > 99 ? "99+" : item.badge}
-            </span>
-          )}
-        </>
+      <span
+        className={cn(
+          "flex-1 truncate transition-all duration-150",
+          isCollapsed && "opacity-0 w-0 invisible"
+        )}
+      >
+        {item.label}
+      </span>
+      {item.badge !== undefined && item.badge > 0 && !isCollapsed && (
+        <span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-semibold text-white bg-[#023E87] rounded-full transition-all duration-150">
+          {item.badge > 99 ? "99+" : item.badge}
+        </span>
       )}
     </Link>
   );
@@ -116,28 +120,41 @@ function ModuleNodeComponent({
     setIsExpanded(true);
   }
 
-  if (isCollapsed) {
-    // In collapsed mode, show only the main route
-    const mainItem = module.items[0];
-    if (!mainItem) return null;
-
+  // ✅ SIMPLIFIED: If module has only 1 item, render it as a direct link (no expandable button)
+  if (module.items.length === 1) {
     return (
       <NavigationItemComponent
-        item={mainItem}
-        isCollapsed={true}
-        level={0}
+        item={module.items[0]}
+        isCollapsed={isCollapsed}
+        level={0} // Direct item, no nesting
       />
+    );
+  }
+
+  if (isCollapsed) {
+    // In collapsed mode, show all items with icons only
+    return (
+      <div className="space-y-1">
+        {module.items.map((item) => (
+          <NavigationItemComponent
+            key={item.id}
+            item={item}
+            isCollapsed={true}
+            level={0}
+          />
+        ))}
+      </div>
     );
   }
 
   return (
     <div className="space-y-1">
-      {/* Module header (clickable to expand/collapse) */}
+      {/* Module header (clickable to expand/collapse) - only if multiple items */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
         className={cn(
-          "w-full flex items-center gap-2 px-4 py-2 text-sm font-semibold",
-          "transition-all duration-200 ease-in-out",
+          "w-full flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-md mx-2",
+          "transition-all duration-150 ease-[cubic-bezier(0.4,0,0.2,1)]",
           "hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[#023E87] focus:ring-offset-2",
           hasActiveItem
             ? "bg-[#023E87]/5 text-[#023E87]"
@@ -147,15 +164,16 @@ function ModuleNodeComponent({
         aria-label={`${module.name} module`}
       >
         {isExpanded ? (
-          <ChevronDown className="h-4 w-4" />
+          <ChevronDown className="h-4 w-4 transition-transform duration-150" />
         ) : (
-          <ChevronRight className="h-4 w-4" />
+          <ChevronRight className="h-4 w-4 transition-transform duration-150" />
         )}
         <HugeiconsIcon
           icon={FolderIcon}
           size={18}
           color={hasActiveItem ? "#023E87" : "#333333"}
           strokeWidth={1.5}
+          className="transition-colors duration-150"
         />
         <span className="flex-1 text-left truncate">{module.name}</span>
       </button>
@@ -204,13 +222,42 @@ function CategoryNodeComponent({
   );
 
   // Auto-expand if has active item
-  if (hasActiveItem && !isExpanded) {
-    setIsExpanded(true);
-  }
+  useEffect(() => {
+    if (hasActiveItem && !isExpanded) {
+      setIsExpanded(true);
+    }
+  }, [hasActiveItem, isExpanded]);
 
   if (isCollapsed) {
-    // In collapsed mode, don't show categories
-    return null;
+    // In collapsed mode, show modules without category headers
+    return (
+      <div className="space-y-1">
+        {Array.from(modules.values()).map((module) => (
+          <ModuleNodeComponent
+            key={module.id}
+            module={module}
+            isCollapsed={isCollapsed}
+            categoryName={categoryName}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  // ✅ SIMPLIFIED: Hide category header for "_root" category (top-level items like Dashboard)
+  if (categoryName === "_root") {
+    return (
+      <div className="space-y-1">
+        {Array.from(modules.values()).map((module) => (
+          <ModuleNodeComponent
+            key={module.id}
+            module={module}
+            isCollapsed={isCollapsed}
+            categoryName={categoryName}
+          />
+        ))}
+      </div>
+    );
   }
 
   return (
@@ -219,8 +266,8 @@ function CategoryNodeComponent({
       <button
         onClick={() => setIsExpanded(!isExpanded)}
         className={cn(
-          "w-full flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider",
-          "transition-all duration-200 ease-in-out",
+          "w-full flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-md mx-2",
+          "transition-all duration-150 ease-[cubic-bezier(0.4,0,0.2,1)]",
           "hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[#023E87] focus:ring-offset-2",
           hasActiveItem
             ? "bg-[#023E87]/5 text-[#023E87]"
@@ -230,24 +277,44 @@ function CategoryNodeComponent({
         aria-label={`${categoryName} category`}
       >
         {isExpanded ? (
-          <ChevronDown className="h-3.5 w-3.5" />
+          <ChevronDown className="h-3.5 w-3.5 transition-transform duration-150" />
         ) : (
-          <ChevronRight className="h-3.5 w-3.5" />
+          <ChevronRight className="h-3.5 w-3.5 transition-transform duration-150" />
         )}
         <span className="flex-1 text-left truncate">{categoryName}</span>
       </button>
 
-      {/* Category modules (Nivel 2) */}
+      {/* Category modules (Nivel 2) - Simplified: direct items or expandable modules */}
       {isExpanded && (
         <div className="ml-2 space-y-1">
-          {Array.from(modules.values()).map((module) => (
-            <ModuleNodeComponent
-              key={module.id}
-              module={module}
-              isCollapsed={isCollapsed}
-              categoryName={categoryName}
-            />
-          ))}
+          {Array.from(modules.values()).map((module) => {
+            // ✅ FIXED: If module id ends with "-direct", render items directly (no module header)
+            if (module.id.endsWith("-direct")) {
+              return (
+                <div key={module.id} className="space-y-0.5">
+                  {module.items.map((item) => (
+                    <NavigationItemComponent
+                      key={item.id}
+                      item={item}
+                      isCollapsed={isCollapsed}
+                      level={0} // Direct items, no nesting
+                    />
+                  ))}
+                </div>
+              );
+            }
+
+            // ✅ If module has 1 item, render as direct link
+            // ✅ If module has multiple items, render as expandable module
+            return (
+              <ModuleNodeComponent
+                key={module.id}
+                module={module}
+                isCollapsed={isCollapsed}
+                categoryName={categoryName}
+              />
+            );
+          })}
         </div>
       )}
     </div>
@@ -268,8 +335,22 @@ export function NavigationTree({ isCollapsed = false }: NavigationTreeProps) {
 
   if (!navigationTree || navigationTree.categories.size === 0) {
     return (
-      <div className="px-4 py-8 text-center text-sm text-gray-500">
-        No hay módulos disponibles
+      <div className={cn(
+        "py-8 text-center text-sm text-gray-500",
+        isCollapsed ? "px-2" : "px-4"
+      )}>
+        {isCollapsed ? (
+          <div className="flex justify-center" title="No hay módulos disponibles">
+            <HugeiconsIcon
+              icon={FolderIcon}
+              size={24}
+              color="#9CA3AF"
+              strokeWidth={1.5}
+            />
+          </div>
+        ) : (
+          "No hay módulos disponibles"
+        )}
       </div>
     );
   }
@@ -289,4 +370,10 @@ export function NavigationTree({ isCollapsed = false }: NavigationTreeProps) {
     </nav>
   );
 }
+
+
+
+
+
+
 

@@ -4,7 +4,6 @@
  * Form for creating/editing users with validation using react-hook-form and zod
  */
 
-import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "~/components/ui/button";
@@ -93,7 +92,7 @@ export function UserForm({
     // Sanitize inputs before submission
     const sanitizedData = {
       ...data,
-      email: sanitizeEmail(data.email),
+      email: sanitizeEmail(data.email || ""),
       first_name: data.first_name ? sanitizeString(data.first_name) : null,
       last_name: data.last_name ? sanitizeString(data.last_name) : null,
       middle_name: data.middle_name ? sanitizeString(data.middle_name) : null,
@@ -103,7 +102,7 @@ export function UserForm({
       bio: data.bio ? sanitizeString(data.bio) : null,
       notes: data.notes ? sanitizeString(data.notes) : null,
     };
-    
+
     await onSubmit(sanitizedData as UserCreate | UserUpdate);
   };
 
@@ -134,10 +133,10 @@ export function UserForm({
           <Input
             id="password"
             type="password"
-            {...register("password")}
+            {...register("password" as keyof UserCreateFormData)}
             disabled={loading || isSubmitting}
           />
-          {errors.password && (
+          {"password" in errors && errors.password && (
             <p className="text-sm text-destructive">
               {errors.password.message}
             </p>
@@ -369,4 +368,10 @@ export function UserForm({
     </form>
   );
 }
+
+
+
+
+
+
 

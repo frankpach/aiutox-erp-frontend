@@ -7,6 +7,7 @@
 import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Plus, X } from "lucide-react";
+import { LoadingSpinner } from "~/components/common/LoadingSpinner";
 import { useOrganizations } from "../hooks/useOrganizations";
 import type { Organization, User } from "../types/user.types";
 
@@ -49,7 +50,11 @@ export function UserOrganizations({ user, onUpdate }: UserOrganizationsProps) {
   };
 
   if (loading) {
-    return <div className="text-sm text-muted-foreground">Cargando organizaciones...</div>;
+    return (
+      <div className="flex items-center justify-center py-8">
+        <LoadingSpinner size="md" text="Cargando organizaciones..." />
+      </div>
+    );
   }
 
   return (
@@ -100,4 +105,10 @@ export function UserOrganizations({ user, onUpdate }: UserOrganizationsProps) {
     </div>
   );
 }
+
+
+
+
+
+
 

@@ -26,8 +26,18 @@ export function AppShell({ children }: AppShellProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-  // Initialize modules on mount
+  // Initialize modules and encryption secret on mount
   useEffect(() => {
+    // Fetch encryption secret first (required for module cache)
+    import("~/stores/encryptionStore").then(({ useEncryptionStore }) => {
+      useEncryptionStore.getState().fetchSecret().catch((error) => {
+        console.warn("Failed to fetch encryption secret:", error);
+      });
+    }).catch(() => {
+      // Ignore if store not available
+    });
+
+    // Then initialize modules
     initializeModules().catch((error) => {
       console.error("Failed to initialize modules:", error);
     });
@@ -79,6 +89,7 @@ export function AppShell({ children }: AppShellProps) {
         <Header
           onSidebarToggle={handleSidebarToggle}
           isSidebarOpen={isSidebarOpen}
+          isSidebarCollapsed={isSidebarCollapsed}
         />
         <MainContent>{children}</MainContent>
         <Footer />
@@ -86,6 +97,13 @@ export function AppShell({ children }: AppShellProps) {
     </div>
   );
 }
+
+
+
+
+
+
+
 
 
 

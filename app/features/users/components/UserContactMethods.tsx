@@ -9,6 +9,7 @@ import { Button } from "~/components/ui/button";
 import { Plus, Edit, Trash2, Mail, Phone, MapPin, Globe } from "lucide-react";
 import { ConfirmDialog } from "~/components/common/ConfirmDialog";
 import { showToast } from "~/components/common/Toast";
+import { LoadingSpinner } from "~/components/common/LoadingSpinner";
 import {
   useContactMethods,
   useCreateContactMethod,
@@ -66,24 +67,34 @@ export function UserContactMethods({
   }>({ open: false, methodId: null });
 
   const handleCreate = async (data: {
-    method_type: ContactMethodType;
-    value: string;
+    method_type?: ContactMethodType;
+    value?: string | null;
     label?: string | null;
-    is_primary?: boolean;
+    is_primary?: boolean | null;
     // Address fields
     address_line1?: string | null;
+    address_line2?: string | null;
     city?: string | null;
+    state_province?: string | null;
+    postal_code?: string | null;
     country?: string | null;
   }) => {
+    if (!data.method_type || !data.value) {
+      showToast("Tipo de método y valor son requeridos", "error");
+      return;
+    }
     const result = await create({
       entity_type: "user",
       entity_id: user.id,
       method_type: data.method_type,
       value: data.value,
       label: data.label,
-      is_primary: data.is_primary,
+      is_primary: data.is_primary ?? false,
       address_line1: data.address_line1,
+      address_line2: data.address_line2,
       city: data.city,
+      state_province: data.state_province,
+      postal_code: data.postal_code,
       country: data.country,
     });
 
@@ -136,8 +147,8 @@ export function UserContactMethods({
 
   if (loading) {
     return (
-      <div className="text-sm text-muted-foreground">
-        Cargando métodos de contacto...
+      <div className="flex items-center justify-center py-8">
+        <LoadingSpinner size="md" text="Cargando métodos de contacto..." />
       </div>
     );
   }
@@ -176,7 +187,13 @@ export function UserContactMethods({
                 <ContactMethodForm
                   key={method.id}
                   method={method}
-                  onSubmit={(data) => handleUpdate(method.id, data)}
+                  onSubmit={async (data) => {
+                    await handleUpdate(method.id, {
+                      value: data.value,
+                      label: data.label,
+                      is_primary: data.is_primary,
+                    });
+                  }}
                   onCancel={() => setEditingMethod(null)}
                   loading={updating}
                 />
@@ -263,4 +280,10 @@ export function UserContactMethods({
     </div>
   );
 }
+
+
+
+
+
+
 

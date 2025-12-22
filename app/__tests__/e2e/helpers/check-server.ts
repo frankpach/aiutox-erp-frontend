@@ -15,7 +15,8 @@ export async function checkFrontendServer(page: Page, baseURL: string): Promise<
 
 export async function checkBackendServer(page: Page, apiURL: string = "http://localhost:8000"): Promise<boolean> {
   try {
-    const response = await page.request.get(`${apiURL}/api/v1/health`, { timeout: 5000 });
+    // Try /healthz endpoint first (correct endpoint)
+    const response = await page.request.get(`${apiURL}/healthz`, { timeout: 5000 });
     return response.ok();
   } catch {
     // Try /docs as fallback
@@ -27,6 +28,12 @@ export async function checkBackendServer(page: Page, apiURL: string = "http://lo
     }
   }
 }
+
+
+
+
+
+
 
 
 

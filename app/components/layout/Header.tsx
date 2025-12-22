@@ -3,6 +3,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { SearchIcon, NotificationIcon } from "@hugeicons/core-free-icons";
 import { UserMenu } from "./UserMenu";
 import { SidebarToggle } from "./SidebarToggle";
+import { cn } from "~/lib/utils";
 
 /**
  * Header - Barra superior de la aplicación
@@ -16,12 +17,13 @@ import { SidebarToggle } from "./SidebarToggle";
 interface HeaderProps {
   onSidebarToggle?: () => void;
   isSidebarOpen?: boolean;
+  isSidebarCollapsed?: boolean;
 }
 
-export function Header({ onSidebarToggle, isSidebarOpen }: HeaderProps) {
+export function Header({ onSidebarToggle, isSidebarOpen, isSidebarCollapsed }: HeaderProps) {
   return (
     <header
-      className="h-16 border-b border-gray-200 bg-white px-6 flex items-center justify-between shadow-sm"
+      className="h-16 bg-white px-6 flex items-center justify-between shadow-md"
       role="banner"
     >
       {/* Sección izquierda: Logo y SidebarToggle (móvil) */}
@@ -31,9 +33,28 @@ export function Header({ onSidebarToggle, isSidebarOpen }: HeaderProps) {
           isOpen={isSidebarOpen}
           className="lg:hidden"
         />
+        {/* Logo en Header - aparece cuando sidebar está colapsado */}
         <Link
           to="/"
-          className="flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-[#023E87] focus:ring-offset-2 rounded"
+          className={cn(
+            "hidden lg:flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-[#023E87] focus:ring-offset-2 rounded overflow-hidden",
+            "transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]",
+            isSidebarCollapsed
+              ? "opacity-100 max-w-[200px] visible"
+              : "opacity-0 max-w-0 invisible"
+          )}
+          aria-label="Ir al inicio"
+        >
+          <img
+            src="/logo-name.png"
+            alt="AiutoX ERP"
+            className="h-6 object-contain"
+          />
+        </Link>
+        {/* Logo móvil */}
+        <Link
+          to="/"
+          className="lg:hidden flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-[#023E87] focus:ring-offset-2 rounded"
           aria-label="Ir al inicio"
         >
           <span className="text-xl font-bold text-[#023E87]">AiutoX ERP</span>
@@ -86,6 +107,12 @@ export function Header({ onSidebarToggle, isSidebarOpen }: HeaderProps) {
     </header>
   );
 }
+
+
+
+
+
+
 
 
 

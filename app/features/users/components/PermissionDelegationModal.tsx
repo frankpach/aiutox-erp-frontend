@@ -29,7 +29,7 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { useUsers } from "../hooks/useUsers";
 import { usePermissionsByModule, useDelegatePermission } from "../hooks/useUserPermissions";
 import { showToast } from "~/components/common/Toast";
-import type { User, PermissionDelegation } from "../types/user.types";
+import type { PermissionDelegation } from "../types/user.types";
 
 const delegationSchema = z.object({
   target_user_id: z.string().uuid("Usuario inválido"),
@@ -90,7 +90,6 @@ export function PermissionDelegationModal({
   });
 
   const selectedUserId = watch("target_user_id");
-  const expiresAt = watch("expires_at");
 
   // Reset form when modal closes
   useEffect(() => {
@@ -120,7 +119,16 @@ export function PermissionDelegationModal({
     }
 
     const permission = Array.from(selectedPermissions)[0];
+    if (!permission) {
+      showToast("Debe seleccionar un permiso", "error");
+      return;
+    }
+
     const module = permission.split(".")[0];
+    if (!module) {
+      showToast("Permiso inválido", "error");
+      return;
+    }
 
     const delegation: PermissionDelegation = {
       target_user_id: data.target_user_id,
@@ -277,4 +285,10 @@ export function PermissionDelegationModal({
     </Dialog>
   );
 }
+
+
+
+
+
+
 

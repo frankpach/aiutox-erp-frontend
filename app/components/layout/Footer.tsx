@@ -6,11 +6,11 @@
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
-  const version = "1.0.0"; // TODO: Leer desde package.json o variable de entorno
+  const version = "0.0.126";
 
   return (
     <footer
-      className="h-12 border-t border-gray-200 bg-gray-50 flex items-center justify-center"
+      className="h-12 bg-gray-50 flex items-center justify-center shadow-[0_-2px_8px_rgba(0,0,0,0.05)]"
       role="contentinfo"
     >
       <div className="text-sm text-gray-600">
@@ -19,6 +19,13 @@ export function Footer() {
     </footer>
   );
 }
+
+
+
+
+
+
+
 
 
 

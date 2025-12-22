@@ -1,6 +1,6 @@
 /**
  * Rate limiting utilities for frontend
- * 
+ *
  * Client-side rate limiting to prevent abuse
  * Note: This is a basic implementation. Real rate limiting should be done on the backend.
  */
@@ -18,8 +18,15 @@ interface RequestRecord {
 const rateLimitStore = new Map<string, RequestRecord>();
 
 /**
+ * Clear rate limit store (useful for testing)
+ */
+export function clearAllRateLimits(): void {
+  rateLimitStore.clear();
+}
+
+/**
  * Check if a request should be rate limited
- * 
+ *
  * @param key - Unique key for the rate limit (e.g., 'login', 'api-call')
  * @param config - Rate limit configuration
  * @returns true if request should be allowed, false if rate limited
@@ -54,7 +61,7 @@ export function checkRateLimit(
 
 /**
  * Get remaining requests for a rate limit key
- * 
+ *
  * @param key - Rate limit key
  * @param config - Rate limit configuration
  * @returns Number of remaining requests
@@ -75,23 +82,20 @@ export function getRemainingRequests(
 
 /**
  * Reset rate limit for a key
- * 
+ *
  * @param key - Rate limit key to reset
  */
 export function resetRateLimit(key: string): void {
   rateLimitStore.delete(key);
-}
-
-/**
- * Clear all rate limits
- */
-export function clearAllRateLimits(): void {
-  rateLimitStore.clear();
+  // Verify deletion
+  if (rateLimitStore.has(key)) {
+    console.warn(`[RateLimit] Failed to reset rate limit for key: ${key}`);
+  }
 }
 
 /**
  * Rate limit decorator for async functions
- * 
+ *
  * @param key - Rate limit key
  * @param config - Rate limit configuration
  * @param fn - Function to rate limit
@@ -104,10 +108,11 @@ export function withRateLimit<T extends (...args: unknown[]) => Promise<unknown>
 ): T {
   return (async (...args: Parameters<T>) => {
     if (!checkRateLimit(key, config)) {
+      const record = rateLimitStore.get(key);
+      const resetAt = record?.resetAt || Date.now() + config.windowMs;
+      const secondsRemaining = Math.ceil((resetAt - Date.now()) / 1000);
       throw new Error(
-        `Rate limit exceeded. Please try again in ${Math.ceil(
-          (rateLimitStore.get(key)?.resetAt || 0 - Date.now()) / 1000
-        )} seconds.`
+        `Rate limit exceeded. Please try again in ${secondsRemaining} seconds.`
       );
     }
 
@@ -124,3 +129,8 @@ export function withRateLimit<T extends (...args: unknown[]) => Promise<unknown>
     }
   }) as T;
 }
+
+
+
+
+
