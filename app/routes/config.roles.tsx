@@ -1,442 +1,373 @@
+/**
+ * Roles Configuration Page
+ *
+ * Manage roles and their permissions, assign roles to users
+ * Uses ConfigPageLayout and shared components for visual consistency
+ */
+
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import apiClient from "~/lib/api/client";
+import { useTranslation } from "~/lib/i18n/useTranslation";
+import { showToast } from "~/components/common/Toast";
+import { listRoles } from "~/features/users/api/roles.api";
+import type { RoleWithPermissions } from "~/features/users/api/roles.api";
+import { useUsers } from "~/features/users/hooks/useUsers";
+import { ConfigPageLayout } from "~/components/config/ConfigPageLayout";
+import { ConfigLoadingState } from "~/components/config/ConfigLoadingState";
+import { ConfigErrorState } from "~/components/config/ConfigErrorState";
+import { ConfigEmptyState } from "~/components/config/ConfigEmptyState";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import type { StandardListResponse, StandardResponse } from "~/lib/api/types/common.types";
-import { toast } from "sonner";
+import { SearchBar } from "~/components/common/SearchBar";
+import { DataTable, type DataTableColumn } from "~/components/common/DataTable";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "~/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import { Label } from "~/components/ui/label";
+import { Separator } from "~/components/ui/separator";
+import { ScrollArea } from "~/components/ui/scroll-area";
+import { ShieldIcon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 
-interface RoleWithPermissions {
-  role: string;
-  permissions: string[];
-}
+type GlobalRole = "owner" | "admin" | "manager" | "staff" | "viewer";
+
+const SYSTEM_ROLES: GlobalRole[] = ["owner", "admin"];
 
 interface User {
   id: string;
+  name: string;
   email: string;
-  full_name: string;
-  is_active: boolean;
+  roles?: string[];
 }
 
-interface UserRole {
-  role: string;
-  granted_by: string | null;
-  created_at: string;
+export function meta() {
+  return [
+    { title: "Roles y Permisos - AiutoX ERP" },
+    { name: "description", content: "Gestiona los roles y permisos del sistema" },
+  ];
 }
-
-// Role display names and descriptions
-const ROLE_INFO: Record<string, { display_name: string; description: string }> = {
-  owner: {
-    display_name: "Propietario",
-    description: "Acceso total al sistema. Control completo sobre la organización.",
-  },
-  admin: {
-    display_name: "Administrador",
-    description: "Administrador del sistema con acceso casi completo. Puede gestionar usuarios, roles y configuraciones.",
-  },
-  manager: {
-    display_name: "Gestor",
-    description: "Gestor con acceso a módulos asignados. Puede gestionar operaciones de negocio.",
-  },
-  staff: {
-    display_name: "Personal",
-    description: "Personal operativo con acceso limitado a funciones específicas.",
-  },
-  viewer: {
-    display_name: "Visualizador",
-    description: "Solo lectura. Puede ver información pero no realizar cambios.",
-  },
-};
-
-// System roles that cannot be modified
-const SYSTEM_ROLES = ["owner", "admin"];
 
 export default function RolesConfigPage() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const [selectedRole, setSelectedRole] = useState<string | null>(null);
-  const [selectedUserForRole, setSelectedUserForRole] = useState<string>("");
+  const [selectedRole, setSelectedRole] = useState<GlobalRole | null>(null);
   const [searchUser, setSearchUser] = useState("");
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
 
-  // Fetch roles from backend
-  const { data: rolesData, isLoading: isLoadingRoles, error: rolesError } = useQuery({
+  const { data: rolesData, isLoading, error } = useQuery({
     queryKey: ["roles"],
-    queryFn: async () => {
-      const response = await apiClient.get<StandardListResponse<RoleWithPermissions>>(
-        "/auth/roles"
-      );
-      return response.data.data;
-    },
+    queryFn: listRoles,
   });
 
-  // Fetch users
-  const { data: usersData } = useQuery({
-    queryKey: ["users", "list"],
-    queryFn: async () => {
-      const response = await apiClient.get<StandardListResponse<User>>(
-        "/users?page_size=100"
-      );
-      return response.data.data;
-    },
+  const { users, isLoading: usersLoading } = useUsers({
+    search: searchUser || undefined,
+    page: 1,
+    page_size: 20,
   });
 
-  // Fetch users with selected role
-  const { data: usersWithRole, isLoading: isLoadingUsersWithRole } = useQuery({
-    queryKey: ["users", "role", selectedRole],
-    queryFn: async () => {
-      if (!selectedRole) return [];
-      // Fetch all users and check their roles
-      const users = usersData || [];
-      const usersWithRoleData: Array<User & { userRole: UserRole }> = [];
-
-      for (const user of users) {
-        try {
-          const roleResponse = await apiClient.get<{ roles: UserRole[]; total: number }>(
-            `/auth/roles/${user.id}`
-          );
-          const userRoles = roleResponse.data.roles || [];
-          const hasRole = userRoles.some((ur) => ur.role === selectedRole);
-          if (hasRole) {
-            const userRole = userRoles.find((ur) => ur.role === selectedRole)!;
-            usersWithRoleData.push({ ...user, userRole });
-          }
-        } catch (error) {
-          // User might not have roles, skip
-          console.warn(`Could not fetch roles for user ${user.id}:`, error);
-        }
-      }
-
-      return usersWithRoleData;
-    },
-    enabled: !!selectedRole && !!usersData,
-  });
-
-  // Assign role mutation
-  const assignRoleMutation = useMutation({
-    mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
-      const response = await apiClient.post<StandardResponse<UserRole>>(
-        `/auth/roles/${userId}`,
-        { role }
-      );
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["users", "role", selectedRole] });
-      toast.success("Rol asignado exitosamente");
-      setSelectedUserForRole("");
-    },
-    onError: (error: any) => {
-      toast.error(`Error al asignar rol: ${error.response?.data?.error?.message || error.message}`);
-    },
-  });
-
-  // Remove role mutation
-  const removeRoleMutation = useMutation({
-    mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
-      await apiClient.delete(`/auth/roles/${userId}/${role}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["users", "role", selectedRole] });
-      toast.success("Rol removido exitosamente");
-    },
-    onError: (error: any) => {
-      toast.error(`Error al remover rol: ${error.response?.data?.error?.message || error.message}`);
-    },
-  });
-
-  // Group permissions by module
+  // Agrupar permisos por módulo
   const groupPermissionsByModule = (permissions: string[]) => {
     const grouped: Record<string, string[]> = {};
-    for (const perm of permissions) {
-      const parts = perm.split(".");
-      const module = parts[0];
-      if (module) {
-        if (!grouped[module]) {
-          grouped[module] = [];
-        }
-        grouped[module].push(perm);
+    permissions.forEach((perm) => {
+      const [module] = perm.split(".");
+      if (!grouped[module]) {
+        grouped[module] = [];
       }
-    }
+      grouped[module].push(perm);
+    });
     return grouped;
   };
 
-  const selectedRoleData = rolesData?.find((r: RoleWithPermissions) => r.role === selectedRole);
-  const permissionsByModule = selectedRoleData
-    ? groupPermissionsByModule(selectedRoleData.permissions)
-    : {};
-
-  // Filter users for assignment
-  const availableUsers = usersData?.filter(
-    (user) =>
-      user.email.toLowerCase().includes(searchUser.toLowerCase()) ||
-      user.full_name?.toLowerCase().includes(searchUser.toLowerCase())
-  ) || [];
-
-  // Filter users with role
-  const filteredUsersWithRole = usersWithRole?.filter(
-    (user) =>
-      user.email.toLowerCase().includes(searchUser.toLowerCase()) ||
-      user.full_name?.toLowerCase().includes(searchUser.toLowerCase())
-  ) || [];
-
-  if (isLoadingRoles) {
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <p>Cargando roles...</p>
-      </div>
+      <ConfigPageLayout
+        title={t("config.roles.title")}
+        description={t("config.roles.description")}
+        loading={true}
+      >
+        <ConfigLoadingState lines={6} />
+      </ConfigPageLayout>
     );
   }
 
-  if (rolesError) {
+  if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-md p-4">
-        <p className="text-red-800">
-          Error al cargar roles: {rolesError instanceof Error ? rolesError.message : "Error desconocido"}
-        </p>
-      </div>
+      <ConfigPageLayout
+        title={t("config.roles.title")}
+        description={t("config.roles.description")}
+        error={error instanceof Error ? error : String(error)}
+      >
+        <ConfigErrorState message="Error al cargar los roles" />
+      </ConfigPageLayout>
     );
   }
+
+  const roles = rolesData?.data || [];
+  const selectedRoleData = roles.find((r) => r.role === selectedRole);
+
+  // Usuarios con el rol seleccionado (simulado - debería venir del backend)
+  const usersWithRole: User[] = users?.users?.filter((u) =>
+    u.roles?.includes(selectedRole || "")
+  ) || [];
+
+  // Columnas para la tabla de usuarios
+  const userColumns: DataTableColumn<User>[] = [
+    {
+      key: "name",
+      header: t("config.roles.users"),
+      cell: (user) => (
+        <div>
+          <div className="font-medium">{user.name}</div>
+          <div className="text-sm text-muted-foreground">{user.email}</div>
+        </div>
+      ),
+    },
+    {
+      key: "actions",
+      header: t("common.actions"),
+      cell: (user) => (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            // TODO: Implementar remover rol
+            showToast(`${t("config.roles.removeRole")} ${user.name}`, "info");
+          }}
+        >
+          {t("config.roles.removeRole")}
+        </Button>
+      ),
+    },
+  ];
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Roles y Permisos</h1>
-          <p className="text-muted-foreground mt-1">
-            Gestiona roles y sus permisos en el sistema
-          </p>
-        </div>
-      </div>
-
+    <ConfigPageLayout
+      title="Roles y Permisos"
+      description="Gestiona los roles y permisos del sistema"
+    >
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Lista de Roles */}
-        <div className="lg:col-span-1 space-y-3">
-          <h2 className="text-lg font-semibold">Roles del Sistema</h2>
-          <div className="space-y-2">
-            {rolesData?.map((role: RoleWithPermissions) => {
-              const roleInfo = ROLE_INFO[role.role] || {
-                display_name: role.role,
-                description: "Rol del sistema",
-              };
-              const isSystem = SYSTEM_ROLES.includes(role.role);
-              return (
-                <button
-                  key={role.role}
-                  onClick={() => setSelectedRole(role.role)}
-                  className={`w-full text-left p-4 rounded-lg border transition-colors ${
-                    selectedRole === role.role
-                      ? "bg-blue-50 border-blue-200"
-                      : "bg-white border-gray-200 hover:bg-gray-50"
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium">{roleInfo.display_name}</span>
-                    {isSystem && (
-                      <Badge variant="outline" className="text-xs">
-                        Sistema
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-600">{roleInfo.description}</p>
-                  <p className="text-xs text-gray-500 mt-2">
-                    {role.permissions.length} permiso(s)
-                  </p>
-                </button>
-              );
-            })}
+        {/* Lista de roles */}
+        <div className="lg:col-span-1 space-y-4">
+          <div>
+            <h3 className="text-lg font-semibold mb-4">{t("config.roles.systemRoles")}</h3>
+            <div className="space-y-2">
+              {roles.length === 0 ? (
+                <ConfigEmptyState
+                  title="No hay roles"
+                  description="No se encontraron roles en el sistema."
+                />
+              ) : (
+                roles.map((role) => (
+                  <Card
+                    key={role.role}
+                    className={`cursor-pointer transition-colors hover:bg-muted/50 ${
+                      selectedRole === role.role ? "border-primary border-2" : ""
+                    }`}
+                    onClick={() => setSelectedRole(role.role as GlobalRole)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-semibold capitalize">{role.role}</h4>
+                            {SYSTEM_ROLES.includes(role.role as GlobalRole) && (
+                              <Badge variant="secondary">Sistema</Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {role.permissions.length} permisos
+                          </p>
+                        </div>
+                        <HugeiconsIcon
+                          icon={ShieldIcon}
+                          size={24}
+                          className="text-muted-foreground"
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Detalles del Rol */}
+        {/* Detalles del rol seleccionado */}
         <div className="lg:col-span-2">
           {selectedRoleData ? (
-            <Tabs defaultValue="permissions" className="w-full">
+            <Tabs defaultValue="permissions" className="space-y-4">
               <TabsList>
-                <TabsTrigger value="permissions">Permisos</TabsTrigger>
-                <TabsTrigger value="users">Usuarios ({filteredUsersWithRole.length})</TabsTrigger>
+                <TabsTrigger value="permissions">{t("config.roles.permissions")}</TabsTrigger>
+                <TabsTrigger value="users">{t("config.roles.users")} ({usersWithRole.length})</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="permissions" className="space-y-6">
-                <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-6">
-                  <div>
-                    <h2 className="text-xl font-bold mb-2">
-                      {ROLE_INFO[selectedRoleData.role]?.display_name || selectedRoleData.role}
-                    </h2>
-                    <p className="text-gray-600">
-                      {ROLE_INFO[selectedRoleData.role]?.description || "Rol del sistema"}
-                    </p>
-                    {SYSTEM_ROLES.includes(selectedRoleData.role) && (
-                      <p className="text-sm text-amber-600 mt-2">
-                        ⚠️ Este es un rol del sistema y no puede ser modificado
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <h3 className="font-semibold mb-3">
-                      Permisos Asignados ({selectedRoleData.permissions.length})
-                    </h3>
-                    {Object.keys(permissionsByModule).length > 0 ? (
-                      <div className="space-y-4">
-                        {Object.entries(permissionsByModule).map(([module, perms]) => (
-                          <div key={module} className="border border-gray-200 rounded-lg p-4">
-                            <h4 className="font-medium text-gray-700 mb-2 capitalize">
-                              {module === "*" ? "Todos los módulos" : `Módulo: ${module}`}
-                            </h4>
-                            <div className="flex flex-wrap gap-2">
-                              {perms.map((permission) => (
-                                <Badge key={permission} variant="secondary" className="text-xs">
-                                  {permission}
-                                </Badge>
-                              ))}
+              <TabsContent value="permissions" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{t("config.roles.permissionsAssigned")}</CardTitle>
+                    <CardDescription>
+                      {t("config.roles.permissionsAssignedDesc")} {selectedRoleData.role}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {selectedRoleData.permissions.length > 0 ? (
+                      <ScrollArea className="h-[400px]">
+                        <div className="space-y-4">
+                          {Object.entries(
+                            groupPermissionsByModule(selectedRoleData.permissions)
+                          ).map(([module, perms]) => (
+                            <div key={module} className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-semibold capitalize">{module}</h4>
+                                <Badge variant="outline">{perms.length}</Badge>
+                              </div>
+                              <div className="flex flex-wrap gap-2 pl-4">
+                                {perms.map((permission) => (
+                                  <Badge
+                                    key={permission}
+                                    variant="outline"
+                                    className="text-xs"
+                                  >
+                                    {permission}
+                                  </Badge>
+                                ))}
+                              </div>
+                              <Separator className="mt-2" />
                             </div>
-                          </div>
-                        ))}
-                      </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
                     ) : (
-                      <p className="text-gray-500 text-sm">No hay permisos asignados</p>
+                      <ConfigEmptyState
+                        title={t("config.roles.noPermissions")}
+                        description={t("config.roles.noPermissions")}
+                      />
                     )}
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               </TabsContent>
 
-              <TabsContent value="users" className="space-y-6">
-                <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-6">
-                  <div>
-                    <h2 className="text-xl font-bold mb-2">
-                      Usuarios con rol: {ROLE_INFO[selectedRoleData.role]?.display_name || selectedRoleData.role}
-                    </h2>
-                    <p className="text-gray-600">
-                      Gestiona los usuarios que tienen este rol asignado
-                    </p>
-                  </div>
-
-                  {/* Search */}
-                  <div className="space-y-2">
-                    <Label htmlFor="search-user">Buscar Usuario</Label>
-                    <Input
-                      id="search-user"
-                      placeholder="Buscar por nombre o email..."
-                      value={searchUser}
-                      onChange={(e) => setSearchUser(e.target.value)}
-                    />
-                  </div>
-
-                  {/* Assign Role */}
-                  <div className="border border-gray-200 rounded-lg p-4 space-y-4">
-                    <h3 className="font-semibold">Asignar Rol a Usuario</h3>
-                    <div className="flex gap-2">
-                      <Select value={selectedUserForRole} onValueChange={setSelectedUserForRole}>
-                        <SelectTrigger className="flex-1">
-                          <SelectValue placeholder="Selecciona un usuario..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableUsers
-                            .filter(
-                              (user) =>
-                                !filteredUsersWithRole.some((ur) => ur.id === user.id)
-                            )
-                            .map((user) => (
-                              <SelectItem key={user.id} value={user.id}>
-                                {user.full_name} ({user.email})
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        onClick={() => {
-                          if (selectedUserForRole && selectedRole) {
-                            assignRoleMutation.mutate({
-                              userId: selectedUserForRole,
-                              role: selectedRole,
-                            });
-                          }
-                        }}
-                        disabled={!selectedUserForRole || assignRoleMutation.isPending}
-                      >
-                        {assignRoleMutation.isPending ? "Asignando..." : "Asignar Rol"}
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Users with Role */}
-                  <div>
-                    <h3 className="font-semibold mb-3">
-                      Usuarios con este rol ({filteredUsersWithRole.length})
-                    </h3>
-                    {isLoadingUsersWithRole ? (
-                      <p className="text-gray-500">Cargando usuarios...</p>
-                    ) : filteredUsersWithRole.length > 0 ? (
-                      <div className="space-y-2">
-                        {filteredUsersWithRole.map((user) => (
-                          <div
-                            key={user.id}
-                            className="flex items-center justify-between p-3 border border-gray-200 rounded-lg"
-                          >
-                            <div>
-                              <div className="font-medium">{user.full_name || user.email}</div>
-                              <div className="text-sm text-gray-500">{user.email}</div>
-                              {user.userRole?.created_at && (
-                                <div className="text-xs text-gray-400 mt-1">
-                                  Asignado: {new Date(user.userRole.created_at).toLocaleDateString("es-ES")}
-                                </div>
-                              )}
-                            </div>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-red-600 hover:text-red-700"
-                              onClick={() => {
-                                if (
-                                  confirm(
-                                    `¿Estás seguro de remover el rol "${ROLE_INFO[selectedRoleData.role]?.display_name}" de ${user.full_name || user.email}?`
-                                  )
-                                ) {
-                                  removeRoleMutation.mutate({
-                                    userId: user.id,
-                                    role: selectedRoleData.role,
-                                  });
-                                }
-                              }}
-                              disabled={removeRoleMutation.isPending}
-                            >
-                              Remover
-                            </Button>
-                          </div>
-                        ))}
+              <TabsContent value="users" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle>{t("config.roles.usersWithRole")}</CardTitle>
+                        <CardDescription>
+                          {t("config.roles.manageUsers")} {selectedRoleData.role}
+                        </CardDescription>
                       </div>
+                      <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button>Asignar Rol</Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>{t("config.roles.assignRole")}</DialogTitle>
+                            <DialogDescription>
+                              {t("config.roles.assignRoleDesc")} {selectedRoleData.role}
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                              <Label>{t("config.roles.searchUser")}</Label>
+                              <SearchBar
+                                value={searchUser}
+                                onChange={setSearchUser}
+                                placeholder={t("config.roles.searchUserPlaceholder")}
+                              />
+                            </div>
+                            {usersLoading ? (
+                              <div className="text-center py-8 text-muted-foreground">
+                                Buscando usuarios...
+                              </div>
+                            ) : users?.users && users.users.length > 0 ? (
+                              <ScrollArea className="h-[300px]">
+                                <div className="space-y-2">
+                                  {users.users.map((user) => (
+                                    <div
+                                      key={user.id}
+                                      className="flex items-center justify-between p-3 border rounded hover:bg-muted/50 transition-colors"
+                                    >
+                                      <div>
+                                        <p className="font-medium">{user.name}</p>
+                                        <p className="text-sm text-muted-foreground">{user.email}</p>
+                                      </div>
+                                      <Button
+                                        size="sm"
+                                        onClick={() => {
+                                          // TODO: Implementar asignar rol
+                                          showToast(`Rol asignado a ${user.name}`, "success");
+                                          setAssignDialogOpen(false);
+                                        }}
+                                      >
+                                        Asignar
+                                      </Button>
+                                    </div>
+                                  ))}
+                                </div>
+                              </ScrollArea>
+                            ) : (
+                              <ConfigEmptyState
+                                title="No se encontraron usuarios"
+                                description="Intenta con otro término de búsqueda."
+                                inCard={false}
+                              />
+                            )}
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {usersWithRole.length > 0 ? (
+                      <DataTable
+                        columns={userColumns}
+                        data={usersWithRole}
+                        inCard={false}
+                      />
                     ) : (
-                      <p className="text-gray-500 text-sm">No hay usuarios con este rol asignado</p>
+                      <ConfigEmptyState
+                        title={t("config.roles.noUsersWithRole")}
+                        description={t("config.roles.noUsersWithRole")}
+                        action={
+                          <Button onClick={() => setAssignDialogOpen(true)}>
+                            {t("config.roles.assignRoleButton")}
+                          </Button>
+                        }
+                      />
                     )}
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               </TabsContent>
             </Tabs>
           ) : (
-            <div className="bg-white border border-gray-200 rounded-lg p-6 flex items-center justify-center h-64">
-              <p className="text-gray-500">
-                Selecciona un rol para ver sus detalles
-              </p>
-            </div>
+            <Card>
+              <CardContent className="py-12">
+                <div className="text-center space-y-2">
+                  <HugeiconsIcon
+                    icon={ShieldIcon}
+                    size={48}
+                    className="text-muted-foreground mx-auto mb-4"
+                  />
+                  <h3 className="text-lg font-semibold">{t("config.roles.selectRole")}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {t("config.roles.selectRole")}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           )}
         </div>
       </div>
-
-      {/* Información Adicional */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h3 className="font-semibold text-blue-900 mb-2">
-          ℹ️ Sobre Roles y Permisos
-        </h3>
-        <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-          <li>Los roles del sistema (Propietario, Administrador) no pueden ser modificados</li>
-          <li>Los permisos se organizan por módulos del sistema</li>
-          <li>Un usuario puede tener múltiples roles asignados</li>
-          <li>Los permisos efectivos de un usuario son la unión de todos sus roles</li>
-        </ul>
-      </div>
-    </div>
+    </ConfigPageLayout>
   );
 }

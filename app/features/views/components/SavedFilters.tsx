@@ -1,4 +1,4 @@
-/**
+  /**
  * SavedFilters Component
  * Generic reusable component for applying saved filters in any module.
  */
@@ -27,6 +27,16 @@ export interface SavedFiltersProps {
   currentFilterId?: string | null;
   onManageClick?: () => void;
   onSaveCurrentFilter?: () => void; // For quick save current filter
+  // Optional: pass hook state from parent to avoid duplicate instances
+  filters?: SavedFilterType[];
+  defaultFilter?: SavedFilterType | null;
+  loading?: boolean;
+  error?: Error | null;
+  getMyFilters?: (module: string) => SavedFilterType[];
+  getSharedFilters?: (module: string) => SavedFilterType[];
+  refreshFilters?: () => Promise<void>;
+  createFilter?: (filterData: SavedFilterCreate) => Promise<SavedFilterType | null>;
+  autoLoad?: boolean; // If false, don't create own hook instance
 }
 
 /**
@@ -39,17 +49,38 @@ export function SavedFilters({
   currentFilterId,
   onManageClick,
   onSaveCurrentFilter,
+  filters: propsFilters,
+  defaultFilter: propsDefaultFilter,
+  loading: propsLoading,
+  error: propsError,
+  getMyFilters: propsGetMyFilters,
+  getSharedFilters: propsGetSharedFilters,
+  refreshFilters: propsRefreshFilters,
+  createFilter: propsCreateFilter,
+  autoLoad = true,
 }: SavedFiltersProps) {
+  // Use hook only if props are not provided (parent not managing state)
+  const hookState = useSavedFilters(module, autoLoad && !propsFilters);
   const {
-    filters,
-    defaultFilter,
-    loading,
-    error,
-    getMyFilters,
-    getSharedFilters,
-    refreshFilters,
-    createFilter,
-  } = useSavedFilters(module, true);
+    filters: hookFilters,
+    defaultFilter: hookDefaultFilter,
+    loading: hookLoading,
+    error: hookError,
+    getMyFilters: hookGetMyFilters,
+    getSharedFilters: hookGetSharedFilters,
+    refreshFilters: hookRefreshFilters,
+    createFilter: hookCreateFilter,
+  } = hookState;
+
+  // Use props if provided, otherwise use hook state
+  const filters = propsFilters ?? hookFilters;
+  const defaultFilter = propsDefaultFilter ?? hookDefaultFilter;
+  const loading = propsLoading ?? hookLoading;
+  const error = propsError ?? hookError;
+  const getMyFilters = propsGetMyFilters ?? hookGetMyFilters;
+  const getSharedFilters = propsGetSharedFilters ?? hookGetSharedFilters;
+  const refreshFilters = propsRefreshFilters ?? hookRefreshFilters;
+  const createFilter = propsCreateFilter ?? hookCreateFilter;
 
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingFilter, setEditingFilter] = useState<SavedFilterType | null>(null);
@@ -119,10 +150,39 @@ export function SavedFilters({
     );
   }
 
-  if (error) {
+  // Only show error if we have an error AND no filters loaded AND not currently loading
+  // This ensures we don't show stale errors after a successful load
+  const shouldShowError = error && !loading && filters.length === 0;
+
+  // Get user-friendly error message based on error type
+  const getErrorMessage = (err: Error | null): string => {
+    if (!err) return t("savedFilters.errorUnknown");
+
+    const errorMessage = err.message.toLowerCase();
+
+    // Check for network errors
+    if (errorMessage.includes("network") || errorMessage.includes("network error")) {
+      return t("savedFilters.errorNetwork");
+    }
+
+    // Check for CORS errors
+    if (errorMessage.includes("cors") || errorMessage.includes("blocked by cors")) {
+      return t("savedFilters.errorCORS");
+    }
+
+    // Check for server errors (5xx)
+    if (errorMessage.includes("500") || errorMessage.includes("internal server error")) {
+      return t("savedFilters.errorServer");
+    }
+
+    // Default error message
+    return t("savedFilters.errorLoading");
+  };
+
+  if (shouldShowError) {
     return (
       <div className="text-sm text-destructive">
-        Error al cargar filtros: {error.message}
+        {getErrorMessage(error)}
       </div>
     );
   }
@@ -185,7 +245,7 @@ export function SavedFilters({
           {sharedFilters.length > 0 && (
             <>
               <DropdownMenuLabel className="text-xs text-muted-foreground">
-                Compartidos
+                {t("savedFilters.shared")}
               </DropdownMenuLabel>
               {sharedFilters.map((filter) => (
                 <DropdownMenuItem
@@ -216,7 +276,7 @@ export function SavedFilters({
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleClearFilter} className="text-muted-foreground">
-                Limpiar filtro
+                {t("savedFilters.clear")}
               </DropdownMenuItem>
             </>
           )}

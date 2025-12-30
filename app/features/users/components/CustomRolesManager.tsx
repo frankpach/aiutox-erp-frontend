@@ -10,6 +10,7 @@ import { Button } from "~/components/ui/button";
 import { Plus, Edit, Trash2 } from "lucide-react";
 import { ConfirmDialog } from "~/components/common/ConfirmDialog";
 import { showToast } from "~/components/common/Toast";
+import { useTranslation } from "~/lib/i18n/useTranslation";
 import { useCustomRoles, useDeleteCustomRole } from "../hooks/useCustomRoles";
 import { RoleForm } from "./RoleForm";
 import type { CustomRole } from "../types/user.types";
@@ -24,6 +25,7 @@ interface CustomRolesManagerProps {
 export function CustomRolesManager({
   onRoleSelect,
 }: CustomRolesManagerProps) {
+  const { t } = useTranslation();
   const { roles, loading, refresh } = useCustomRoles();
   const { remove, loading: deleting } = useDeleteCustomRole();
 
@@ -43,10 +45,10 @@ export function CustomRolesManager({
 
     const success = await remove(deleteConfirm.roleId);
     if (success) {
-      showToast("Rol eliminado exitosamente", "success");
+      showToast(t("users.roleDeletedSuccess") || "Rol eliminado exitosamente", "success");
       refresh();
     } else {
-      showToast("Error al eliminar el rol", "error");
+      showToast(t("users.roleDeletedError") || "Error al eliminar el rol", "error");
     }
     setDeleteConfirm({ open: false, roleId: null });
   };
@@ -54,8 +56,8 @@ export function CustomRolesManager({
   const handleFormSuccess = () => {
     showToast(
       editingRole
-        ? "Rol actualizado exitosamente"
-        : "Rol creado exitosamente",
+        ? (t("users.roleUpdatedSuccess") || "Rol actualizado exitosamente")
+        : (t("users.roleCreatedSuccess") || "Rol creado exitosamente"),
       "success"
     );
     setShowForm(false);
@@ -65,7 +67,7 @@ export function CustomRolesManager({
 
   if (loading) {
     return (
-      <div className="text-sm text-muted-foreground">Cargando roles...</div>
+      <div className="text-sm text-muted-foreground">{t("users.loadingRoles") || "Cargando roles..."}</div>
     );
   }
 
@@ -73,9 +75,9 @@ export function CustomRolesManager({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold">Roles Personalizados</h3>
+          <h3 className="text-lg font-semibold">{t("users.customRolesTitle") || "Roles Personalizados"}</h3>
           <p className="text-sm text-muted-foreground">
-            Crea y gestiona roles personalizados con permisos granulares
+            {t("users.customRolesDescription") || "Crea y gestiona roles personalizados con permisos granulares"}
           </p>
         </div>
         <Button
@@ -86,7 +88,7 @@ export function CustomRolesManager({
           }}
         >
           <Plus className="h-4 w-4 mr-2" />
-          Crear Rol
+          {t("users.createRole") || "Crear Rol"}
         </Button>
       </div>
 
@@ -104,7 +106,7 @@ export function CustomRolesManager({
       {roles.length === 0 ? (
         <div className="rounded-md border p-8 text-center">
           <p className="text-sm text-muted-foreground">
-            No hay roles personalizados. Crea uno para comenzar.
+            {t("users.noCustomRoles") || "No hay roles personalizados. Crea uno para comenzar."}
           </p>
         </div>
       ) : (
@@ -118,7 +120,7 @@ export function CustomRolesManager({
                 <div className="flex items-center gap-2">
                   <p className="font-medium">{role.name}</p>
                   <span className="rounded-full bg-[#023E87]/10 px-2 py-0.5 text-xs text-[#023E87]">
-                    {role.permissions.length} permisos
+                    {role.permissions.length} {t("users.permissions") || "permisos"}
                   </span>
                 </div>
                 {role.description && (
@@ -158,16 +160,21 @@ export function CustomRolesManager({
         open={deleteConfirm.open}
         onClose={() => setDeleteConfirm({ open: false, roleId: null })}
         onConfirm={confirmDelete}
-        title="Eliminar Rol Personalizado"
-        description="¿Estás seguro de que deseas eliminar este rol? Esta acción no se puede deshacer."
-        confirmText="Eliminar"
-        cancelText="Cancelar"
+        title={t("users.deleteCustomRoleTitle") || "Eliminar Rol Personalizado"}
+        description={t("users.deleteCustomRoleDescription") || "¿Estás seguro de que deseas eliminar este rol? Esta acción no se puede deshacer."}
+        confirmText={t("users.delete") || "Eliminar"}
+        cancelText={t("users.cancel") || "Cancelar"}
         variant="destructive"
         loading={deleting}
       />
     </div>
   );
 }
+
+
+
+
+
 
 
 

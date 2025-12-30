@@ -20,7 +20,7 @@ export interface UsersListParams {
   page_size?: number;
   search?: string;
   is_active?: boolean;
-  saved_filter_id?: string; // Will be supported when backend is updated
+  saved_filter_id?: string;
 }
 
 /**
@@ -85,11 +85,27 @@ export async function updateUser(
   userId: string,
   data: UserUpdate
 ): Promise<StandardResponse<User>> {
-  const response = await apiClient.patch<StandardResponse<User>>(
-    `/users/${userId}`,
-    data
-  );
-  return response.data;
+  console.log("[updateUser API] Calling PATCH /users/{userId}:", { userId, data });
+  try {
+    const response = await apiClient.patch<StandardResponse<User>>(
+      `/users/${userId}`,
+      data
+    );
+    console.log("[updateUser API] Response received:", { status: response.status, data: response.data });
+    return response.data;
+  } catch (error: any) {
+    console.error("[updateUser API] Error:", error);
+    // Log detailed error information
+    if (error.response) {
+      console.error("[updateUser API] Error response:", {
+        status: error.response.status,
+        statusText: error.response.statusText,
+        data: error.response.data,
+        headers: error.response.headers,
+      });
+    }
+    throw error;
+  }
 }
 
 /**
@@ -104,6 +120,34 @@ export async function deleteUser(
   const response = await apiClient.delete<StandardResponse<{ message: string }>>(
     `/users/${userId}`
   );
+  return response.data;
+}
+
+/**
+ * Bulk actions on users
+ * POST /api/v1/users/bulk
+ *
+ * Requires: auth.manage_users permission
+ */
+export interface BulkUsersActionRequest {
+  action: "activate" | "deactivate" | "delete";
+  user_ids: string[];
+}
+
+export interface BulkUsersActionResponse {
+  action: string;
+  total: number;
+  success: number;
+  failed: number;
+  failed_ids: string[];
+}
+
+export async function bulkUsersAction(
+  data: BulkUsersActionRequest
+): Promise<StandardResponse<BulkUsersActionResponse>> {
+  const response = await apiClient.post<
+    StandardResponse<BulkUsersActionResponse>
+  >("/users/bulk", data);
   return response.data;
 }
 

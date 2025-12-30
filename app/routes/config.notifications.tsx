@@ -1,10 +1,27 @@
-import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+/**
+ * Notifications Configuration Page
+ *
+ * Configure notification channels (SMTP, SMS, Webhooks) and templates
+ * Uses ConfigPageLayout and shared components for visual consistency
+ */
+
+import { useState, useEffect, useMemo } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useTranslation } from "~/lib/i18n/useTranslation";
+import { ConfigPageLayout } from "~/components/config/ConfigPageLayout";
+import { ConfigFormField } from "~/components/config/ConfigFormField";
+import { ConfigSection } from "~/components/config/ConfigSection";
+import { ConfigLoadingState } from "~/components/config/ConfigLoadingState";
+import { ConfigErrorState } from "~/components/config/ConfigErrorState";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Button } from "~/components/ui/button";
 import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
-import { Input } from "~/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { TemplateList } from "~/components/notifications/TemplateList";
+import { TemplateEditor } from "~/components/notifications/TemplateEditor";
+import { showToast } from "~/components/common/Toast";
+import { useConfigForm } from "~/hooks/useConfigForm";
+import { useConfigSave } from "~/hooks/useConfigSave";
 import {
   getNotificationChannels,
   updateSMTPConfig,
@@ -12,494 +29,511 @@ import {
   updateWebhookConfig,
   testSMTPConnection,
   testWebhookConnection,
-  type SMTPConfigRequest,
-  type SMSConfigRequest,
-  type WebhookConfigRequest,
+  type SMTPConfig,
+  type SMSConfig,
+  type WebhookConfig,
 } from "~/lib/api/notifications.api";
+import { z } from "zod";
+
+export function meta() {
+  return [
+    { title: "Notificaciones - AiutoX ERP" },
+    { name: "description", content: "Configura las notificaciones del sistema" },
+  ];
+}
 
 export default function NotificationsConfigPage() {
-  const queryClient = useQueryClient();
-  const [smtpConfig, setSmtpConfig] = useState<SMTPConfigRequest>({
-    enabled: false,
-    host: "smtp.gmail.com",
-    port: 587,
-    user: "",
-    password: "",
-    use_tls: true,
-    from_email: "",
-    from_name: "",
-  });
+  const { t } = useTranslation();
+  const [editingTemplate, setEditingTemplate] = useState<any>(null);
+  const [showTemplateEditor, setShowTemplateEditor] = useState(false);
 
-  const [smsConfig, setSmsConfig] = useState<SMSConfigRequest>({
-    enabled: false,
-    provider: "twilio",
-    account_sid: "",
-    auth_token: "",
-    from_number: "",
-  });
-
-  const [webhookConfig, setWebhookConfig] = useState<WebhookConfigRequest>({
-    enabled: false,
-    url: "",
-    secret: "",
-    timeout: 30,
-  });
-
-  // Fetch current configuration
+  // Load channels configuration
   const { data, isLoading, error } = useQuery({
-    queryKey: ["notifications", "channels"],
+    queryKey: ["config", "notifications", "channels"],
     queryFn: async () => {
       const response = await getNotificationChannels();
       return response.data;
     },
   });
 
-  // Update configs when data loads
+  // SMTP Form
+  const smtpDefaultValues: SMTPConfig = {
+    enabled: false,
+    host: "",
+    port: 587,
+    user: "",
+    password: null,
+    use_tls: true,
+    from_email: "",
+    from_name: "",
+  };
+
+  const smtpSchema = useMemo(() => z.object({
+    enabled: z.boolean(),
+    host: z.string().min(1, t("config.notifications.smtpServer") + " es requerido"),
+    port: z.number().min(1).max(65535),
+    user: z.string().min(1, t("config.notifications.smtpUser") + " es requerido"),
+    password: z.string().nullable().optional(),
+    use_tls: z.boolean(),
+    from_email: z.string().email(t("config.notifications.fromEmail") + " debe ser un email válido"),
+    from_name: z.string().min(1, t("config.notifications.fromName") + " es requerido"),
+  }), [t]);
+
+  const smtpForm = useConfigForm<SMTPConfig>({
+    initialValues: data?.smtp || smtpDefaultValues,
+    schema: smtpSchema,
+  });
+
   useEffect(() => {
-    if (data) {
-      setSmtpConfig({
-        enabled: data.smtp.enabled,
-        host: data.smtp.host,
-        port: data.smtp.port,
-        user: data.smtp.user,
-        password: "", // Never show password
-        use_tls: data.smtp.use_tls,
-        from_email: data.smtp.from_email,
-        from_name: data.smtp.from_name || "",
-      });
-      setSmsConfig({
-        enabled: data.sms.enabled,
-        provider: data.sms.provider,
-        account_sid: data.sms.account_sid || "",
-        auth_token: "", // Never show token
-        from_number: data.sms.from_number || "",
-      });
-      setWebhookConfig({
-        enabled: data.webhook.enabled,
-        url: data.webhook.url,
-        secret: "", // Never show secret
-        timeout: data.webhook.timeout,
-      });
+    if (data?.smtp) {
+      smtpForm.updateOriginalValues(data.smtp);
     }
-  }, [data]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data?.smtp]);
 
-  // Mutations
-  const smtpMutation = useMutation({
-    mutationFn: updateSMTPConfig,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notifications", "channels"] });
+  const { save: saveSMTP, isSaving: isSavingSMTP } = useConfigSave<SMTPConfig>({
+    queryKey: ["config", "notifications", "channels"],
+    saveFn: async (values) => {
+      const response = await updateSMTPConfig({
+        enabled: values.enabled,
+        host: values.host,
+        port: values.port,
+        user: values.user,
+        password: values.password || null,
+        use_tls: values.use_tls,
+        from_email: values.from_email,
+        from_name: values.from_name,
+      });
+      return response.data;
+    },
+    successMessage: t("config.notifications.saveSuccess"),
+    errorMessage: t("config.notifications.errorSaving"),
+    onSuccess: (updatedData) => {
+      smtpForm.updateOriginalValues(updatedData);
     },
   });
 
-  const smsMutation = useMutation({
-    mutationFn: updateSMSConfig,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notifications", "channels"] });
-    },
-  });
-
-  const webhookMutation = useMutation({
-    mutationFn: updateWebhookConfig,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notifications", "channels"] });
-    },
-  });
-
-  const smtpTestMutation = useMutation({
+  const testSMTPMutation = useMutation({
     mutationFn: testSMTPConnection,
+    onSuccess: (response) => {
+      if (response.data.success) {
+        showToast(t("config.notifications.testSuccess"), "success");
+      } else {
+        showToast(response.data.message || t("config.notifications.testConnection"), "error");
+      }
+    },
+    onError: (error: Error) => {
+      showToast(error.message || t("config.notifications.testConnection"), "error");
+    },
   });
 
-  const webhookTestMutation = useMutation({
+  // SMS Form
+  const smsDefaultValues: SMSConfig = {
+    enabled: false,
+    provider: "twilio",
+    account_sid: null,
+    auth_token: null,
+    from_number: null,
+  };
+
+  const smsSchema = useMemo(() => z.object({
+    enabled: z.boolean(),
+    provider: z.string().min(1),
+    account_sid: z.string().nullable().optional(),
+    auth_token: z.string().nullable().optional(),
+    from_number: z.string().nullable().optional(),
+  }), []);
+
+  const smsForm = useConfigForm<SMSConfig>({
+    initialValues: data?.sms || smsDefaultValues,
+    schema: smsSchema,
+  });
+
+  useEffect(() => {
+    if (data?.sms) {
+      smsForm.updateOriginalValues(data.sms);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data?.sms]);
+
+  const { save: saveSMS, isSaving: isSavingSMS } = useConfigSave<SMSConfig>({
+    queryKey: ["config", "notifications", "channels"],
+    saveFn: async (values) => {
+      const response = await updateSMSConfig({
+        enabled: values.enabled,
+        provider: values.provider,
+        account_sid: values.account_sid || null,
+        auth_token: values.auth_token || null,
+        from_number: values.from_number || null,
+      });
+      return response.data;
+    },
+    successMessage: t("config.notifications.saveSuccess"),
+    errorMessage: t("config.notifications.errorSaving"),
+    onSuccess: (updatedData) => {
+      smsForm.updateOriginalValues(updatedData);
+    },
+  });
+
+  // Webhook Form
+  const webhookDefaultValues: WebhookConfig = {
+    enabled: false,
+    url: "",
+    secret: null,
+    timeout: 30,
+  };
+
+  const webhookSchema = useMemo(() => z.object({
+    enabled: z.boolean(),
+    url: z.string().url(t("config.notifications.webhookUrl") + " debe ser una URL válida"),
+    secret: z.string().nullable().optional(),
+    timeout: z.number().min(1).max(300),
+  }), [t]);
+
+  const webhookForm = useConfigForm<WebhookConfig>({
+    initialValues: data?.webhook || webhookDefaultValues,
+    schema: webhookSchema,
+  });
+
+  useEffect(() => {
+    if (data?.webhook) {
+      webhookForm.updateOriginalValues(data.webhook);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data?.webhook]);
+
+  const { save: saveWebhook, isSaving: isSavingWebhook } = useConfigSave<WebhookConfig>({
+    queryKey: ["config", "notifications", "channels"],
+    saveFn: async (values) => {
+      const response = await updateWebhookConfig({
+        enabled: values.enabled,
+        url: values.url,
+        secret: values.secret || null,
+        timeout: values.timeout,
+      });
+      return response.data;
+    },
+    successMessage: t("config.notifications.saveSuccess"),
+    errorMessage: t("config.notifications.errorSaving"),
+    onSuccess: (updatedData) => {
+      webhookForm.updateOriginalValues(updatedData);
+    },
+  });
+
+  const testWebhookMutation = useMutation({
     mutationFn: testWebhookConnection,
+    onSuccess: (response) => {
+      if (response.data.success) {
+        showToast(t("config.notifications.testSuccess"), "success");
+      } else {
+        showToast(response.data.message || t("config.notifications.testWebhook"), "error");
+      }
+    },
+    onError: (error: Error) => {
+      showToast(error.message || t("config.notifications.testWebhook"), "error");
+    },
   });
 
-  const handleSaveSMTP = () => {
-    smtpMutation.mutate(smtpConfig);
+  const handleSaveSMTP = async () => {
+    if (smtpForm.validate()) {
+      await saveSMTP(smtpForm.values);
+    }
   };
 
-  const handleSaveSMS = () => {
-    smsMutation.mutate(smsConfig);
+  const handleSaveSMS = async () => {
+    if (smsForm.validate()) {
+      await saveSMS(smsForm.values);
+    }
   };
 
-  const handleSaveWebhook = () => {
-    webhookMutation.mutate(webhookConfig);
+  const handleSaveWebhook = async () => {
+    if (webhookForm.validate()) {
+      await saveWebhook(webhookForm.values);
+    }
   };
 
   const handleTestSMTP = () => {
-    smtpTestMutation.mutate();
+    testSMTPMutation.mutate();
   };
 
   const handleTestWebhook = () => {
-    webhookTestMutation.mutate();
+    testWebhookMutation.mutate();
   };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <p>Cargando configuración...</p>
-      </div>
+      <ConfigPageLayout
+        title={t("config.notifications.title")}
+        description={t("config.notifications.description")}
+        loading={true}
+      >
+        <ConfigLoadingState lines={6} />
+      </ConfigPageLayout>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-md p-4">
-        <p className="text-red-800">
-          Error al cargar configuración: {error instanceof Error ? error.message : "Error desconocido"}
-        </p>
-      </div>
+      <ConfigPageLayout
+        title={t("config.notifications.title")}
+        description={t("config.notifications.description")}
+        error={error instanceof Error ? error : String(error)}
+      >
+        <ConfigErrorState message={t("config.notifications.errorLoading")} />
+      </ConfigPageLayout>
     );
   }
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Configuración de Notificaciones</h1>
-        <p className="text-muted-foreground mt-1">
-          Configura los canales y preferencias de notificaciones
-        </p>
-      </div>
-
-      <Tabs defaultValue="channels" className="w-full">
+    <ConfigPageLayout
+      title={t("config.notifications.title")}
+      description={t("config.notifications.description")}
+    >
+      <Tabs defaultValue="channels" className="space-y-6">
         <TabsList>
-          <TabsTrigger value="channels">Canales</TabsTrigger>
-          <TabsTrigger value="templates">Plantillas</TabsTrigger>
-          <TabsTrigger value="preferences">Preferencias</TabsTrigger>
+          <TabsTrigger value="channels">{t("config.notifications.tabsChannels")}</TabsTrigger>
+          <TabsTrigger value="templates">{t("config.notifications.tabsTemplates")}</TabsTrigger>
+          <TabsTrigger value="preferences">{t("config.notifications.tabsPreferences")}</TabsTrigger>
         </TabsList>
 
+        {/* Tab: Canales */}
         <TabsContent value="channels" className="space-y-6">
-          {/* Email SMTP */}
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-lg font-semibold">Email (SMTP)</h3>
-                <p className="text-sm text-gray-600">
-                  Configuración del servidor SMTP para envío de correos
-                </p>
-              </div>
+          {/* SMTP */}
+          <ConfigSection
+            title={t("config.notifications.emailSMTP")}
+            description={t("config.notifications.emailSMTPDesc")}
+          >
+            <div className="flex items-center space-x-2 pb-4">
               <Switch
-                checked={smtpConfig.enabled}
-                onCheckedChange={(checked) =>
-                  setSmtpConfig({ ...smtpConfig, enabled: checked })
-                }
+                checked={smtpForm.values.enabled}
+                onCheckedChange={(checked) => smtpForm.setValue("enabled", checked)}
+                id="smtp_enabled"
+              />
+              <Label htmlFor="smtp_enabled">{t("config.notifications.enabled")}</Label>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ConfigFormField
+                label={t("config.notifications.smtpServer")}
+                id="smtp_host"
+                value={smtpForm.values.host}
+                onChange={(value) => smtpForm.setValue("host", value)}
+                placeholder="smtp.example.com"
+                error={smtpForm.errors.host}
+                required
+              />
+              <ConfigFormField
+                label={t("config.notifications.smtpPort")}
+                id="smtp_port"
+                type="number"
+                value={String(smtpForm.values.port)}
+                onChange={(value) => smtpForm.setValue("port", parseInt(value) || 587)}
+                error={smtpForm.errors.port}
+                required
+              />
+              <ConfigFormField
+                label={t("config.notifications.smtpUser")}
+                id="smtp_user"
+                value={smtpForm.values.user}
+                onChange={(value) => smtpForm.setValue("user", value)}
+                error={smtpForm.errors.user}
+                required
+              />
+              <ConfigFormField
+                label={t("config.notifications.smtpPassword")}
+                id="smtp_password"
+                type="password"
+                value={smtpForm.values.password || ""}
+                onChange={(value) => smtpForm.setValue("password", value || null)}
+                description={t("config.notifications.smtpPasswordPlaceholder")}
+              />
+              <ConfigFormField
+                label={t("config.notifications.fromEmail")}
+                id="smtp_from_email"
+                type="email"
+                value={smtpForm.values.from_email}
+                onChange={(value) => smtpForm.setValue("from_email", value)}
+                error={smtpForm.errors.from_email}
+                required
+              />
+              <ConfigFormField
+                label={t("config.notifications.fromName")}
+                id="smtp_from_name"
+                value={smtpForm.values.from_name}
+                onChange={(value) => smtpForm.setValue("from_name", value)}
+                error={smtpForm.errors.from_name}
+                required
               />
             </div>
-
-            {smtpConfig.enabled && (
-              <div className="space-y-4 mt-4 pt-4 border-t">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="smtpHost">Servidor SMTP</Label>
-                    <Input
-                      id="smtpHost"
-                      value={smtpConfig.host}
-                      onChange={(e) =>
-                        setSmtpConfig({ ...smtpConfig, host: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="smtpPort">Puerto</Label>
-                    <Input
-                      id="smtpPort"
-                      type="number"
-                      value={smtpConfig.port}
-                      onChange={(e) =>
-                        setSmtpConfig({ ...smtpConfig, port: parseInt(e.target.value) || 587 })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="smtpUser">Usuario</Label>
-                    <Input
-                      id="smtpUser"
-                      value={smtpConfig.user}
-                      onChange={(e) =>
-                        setSmtpConfig({ ...smtpConfig, user: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="smtpPassword">Contraseña</Label>
-                    <Input
-                      id="smtpPassword"
-                      type="password"
-                      value={smtpConfig.password}
-                      onChange={(e) =>
-                        setSmtpConfig({ ...smtpConfig, password: e.target.value })
-                      }
-                      placeholder="Dejar vacío para no cambiar"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="fromEmail">Email Remitente</Label>
-                    <Input
-                      id="fromEmail"
-                      type="email"
-                      value={smtpConfig.from_email}
-                      onChange={(e) =>
-                        setSmtpConfig({ ...smtpConfig, from_email: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="fromName">Nombre Remitente</Label>
-                    <Input
-                      id="fromName"
-                      value={smtpConfig.from_name || ""}
-                      onChange={(e) =>
-                        setSmtpConfig({ ...smtpConfig, from_name: e.target.value })
-                      }
-                    />
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="useTLS" className="flex items-center gap-2 cursor-pointer">
-                    <Switch
-                      id="useTLS"
-                      checked={smtpConfig.use_tls}
-                      onCheckedChange={(checked) =>
-                        setSmtpConfig({ ...smtpConfig, use_tls: checked })
-                      }
-                    />
-                    Usar TLS
-                  </Label>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" onClick={handleTestSMTP} disabled={smtpTestMutation.isPending}>
-                    {smtpTestMutation.isPending ? "Probando..." : "Probar Conexión"}
-                  </Button>
-                  <Button onClick={handleSaveSMTP} disabled={smtpMutation.isPending}>
-                    {smtpMutation.isPending ? "Guardando..." : "Guardar Configuración"}
-                  </Button>
-                </div>
-                {smtpTestMutation.isSuccess && (
-                  <div className="bg-green-50 border border-green-200 rounded p-3">
-                    <p className="text-sm text-green-800">✅ {smtpTestMutation.data.data.message}</p>
-                  </div>
-                )}
-                {smtpTestMutation.isError && (
-                  <div className="bg-red-50 border border-red-200 rounded p-3">
-                    <p className="text-sm text-red-800">
-                      Error: {smtpTestMutation.error instanceof Error ? smtpTestMutation.error.message : "Error desconocido"}
-                    </p>
-                  </div>
-                )}
-                {smtpMutation.isSuccess && (
-                  <div className="bg-green-50 border border-green-200 rounded p-3">
-                    <p className="text-sm text-green-800">✅ Configuración SMTP guardada exitosamente</p>
-                  </div>
-                )}
-                {smtpMutation.isError && (
-                  <div className="bg-red-50 border border-red-200 rounded p-3">
-                    <p className="text-sm text-red-800">
-                      Error: {smtpMutation.error instanceof Error ? smtpMutation.error.message : "Error desconocido"}
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* SMS */}
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-lg font-semibold">SMS</h3>
-                <p className="text-sm text-gray-600">
-                  Notificaciones por mensaje de texto (Twilio, etc.)
-                </p>
-              </div>
+            <div className="flex items-center space-x-2 pt-4">
               <Switch
-                checked={smsConfig.enabled}
-                onCheckedChange={(checked) =>
-                  setSmsConfig({ ...smsConfig, enabled: checked })
-                }
+                checked={smtpForm.values.use_tls}
+                onCheckedChange={(checked) => smtpForm.setValue("use_tls", checked)}
+                id="smtp_use_tls"
               />
+              <Label htmlFor="smtp_use_tls">{t("config.notifications.useTLS")}</Label>
             </div>
-            {smsConfig.enabled && (
-              <div className="space-y-4 mt-4 pt-4 border-t">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="smsProvider">Proveedor</Label>
-                    <Input
-                      id="smsProvider"
-                      value={smsConfig.provider}
-                      onChange={(e) =>
-                        setSmsConfig({ ...smsConfig, provider: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="smsAccountSid">Account SID</Label>
-                    <Input
-                      id="smsAccountSid"
-                      value={smsConfig.account_sid || ""}
-                      onChange={(e) =>
-                        setSmsConfig({ ...smsConfig, account_sid: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="smsAuthToken">Auth Token</Label>
-                    <Input
-                      id="smsAuthToken"
-                      type="password"
-                      value={smsConfig.auth_token || ""}
-                      onChange={(e) =>
-                        setSmsConfig({ ...smsConfig, auth_token: e.target.value })
-                      }
-                      placeholder="Dejar vacío para no cambiar"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="smsFromNumber">Número Remitente</Label>
-                    <Input
-                      id="smsFromNumber"
-                      value={smsConfig.from_number || ""}
-                      onChange={(e) =>
-                        setSmsConfig({ ...smsConfig, from_number: e.target.value })
-                      }
-                    />
-                  </div>
-                </div>
-                <Button onClick={handleSaveSMS} disabled={smsMutation.isPending}>
-                  {smsMutation.isPending ? "Guardando..." : "Guardar Configuración"}
-                </Button>
-                {smsMutation.isSuccess && (
-                  <div className="bg-green-50 border border-green-200 rounded p-3">
-                    <p className="text-sm text-green-800">✅ Configuración SMS guardada exitosamente</p>
-                  </div>
-                )}
-                {smsMutation.isError && (
-                  <div className="bg-red-50 border border-red-200 rounded p-3">
-                    <p className="text-sm text-red-800">
-                      Error: {smsMutation.error instanceof Error ? smsMutation.error.message : "Error desconocido"}
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Webhooks */}
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-lg font-semibold">Webhooks</h3>
-                <p className="text-sm text-gray-600">
-                  Enviar notificaciones a URLs externas
-                </p>
-              </div>
-              <Switch
-                checked={webhookConfig.enabled}
-                onCheckedChange={(checked) =>
-                  setWebhookConfig({ ...webhookConfig, enabled: checked })
-                }
-              />
-            </div>
-            {webhookConfig.enabled && (
-              <div className="space-y-4 mt-4 pt-4 border-t">
-                <div className="space-y-2">
-                  <Label htmlFor="webhookUrl">URL del Webhook</Label>
-                  <Input
-                    id="webhookUrl"
-                    type="url"
-                    placeholder="https://api.example.com/webhook"
-                    value={webhookConfig.url}
-                    onChange={(e) =>
-                      setWebhookConfig({ ...webhookConfig, url: e.target.value })
-                    }
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="webhookSecret">Secret (Opcional)</Label>
-                    <Input
-                      id="webhookSecret"
-                      type="password"
-                      value={webhookConfig.secret || ""}
-                      onChange={(e) =>
-                        setWebhookConfig({ ...webhookConfig, secret: e.target.value })
-                      }
-                      placeholder="Dejar vacío para no cambiar"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="webhookTimeout">Timeout (segundos)</Label>
-                    <Input
-                      id="webhookTimeout"
-                      type="number"
-                      value={webhookConfig.timeout}
-                      onChange={(e) =>
-                        setWebhookConfig({
-                          ...webhookConfig,
-                          timeout: parseInt(e.target.value) || 30,
-                        })
-                      }
-                    />
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" onClick={handleTestWebhook} disabled={webhookTestMutation.isPending}>
-                    {webhookTestMutation.isPending ? "Probando..." : "Probar Webhook"}
-                  </Button>
-                  <Button onClick={handleSaveWebhook} disabled={webhookMutation.isPending}>
-                    {webhookMutation.isPending ? "Guardando..." : "Guardar Configuración"}
-                  </Button>
-                </div>
-                {webhookTestMutation.isSuccess && (
-                  <div className="bg-green-50 border border-green-200 rounded p-3">
-                    <p className="text-sm text-green-800">✅ {webhookTestMutation.data.data.message}</p>
-                  </div>
-                )}
-                {webhookTestMutation.isError && (
-                  <div className="bg-red-50 border border-red-200 rounded p-3">
-                    <p className="text-sm text-red-800">
-                      Error: {webhookTestMutation.error instanceof Error ? webhookTestMutation.error.message : "Error desconocido"}
-                    </p>
-                  </div>
-                )}
-                {webhookMutation.isSuccess && (
-                  <div className="bg-green-50 border border-green-200 rounded p-3">
-                    <p className="text-sm text-green-800">✅ Configuración Webhook guardada exitosamente</p>
-                  </div>
-                )}
-                {webhookMutation.isError && (
-                  <div className="bg-red-50 border border-red-200 rounded p-3">
-                    <p className="text-sm text-red-800">
-                      Error: {webhookMutation.error instanceof Error ? webhookMutation.error.message : "Error desconocido"}
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="templates" className="space-y-4">
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-4">Plantillas de Notificaciones</h3>
-            <p className="text-gray-600">
-              Gestiona las plantillas de correos y mensajes del sistema
-            </p>
-            <div className="mt-4">
-              <Button variant="outline" disabled>
-                Ver Plantillas (Próximamente)
+            <div className="flex gap-4 pt-4">
+              <Button
+                variant="outline"
+                onClick={handleTestSMTP}
+                disabled={testSMTPMutation.isPending || !smtpForm.values.enabled}
+              >
+                {testSMTPMutation.isPending ? t("config.common.testing") : t("config.notifications.testConnection")}
+              </Button>
+              <Button
+                onClick={handleSaveSMTP}
+                disabled={!smtpForm.hasChanges || isSavingSMTP || !smtpForm.isValid}
+              >
+                {isSavingSMTP ? t("config.common.saving") : t("config.notifications.saveConfig")}
               </Button>
             </div>
-          </div>
+          </ConfigSection>
+
+          {/* SMS */}
+          <ConfigSection
+            title={t("config.notifications.sms")}
+            description={t("config.notifications.smsDesc")}
+          >
+            <div className="flex items-center space-x-2 pb-4">
+              <Switch
+                checked={smsForm.values.enabled}
+                onCheckedChange={(checked) => smsForm.setValue("enabled", checked)}
+                id="sms_enabled"
+              />
+              <Label htmlFor="sms_enabled">{t("config.notifications.enabled")}</Label>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ConfigFormField
+                label={t("config.notifications.smsAccountSid")}
+                id="sms_account_sid"
+                value={smsForm.values.account_sid || ""}
+                onChange={(value) => smsForm.setValue("account_sid", value || null)}
+              />
+              <ConfigFormField
+                label={t("config.notifications.smsAuthToken")}
+                id="sms_auth_token"
+                type="password"
+                value={smsForm.values.auth_token || ""}
+                onChange={(value) => smsForm.setValue("auth_token", value || null)}
+              />
+              <ConfigFormField
+                label={t("config.notifications.smsFromNumber")}
+                id="sms_from_number"
+                value={smsForm.values.from_number || ""}
+                onChange={(value) => smsForm.setValue("from_number", value || null)}
+                placeholder={t("config.notifications.smsFromNumber")}
+                className="md:col-span-2"
+              />
+            </div>
+            <div className="flex gap-4 pt-4">
+              <Button
+                onClick={handleSaveSMS}
+                disabled={!smsForm.hasChanges || isSavingSMS || !smsForm.isValid}
+              >
+                {isSavingSMS ? t("config.common.saving") : t("config.notifications.saveConfig")}
+              </Button>
+            </div>
+          </ConfigSection>
+
+          {/* Webhooks */}
+          <ConfigSection
+            title={t("config.notifications.webhooks")}
+            description={t("config.notifications.webhooksDesc")}
+          >
+            <div className="flex items-center space-x-2 pb-4">
+              <Switch
+                checked={webhookForm.values.enabled}
+                onCheckedChange={(checked) => webhookForm.setValue("enabled", checked)}
+                id="webhook_enabled"
+              />
+              <Label htmlFor="webhook_enabled">{t("config.notifications.enabled")}</Label>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ConfigFormField
+                label={t("config.notifications.webhookUrl")}
+                id="webhook_url"
+                value={webhookForm.values.url}
+                onChange={(value) => webhookForm.setValue("url", value)}
+                placeholder={t("config.notifications.webhookUrlPlaceholder")}
+                error={webhookForm.errors.url}
+                required
+                className="md:col-span-2"
+              />
+              <ConfigFormField
+                label={t("config.notifications.webhookSecret")}
+                id="webhook_secret"
+                type="password"
+                value={webhookForm.values.secret || ""}
+                onChange={(value) => webhookForm.setValue("secret", value || null)}
+              />
+              <ConfigFormField
+                label={t("config.notifications.webhookTimeout")}
+                id="webhook_timeout"
+                type="number"
+                value={String(webhookForm.values.timeout)}
+                onChange={(value) => webhookForm.setValue("timeout", parseInt(value) || 30)}
+                error={webhookForm.errors.timeout}
+                required
+              />
+            </div>
+            <div className="flex gap-4 pt-4">
+              <Button
+                variant="outline"
+                onClick={handleTestWebhook}
+                disabled={testWebhookMutation.isPending || !webhookForm.values.enabled}
+              >
+                {testWebhookMutation.isPending ? t("config.common.testing") : t("config.notifications.testWebhook")}
+              </Button>
+              <Button
+                onClick={handleSaveWebhook}
+                disabled={!webhookForm.hasChanges || isSavingWebhook || !webhookForm.isValid}
+              >
+                {isSavingWebhook ? t("config.common.saving") : t("config.notifications.saveConfig")}
+              </Button>
+            </div>
+          </ConfigSection>
         </TabsContent>
 
-        <TabsContent value="preferences" className="space-y-4">
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-4">Preferencias de Usuario</h3>
-            <p className="text-gray-600">
-              Los usuarios pueden configurar sus preferencias individuales de notificaciones
+        {/* Tab: Plantillas */}
+        <TabsContent value="templates">
+          {showTemplateEditor ? (
+            <TemplateEditor
+              template={editingTemplate}
+              onSuccess={() => {
+                setShowTemplateEditor(false);
+                setEditingTemplate(null);
+              }}
+              onCancel={() => {
+                setShowTemplateEditor(false);
+                setEditingTemplate(null);
+              }}
+            />
+          ) : (
+            <TemplateList
+              onEdit={(template) => {
+                setEditingTemplate(template);
+                setShowTemplateEditor(true);
+              }}
+              onCreate={() => {
+                setEditingTemplate(null);
+                setShowTemplateEditor(true);
+              }}
+            />
+          )}
+        </TabsContent>
+
+        {/* Tab: Preferencias */}
+        <TabsContent value="preferences">
+          <ConfigSection
+            title={t("config.notifications.preferencesTitle")}
+            description={t("config.notifications.preferencesDesc")}
+          >
+            <p className="text-muted-foreground">
+              {t("config.notifications.templatesComingSoon")}
             </p>
-          </div>
+          </ConfigSection>
         </TabsContent>
       </Tabs>
-    </div>
+    </ConfigPageLayout>
   );
 }

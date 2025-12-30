@@ -35,8 +35,10 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       _hasHydrated: false, // Track hydration state
       setAuth: (user, token, refreshToken) => {
+        // Store access token in localStorage
         localStorage.setItem("auth_token", token);
-        localStorage.setItem("refresh_token", refreshToken);
+        // Refresh token is now stored in httpOnly cookie, not localStorage
+        // We keep refreshToken in state for backward compatibility but don't store it
         set({ user, token, refreshToken, isAuthenticated: true });
       },
       // Helper to sync from localStorage (used when localStorage changes externally)
@@ -82,7 +84,8 @@ export const useAuthStore = create<AuthState>()(
         return false;
       },
       setRefreshToken: (refreshToken) => {
-        localStorage.setItem("refresh_token", refreshToken);
+        // Refresh token is now in cookie, not localStorage
+        // Keep in state for backward compatibility
         set({ refreshToken });
       },
       refreshAccessToken: async () => {
@@ -109,7 +112,8 @@ export const useAuthStore = create<AuthState>()(
       },
       clearAuth: () => {
         localStorage.removeItem("auth_token");
-        localStorage.removeItem("refresh_token");
+        // Refresh token is in httpOnly cookie, cannot be deleted from JS
+        // Cookie will be deleted by backend on logout or will expire
         set({ user: null, token: null, refreshToken: null, isAuthenticated: false });
 
         // Limpiar cache del Service Worker

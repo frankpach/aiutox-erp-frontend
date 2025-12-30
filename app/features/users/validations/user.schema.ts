@@ -41,7 +41,7 @@ export const userUpdateSchema = z.object({
   full_name: z.string().optional().nullable(),
   date_of_birth: z.string().optional().nullable(),
   gender: z.string().optional().nullable(),
-  nationality: z.string().length(2).optional().nullable(),
+  nationality: z.string().length(2).optional().nullable().or(z.literal("")),
   marital_status: z.string().optional().nullable(),
   job_title: z.string().optional().nullable(),
   department: z.string().optional().nullable(),
@@ -53,10 +53,26 @@ export const userUpdateSchema = z.object({
   notes: z.string().optional().nullable(),
   is_active: z.boolean().optional().nullable(),
   two_factor_enabled: z.boolean().optional().nullable(),
-});
+}).refine(
+  (data) => !data.nationality || data.nationality === "" || data.nationality.length === 2,
+  {
+    message: "La nacionalidad debe ser un código de 2 letras (ISO 3166-1 alpha-2) o estar vacía",
+    path: ["nationality"],
+  }
+);
 
 export type UserCreateFormData = z.infer<typeof userCreateSchema>;
 export type UserUpdateFormData = z.infer<typeof userUpdateSchema>;
+
+
+
+
+
+
+
+
+
+
 
 
 

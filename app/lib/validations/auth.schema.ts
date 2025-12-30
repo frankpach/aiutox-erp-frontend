@@ -17,6 +17,7 @@ export const loginSchema = z.object({
     .string()
     .min(1, "La contraseña es requerida")
     .min(8, "La contraseña debe tener al menos 8 caracteres"),
+  remember_me: z.boolean().default(false),
 });
 
 export type LoginFormData = z.infer<typeof loginSchema>;

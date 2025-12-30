@@ -54,10 +54,10 @@ function NavigationItemComponent({
       className={cn(
         "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md mx-2",
         "transition-all duration-150 ease-[cubic-bezier(0.4,0,0.2,1)]",
-        "hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[#023E87] focus:ring-offset-2",
+        "hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
         isActive
-          ? "bg-[#023E87]/10 text-[#023E87]"
-          : "text-[#121212] hover:text-[#023E87]",
+          ? "bg-primary/10 text-primary"
+          : "text-foreground hover:text-primary",
         isCollapsed && "justify-center px-2"
       )}
       style={{ paddingLeft: isCollapsed ? undefined : `${paddingLeft}px` }}
@@ -69,7 +69,7 @@ function NavigationItemComponent({
         <HugeiconsIcon
           icon={item.icon}
           size={18}
-          color={isActive ? "#023E87" : "#121212"}
+          color={isActive ? "hsl(var(--primary))" : "hsl(var(--foreground))"}
           strokeWidth={1.5}
           className="transition-colors duration-150"
         />
@@ -83,7 +83,7 @@ function NavigationItemComponent({
         {item.label}
       </span>
       {item.badge !== undefined && item.badge > 0 && !isCollapsed && (
-        <span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-semibold text-white bg-[#023E87] rounded-full transition-all duration-150">
+        <span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-semibold text-primary-foreground bg-primary rounded-full transition-all duration-150">
           {item.badge > 99 ? "99+" : item.badge}
         </span>
       )}
@@ -134,7 +134,7 @@ function ModuleNodeComponent({
   if (isCollapsed) {
     // In collapsed mode, show all items with icons only
     return (
-      <div className="space-y-1">
+      <div className="space-y-1 m-1">
         {module.items.map((item) => (
           <NavigationItemComponent
             key={item.id}
@@ -148,17 +148,17 @@ function ModuleNodeComponent({
   }
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-1 m-1">
       {/* Module header (clickable to expand/collapse) - only if multiple items */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
         className={cn(
           "w-full flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-md mx-2",
           "transition-all duration-150 ease-[cubic-bezier(0.4,0,0.2,1)]",
-          "hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[#023E87] focus:ring-offset-2",
+          "hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
           hasActiveItem
-            ? "bg-[#023E87]/5 text-[#023E87]"
-            : "text-[#333333] hover:text-[#023E87]"
+            ? "bg-primary/5 text-primary"
+            : "text-foreground hover:text-primary"
         )}
         aria-expanded={isExpanded}
         aria-label={`${module.name} module`}
@@ -171,7 +171,7 @@ function ModuleNodeComponent({
         <HugeiconsIcon
           icon={FolderIcon}
           size={18}
-          color={hasActiveItem ? "#023E87" : "#333333"}
+          color={hasActiveItem ? "hsl(var(--primary))" : "hsl(var(--foreground))"}
           strokeWidth={1.5}
           className="transition-colors duration-150"
         />
@@ -231,7 +231,7 @@ function CategoryNodeComponent({
   if (isCollapsed) {
     // In collapsed mode, show modules without category headers
     return (
-      <div className="space-y-1">
+      <div className="space-y-1 m-1">
         {Array.from(modules.values()).map((module) => (
           <ModuleNodeComponent
             key={module.id}
@@ -247,7 +247,7 @@ function CategoryNodeComponent({
   // ✅ SIMPLIFIED: Hide category header for "_root" category (top-level items like Dashboard)
   if (categoryName === "_root") {
     return (
-      <div className="space-y-1">
+      <div className="space-y-1 m-1">
         {Array.from(modules.values()).map((module) => (
           <ModuleNodeComponent
             key={module.id}
@@ -261,17 +261,17 @@ function CategoryNodeComponent({
   }
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-1 m-1">
       {/* Category header */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
         className={cn(
           "w-full flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-md mx-2",
           "transition-all duration-150 ease-[cubic-bezier(0.4,0,0.2,1)]",
-          "hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[#023E87] focus:ring-offset-2",
+          "hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
           hasActiveItem
-            ? "bg-[#023E87]/5 text-[#023E87]"
-            : "text-[#666666] hover:text-[#023E87]"
+            ? "bg-primary/5 text-primary"
+            : "text-muted-foreground hover:text-primary"
         )}
         aria-expanded={isExpanded}
         aria-label={`${categoryName} category`}
@@ -291,7 +291,7 @@ function CategoryNodeComponent({
             // ✅ FIXED: If module id ends with "-direct", render items directly (no module header)
             if (module.id.endsWith("-direct")) {
               return (
-                <div key={module.id} className="space-y-0.5">
+                <div key={module.id} className="space-y-0.5 m-1">
                   {module.items.map((item) => (
                     <NavigationItemComponent
                       key={item.id}
@@ -336,7 +336,7 @@ export function NavigationTree({ isCollapsed = false }: NavigationTreeProps) {
   if (!navigationTree || navigationTree.categories.size === 0) {
     return (
       <div className={cn(
-        "py-8 text-center text-sm text-gray-500",
+        "py-8 text-center text-sm text-muted-foreground",
         isCollapsed ? "px-2" : "px-4"
       )}>
         {isCollapsed ? (
@@ -344,7 +344,7 @@ export function NavigationTree({ isCollapsed = false }: NavigationTreeProps) {
             <HugeiconsIcon
               icon={FolderIcon}
               size={24}
-              color="#9CA3AF"
+              color="hsl(var(--muted-foreground))"
               strokeWidth={1.5}
             />
           </div>

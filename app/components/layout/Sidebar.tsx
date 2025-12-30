@@ -73,8 +73,8 @@ export function Sidebar({
         data-sidebar
         className={cn(
           "fixed lg:static inset-y-0 left-0 z-50",
-          "w-64 bg-gray-50 border-r border-gray-200",
-          "flex flex-col",
+          "w-64 bg-[hsl(var(--sidebar))] shadow-[2px_0_8px_rgba(0,0,0,0.04)]",
+          "flex flex-col h-screen lg:h-full",
           "transition-[width,transform] duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]",
           "lg:translate-x-0",
           isOpen ? "translate-x-0" : "-translate-x-full",
@@ -84,7 +84,7 @@ export function Sidebar({
         aria-label="Navegación principal"
       >
         {/* Logo/Header */}
-        <div className="h-16 px-4 flex items-center justify-center border-b border-gray-200 bg-white overflow-hidden">
+        <div className="h-16 px-4 flex items-center justify-center bg-[hsl(var(--sidebar))] overflow-hidden transition-all duration-200">
           <div className="flex items-center gap-3 w-full min-w-0">
             <img
               src="/logo-icon.png"
@@ -95,10 +95,10 @@ export function Sidebar({
               src="/logo-name.png"
               alt="AiutoX"
               className={cn(
-                "h-6 object-contain transition-all duration-200",
+                "h-6 object-contain transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
                 isCollapsed
-                  ? "opacity-0 w-0 invisible"
-                  : "opacity-100 w-auto visible"
+                  ? "opacity-0 w-0 invisible scale-95"
+                  : "opacity-100 w-auto visible scale-100"
               )}
             />
           </div>
@@ -106,7 +106,7 @@ export function Sidebar({
 
         {/* Tenant Switcher */}
         {isAuthenticated && (
-          <div className="px-2 py-3 border-b border-gray-200 bg-white">
+          <div className="px-2 py-2.5 bg-muted/40">
             <TenantSwitcher isCollapsed={isCollapsed} />
           </div>
         )}
@@ -117,7 +117,7 @@ export function Sidebar({
             <NavigationTree isCollapsed={isCollapsed} />
           ) : (
             <div className={cn(
-              "px-4 py-8 text-center text-sm text-gray-500",
+              "px-4 py-8 text-center text-sm text-muted-foreground",
               isCollapsed && "px-2"
             )}>
               {isCollapsed ? "🔒" : "Inicia sesión para ver la navegación"}
@@ -126,19 +126,19 @@ export function Sidebar({
         </nav>
 
         {/* Botón de colapsar/expandir (solo desktop) */}
-        <div className="hidden lg:flex items-center justify-center py-3 border-t border-gray-200 bg-white">
+        <div className="hidden lg:flex items-center justify-center h-12 bg-[hsl(var(--sidebar))]">
           <Button
             variant="ghost"
             size="icon"
             onClick={onToggleCollapse}
-            className="h-8 w-8"
+            className="h-9 w-9 hover:bg-accent"
             aria-label={isCollapsed ? "Expandir menú" : "Colapsar menú"}
             title={isCollapsed ? "Expandir menú" : "Colapsar menú"}
           >
             {isCollapsed ? (
-              <ChevronRight className="h-5 w-5 text-[#023E87]" />
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
             ) : (
-              <ChevronLeft className="h-5 w-5 text-[#023E87]" />
+              <ChevronLeft className="h-4 w-4 text-muted-foreground" />
             )}
           </Button>
         </div>

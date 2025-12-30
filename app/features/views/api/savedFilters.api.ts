@@ -27,6 +27,7 @@ export async function getSavedFilters(
       page_size: params?.page_size || 20,
     },
   });
+
   return response.data;
 }
 

@@ -26,15 +26,19 @@
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
-    --radius: 0.5rem;
+    --radius: 0.25rem; /* small radius */
+    --sidebar: 0 0% 98%;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.12);
   }
 
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
+    --card: 222.2 84% 6%;
     --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
+    --popover: 222.2 84% 6%;
     --popover-foreground: 210 40% 98%;
     --primary: 210 40% 98%;
     --primary-foreground: 222.2 47.4% 11.2%;
@@ -46,18 +50,57 @@
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
+    --border: 217.2 32.6% 20%;
+    --input: 217.2 32.6% 20%;
     --ring: 212.7 26.8% 83.9%;
+    --sidebar: 222.2 84% 6%;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.5);
   }
 }
 
 html,
 body {
+  height: 100%;
+  overflow: hidden;
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
 
   @media (prefers-color-scheme: dark) {
     color-scheme: dark;
+  }
+}
+
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Scrollbar personalizado para sidebar */
+@layer base {
+  [data-sidebar] nav::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  [data-sidebar] nav::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  [data-sidebar] nav::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 3px;
+  }
+
+  [data-sidebar] nav::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground));
+  }
+
+  .dark [data-sidebar] nav::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+  }
+
+  .dark [data-sidebar] nav::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground));
   }
 }

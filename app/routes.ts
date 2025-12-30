@@ -11,6 +11,7 @@ export default [
   route("/dashboard", "routes/dashboard.tsx"),
   route("/users", "routes/users.tsx"),
   route("/users/:id", "routes/users.$id.tsx"),
+  route("/users/:id/edit", "routes/users.$id.edit.tsx"),
   route("/users/:id/roles", "routes/users.$id.roles.tsx"),
   route("/users/:id/permissions", "routes/users.$id.permissions.tsx"),
   // Config routes

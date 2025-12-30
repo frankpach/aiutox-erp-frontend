@@ -10,15 +10,19 @@ export function Footer() {
 
   return (
     <footer
-      className="h-12 bg-gray-50 flex items-center justify-center shadow-[0_-2px_8px_rgba(0,0,0,0.05)]"
+      className="h-12 flex-shrink-0 bg-muted/30 flex items-center justify-center shadow-[0_-2px_8px_rgba(0,0,0,0.03)]"
       role="contentinfo"
     >
-      <div className="text-sm text-gray-600">
+      <div className="text-sm text-muted-foreground">
         © {currentYear} AiutoX ERP | v{version}
       </div>
     </footer>
   );
 }
+
+
+
+
 
 
 

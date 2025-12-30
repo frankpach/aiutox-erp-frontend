@@ -209,8 +209,8 @@ test.describe("Import/Export Configuration", () => {
     await importExportPage.goto();
     await importExportPage.clickTab("import");
 
-    // Verify import button exists
-    const importButton = page.locator('button:has-text("Importar"), button:has-text("Import")');
+    // Verify import button exists - use data-testid or specific button text to avoid tab ambiguity
+    const importButton = page.locator('[data-testid="import-button"], button:has-text("Iniciar Importación")');
     await expect(importButton).toBeVisible();
   });
 
@@ -220,8 +220,8 @@ test.describe("Import/Export Configuration", () => {
     await importExportPage.goto();
     await importExportPage.clickTab("export");
 
-    // Verify export button exists
-    const exportButton = page.locator('button:has-text("Exportar"), button:has-text("Export")');
+    // Verify export button exists - use data-testid or specific button text to avoid tab ambiguity
+    const exportButton = page.locator('[data-testid="export-button"], button:has-text("Iniciar Exportación")');
     await expect(exportButton).toBeVisible();
   });
 });

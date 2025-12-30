@@ -8,6 +8,24 @@
 const API_BASE_URL = process.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 /**
+ * Get current user info (to get tenant_id)
+ */
+async function getCurrentUser(token: string) {
+  const response = await fetch(`${API_BASE_URL}/api/v1/auth/me`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to get current user");
+  }
+
+  const data = await response.json();
+  return data.data;
+}
+
+/**
  * Create a test user via API
  */
 export async function createTestUser(data: {
@@ -16,13 +34,25 @@ export async function createTestUser(data: {
   full_name: string;
   tenant_id?: string;
 }) {
+  const token = await getAdminToken();
+
+  // Si no se proporciona tenant_id, obtenerlo del usuario admin
+  let tenantId = data.tenant_id;
+  if (!tenantId) {
+    const currentUser = await getCurrentUser(token);
+    tenantId = currentUser.tenant_id;
+  }
+
   const response = await fetch(`${API_BASE_URL}/api/v1/users`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${await getAdminToken()}`,
+      Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify(data),
+    body: JSON.stringify({
+      ...data,
+      tenant_id: tenantId,
+    }),
   });
 
   if (!response.ok) {
@@ -135,6 +165,16 @@ export async function cleanupTestUsers(emails: string[]) {
     }
   }
 }
+
+
+
+
+
+
+
+
+
+
 
 
 

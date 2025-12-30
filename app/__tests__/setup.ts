@@ -1,5 +1,18 @@
-import { expect, afterEach } from "vitest";
+import { expect, afterEach, beforeAll, afterAll } from "vitest";
 import * as matchers from "@testing-library/jest-dom/matchers";
+
+// Mock ResizeObserver for Radix UI components
+global.ResizeObserver = class ResizeObserver {
+  observe() {
+    // Mock implementation
+  }
+  unobserve() {
+    // Mock implementation
+  }
+  disconnect() {
+    // Mock implementation
+  }
+};
 
 // CRITICAL: Configure React.act BEFORE importing @testing-library/react
 // @testing-library/react checks for React.act when it loads, so we must set it up first
@@ -37,11 +50,27 @@ try {
 // It will find React.act when it checks
 import { cleanup } from "@testing-library/react";
 
+// MSW setup
+import { server } from "./msw/server";
+
 // Extend Vitest's expect with jest-dom matchers
 expect.extend(matchers);
 
-// Cleanup after each test
+// Establish API mocking before all tests
+// Use "warn" instead of "error" to see what requests are not being handled
+beforeAll(() => {
+  server.listen({ onUnhandledRequest: "warn" });
+});
+
+// Reset any request handlers that are declared as a part of our tests
+// (i.e. for testing one-off error scenarios)
 afterEach(() => {
   cleanup();
+  server.resetHandlers();
+});
+
+// Clean up after the tests are finished
+afterAll(() => {
+  server.close();
 });
 

@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Badge } from "~/components/ui/badge";
 import { TenantFilter } from "~/components/common/TenantFilter";
 import { LoadingSpinner } from "~/components/common/LoadingSpinner";
+import { useTranslation } from "~/lib/i18n/useTranslation";
 import { useUserPermissions, usePermissionsByModule } from "../hooks/useUserPermissions";
 import { ModulePermissionsView } from "./ModulePermissionsView";
 import type { User } from "../types/user.types";
@@ -26,6 +27,7 @@ export function UserPermissionsManager({
   user,
   onUpdate,
 }: UserPermissionsManagerProps) {
+  const { t } = useTranslation();
   const { permissions, loading } = useUserPermissions(user.id);
   const [selectedTenantId, setSelectedTenantId] = useState<string | null>(
     user.tenant_id || null
@@ -38,7 +40,7 @@ export function UserPermissionsManager({
   if (loading || loadingGroups) {
     return (
       <div className="flex items-center justify-center py-8">
-        <LoadingSpinner size="md" text="Cargando permisos..." />
+        <LoadingSpinner size="md" text={t("users.loadingPermissions") || "Cargando permisos..."} />
       </div>
     );
   }
@@ -63,9 +65,9 @@ export function UserPermissionsManager({
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-lg font-semibold">Permisos del Usuario</h3>
+        <h3 className="text-lg font-semibold">{t("users.userPermissionsTitle") || "Permisos del Usuario"}</h3>
         <p className="text-sm text-muted-foreground">
-          Permisos efectivos del usuario (de roles y delegaciones)
+          {t("users.userPermissionsDescription") || "Permisos efectivos del usuario (de roles y delegaciones)"}
         </p>
       </div>
 
@@ -73,20 +75,20 @@ export function UserPermissionsManager({
       <TenantFilter
         selectedTenantId={selectedTenantId || undefined}
         onTenantChange={setSelectedTenantId}
-        label="Filtrar por Tenant"
+        label={t("users.filterByTenant") || "Filtrar por Tenant"}
       />
 
       {/* Permissions Summary */}
       {permissions && (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div className="rounded-md border p-4">
-            <p className="text-sm text-muted-foreground">De Roles Globales</p>
+            <p className="text-sm text-muted-foreground">{t("users.fromGlobalRoles") || "De Roles Globales"}</p>
             <p className="text-2xl font-bold">
               {permissions.global_role_permissions.length}
             </p>
           </div>
           <div className="rounded-md border p-4">
-            <p className="text-sm text-muted-foreground">De Roles de Módulo</p>
+            <p className="text-sm text-muted-foreground">{t("users.fromModuleRoles") || "De Roles de Módulo"}</p>
             <p className="text-2xl font-bold">
               {Object.values(permissions.module_role_permissions).reduce(
                 (sum, perms) => sum + perms.length,
@@ -95,7 +97,7 @@ export function UserPermissionsManager({
             </p>
           </div>
           <div className="rounded-md border p-4">
-            <p className="text-sm text-muted-foreground">Delegados</p>
+            <p className="text-sm text-muted-foreground">{t("users.delegated") || "Delegados"}</p>
             <p className="text-2xl font-bold">
               {permissions.delegated_permissions.filter(
                 (d) => !selectedTenantId || d.permission.startsWith(`${selectedTenantId}.`)
@@ -108,7 +110,7 @@ export function UserPermissionsManager({
       {/* Permissions by Module */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
-          <TabsTrigger value="all">Todos</TabsTrigger>
+          <TabsTrigger value="all">{t("users.all") || "Todos"}</TabsTrigger>
           {permissionGroups.map((group) => (
             <TabsTrigger key={group.module_id} value={group.module_id}>
               {group.module_name}
@@ -138,7 +140,7 @@ export function UserPermissionsManager({
               {/* Delegated Permissions for this module */}
               {delegatedByModule.has(group.module_id) && (
                 <div className="mt-4 rounded-md border p-4">
-                  <h4 className="font-medium mb-2">Permisos Delegados</h4>
+                  <h4 className="font-medium mb-2">{t("users.delegatedPermissions") || "Permisos Delegados"}</h4>
                   <div className="space-y-2">
                     {delegatedByModule.get(group.module_id)!.map((delegated) => (
                       <div
@@ -151,7 +153,7 @@ export function UserPermissionsManager({
                           </p>
                           {delegated.expires_at && (
                             <p className="text-xs text-muted-foreground">
-                              Expira: {new Date(delegated.expires_at).toLocaleDateString()}
+                              {t("users.expiresAt") || "Expira"}: {new Date(delegated.expires_at).toLocaleDateString()}
                             </p>
                           )}
                         </div>
@@ -160,7 +162,7 @@ export function UserPermissionsManager({
                             delegated.is_active ? "default" : "secondary"
                           }
                         >
-                          {delegated.is_active ? "Activo" : "Revocado"}
+                          {delegated.is_active ? (t("users.active") || "Activo") : (t("users.revoked") || "Revocado")}
                         </Badge>
                       </div>
                     ))}
@@ -174,6 +176,11 @@ export function UserPermissionsManager({
     </div>
   );
 }
+
+
+
+
+
 
 
 

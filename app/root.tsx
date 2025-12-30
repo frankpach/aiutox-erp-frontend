@@ -7,6 +7,7 @@ import {
   ScrollRestoration,
   useLocation,
 } from "react-router";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import type { Route } from "./+types/root";
 import "./app.css";
@@ -17,6 +18,22 @@ import { AppShell } from "~/components/layout";
 import { useAuthStore } from "~/stores/authStore";
 import { ToastProvider } from "~/components/common/Toast";
 import { PWAUpdatePrompt } from "~/components/common/PWAUpdatePrompt";
+import { ThemeProvider } from "~/providers";
+
+// Create QueryClient with optimized configuration
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      refetchOnWindowFocus: false, // No refetch al cambiar de pestaña
+      retry: 1, // Solo 1 retry
+      gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+    },
+    mutations: {
+      retry: 1,
+    },
+  },
+});
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -37,29 +54,30 @@ export const links: Route.LinksFunction = () => [
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es">
-      <head>
+      <head suppressHydrationWarning>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
 
         {/* PWA Meta Tags */}
         <meta name="theme-color" content="#3C3A47" />
+        <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="AiutoX ERP" />
         <meta name="description" content="Sistema ERP modular y extensible para gestión empresarial" />
 
-        {/* Security Headers */}
+        {/* Security Headers - Note: X-Frame-Options and frame-ancestors must be set via HTTP headers, not meta tags */}
         <meta httpEquiv="X-Content-Type-Options" content="nosniff" />
-        <meta httpEquiv="X-Frame-Options" content="DENY" />
         <meta httpEquiv="X-XSS-Protection" content="1; mode=block" />
         <meta httpEquiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
         <meta httpEquiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=()" />
         {/* Content Security Policy - Basic
             Note: 'unsafe-inline' and 'unsafe-eval' are needed for Vite/React Router
-            In production, consider using nonces or hashes for stricter CSP */}
+            frame-ancestors is ignored in meta tags and must be set via HTTP headers
+            In production, configure these headers in your web server (nginx, Apache, etc.) */}
         <meta
           httpEquiv="Content-Security-Policy"
-          content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' http://localhost:8000 https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; worker-src 'self' blob:;"
+          content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' http://localhost:8000 https:; base-uri 'self'; form-action 'self'; worker-src 'self' blob:;"
         />
         <Meta />
         <Links />
@@ -94,36 +112,35 @@ export default function App() {
     location.pathname === route || location.pathname.startsWith(`${route}/`)
   );
 
-  // Si es ruta pública, renderizar sin AppShell
-  if (isPublicRoute) {
-    return (
-      <>
-        <Outlet />
-        <PWAUpdatePrompt />
-      </>
-    );
-  }
-
-  // Si no está autenticado y no es ruta pública, el ProtectedRoute se encargará del redirect
-  // Pero aún así no usamos AppShell aquí
-  if (!isAuthenticated) {
-    return (
-      <>
-        <Outlet />
-        <PWAUpdatePrompt />
-      </>
-    );
-  }
-
-  // Rutas protegidas y autenticadas usan AppShell
-  return (
+  // Wrap everything with QueryClientProvider and ThemeProvider
+  const content = (
     <>
-      <AppShell>
-        <Outlet />
-      </AppShell>
-      <ToastProvider />
-      <PWAUpdatePrompt />
+      {isPublicRoute ? (
+        <>
+          <Outlet />
+          <PWAUpdatePrompt />
+        </>
+      ) : !isAuthenticated ? (
+        <>
+          <Outlet />
+          <PWAUpdatePrompt />
+        </>
+      ) : (
+        <>
+          <AppShell>
+            <Outlet />
+          </AppShell>
+          <ToastProvider />
+          <PWAUpdatePrompt />
+        </>
+      )}
     </>
+  );
+
+  return (
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>{content}</QueryClientProvider>
+    </ThemeProvider>
   );
 }
 

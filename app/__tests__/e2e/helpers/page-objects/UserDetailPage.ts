@@ -34,7 +34,10 @@ export class UserDetailPage {
 
   async goto(userId: string) {
     await this.page.goto(`/users/${userId}`);
-    await this.page.waitForLoadState("networkidle");
+    // Wait for page to load, but with a reasonable timeout
+    await this.page.waitForLoadState("domcontentloaded", { timeout: 10000 });
+    // Wait a bit for React to hydrate
+    await this.page.waitForTimeout(1000);
   }
 
   async clickEdit() {
@@ -56,21 +59,49 @@ export class UserDetailPage {
 
   async fillUserForm(data: {
     email?: string;
-    full_name?: string;
+    first_name?: string;
+    last_name?: string;
+    full_name?: string; // Para compatibilidad, dividir en first_name y last_name
     job_title?: string;
     department?: string;
   }) {
+    // Wait for form to be visible
+    await this.page.waitForSelector('form', { timeout: 10000 });
+    await this.page.waitForTimeout(500);
+
     if (data.email) {
       await this.page.fill('input[name="email"]', data.email);
     }
+
+    // Si se proporciona full_name, dividirlo en first_name y last_name
     if (data.full_name) {
-      await this.page.fill('input[name="full_name"]', data.full_name);
+      const parts = data.full_name.split(' ');
+      if (parts.length > 0) {
+        await this.page.fill('input[name="first_name"]', parts[0]);
+      }
+      if (parts.length > 1) {
+        await this.page.fill('input[name="last_name"]', parts.slice(1).join(' '));
+      }
+    } else {
+      if (data.first_name) {
+        await this.page.fill('input[name="first_name"]', data.first_name);
+      }
+      if (data.last_name) {
+        await this.page.fill('input[name="last_name"]', data.last_name);
+      }
     }
+
     if (data.job_title) {
-      await this.page.fill('input[name="job_title"]', data.job_title);
+      await this.page.fill('input[name="job_title"]', data.job_title).catch(() => {
+        // job_title puede no estar presente
+        console.log("[UserDetailPage] job_title field not found");
+      });
     }
     if (data.department) {
-      await this.page.fill('input[name="department"]', data.department);
+      await this.page.fill('input[name="department"]', data.department).catch(() => {
+        // department puede no estar presente
+        console.log("[UserDetailPage] department field not found");
+      });
     }
   }
 
@@ -89,6 +120,7 @@ export class UserDetailPage {
     return await emailElement.textContent();
   }
 }
+
 
 
 

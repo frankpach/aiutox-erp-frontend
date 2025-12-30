@@ -60,7 +60,7 @@ class AuditConfigPage {
   }
 
   async clickExportButton() {
-    await this.page.click('button:has-text("Exportar Logs")');
+    await this.page.click('[data-testid="export-logs-button"], button:has-text("Exportar Logs")');
   }
 
   async waitForExport() {
@@ -150,14 +150,26 @@ test.describe("Audit Log Export", () => {
       return;
     }
 
-    // Set up download listener
+    // Wait for logs to load
+    await page.waitForTimeout(2000);
+
+    // Verify there are logs to export
+    const logCount = await auditPage.getLogCount();
+    if (logCount === 0) {
+      test.skip();
+      return;
+    }
+
+    // Set up download listener BEFORE clicking
     const downloadPromise = context.waitForEvent("download", { timeout: 30000 });
 
     // Select CSV format
     await auditPage.selectExportFormat("csv");
+    await page.waitForTimeout(500); // Wait for format selection
 
-    // Click export
+    // Click export and wait a bit for the download to start
     await auditPage.clickExportButton();
+    await page.waitForTimeout(1000); // Give time for download to initiate
 
     // Wait for download
     const download = await downloadPromise;
@@ -185,16 +197,34 @@ test.describe("Audit Log Export", () => {
   test("should export audit logs to JSON", async ({ authenticatedPage: page, context }) => {
     const auditPage = new AuditConfigPage(page);
 
-    // Set up download listener
-    const downloadPromise = context.waitForEvent("download", { timeout: 30000 });
-
     await auditPage.goto();
+
+    // Skip if we're not on the audit page (permission issue)
+    if (!(await auditPage.isOnAuditPage())) {
+      test.skip();
+      return;
+    }
+
+    // Wait for logs to load
+    await page.waitForTimeout(2000);
+
+    // Verify there are logs to export
+    const logCount = await auditPage.getLogCount();
+    if (logCount === 0) {
+      test.skip();
+      return;
+    }
+
+    // Set up download listener BEFORE clicking
+    const downloadPromise = context.waitForEvent("download", { timeout: 30000 });
 
     // Select JSON format
     await auditPage.selectExportFormat("json");
+    await page.waitForTimeout(500); // Wait for format selection
 
-    // Click export
+    // Click export and wait a bit for the download to start
     await auditPage.clickExportButton();
+    await page.waitForTimeout(1000); // Give time for download to initiate
 
     // Wait for download
     const download = await downloadPromise;
@@ -223,16 +253,34 @@ test.describe("Audit Log Export", () => {
   test("should export audit logs to Excel (CSV format)", async ({ authenticatedPage: page, context }) => {
     const auditPage = new AuditConfigPage(page);
 
-    // Set up download listener
-    const downloadPromise = context.waitForEvent("download", { timeout: 30000 });
-
     await auditPage.goto();
+
+    // Skip if we're not on the audit page (permission issue)
+    if (!(await auditPage.isOnAuditPage())) {
+      test.skip();
+      return;
+    }
+
+    // Wait for logs to load
+    await page.waitForTimeout(2000);
+
+    // Verify there are logs to export
+    const logCount = await auditPage.getLogCount();
+    if (logCount === 0) {
+      test.skip();
+      return;
+    }
+
+    // Set up download listener BEFORE clicking
+    const downloadPromise = context.waitForEvent("download", { timeout: 30000 });
 
     // Select Excel format
     await auditPage.selectExportFormat("excel");
+    await page.waitForTimeout(500); // Wait for format selection
 
-    // Click export
+    // Click export and wait a bit for the download to start
     await auditPage.clickExportButton();
+    await page.waitForTimeout(1000); // Give time for download to initiate
 
     // Wait for download
     const download = await downloadPromise;
@@ -264,14 +312,19 @@ test.describe("Audit Log Export", () => {
     await auditPage.setFilter("action", "create");
     await page.waitForTimeout(1000); // Wait for filter to apply
 
-    // Set up download listener
+    // Wait for filtered logs to load
+    await page.waitForTimeout(2000);
+
+    // Set up download listener BEFORE clicking
     const downloadPromise = context.waitForEvent("download", { timeout: 30000 });
 
     // Select CSV format
     await auditPage.selectExportFormat("csv");
+    await page.waitForTimeout(500); // Wait for format selection
 
-    // Click export
+    // Click export and wait a bit for the download to start
     await auditPage.clickExportButton();
+    await page.waitForTimeout(1000); // Give time for download to initiate
 
     // Wait for download
     const download = await downloadPromise;

@@ -1,11 +1,12 @@
 import { useCallback } from "react";
 import { useAuthStore } from "~/stores/authStore";
-import apiClient from "~/lib/api/client";
+import apiClient, { scheduleProactiveRefresh } from "~/lib/api/client";
 import type { TokenResponse } from "~/lib/api/types/auth.types";
 
 interface LoginCredentials {
   email: string;
   password: string;
+  remember_me?: boolean;
 }
 
 interface StandardResponse<T> {
@@ -28,19 +29,6 @@ export function useAuth() {
 
   const login = useCallback(
     async (credentials: LoginCredentials) => {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/bd91a56b-aa7d-44fb-ac11-0977789d60c5', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          location: 'useAuth.ts:login',
-          message: 'login function called',
-          data: { email: credentials.email },
-          timestamp: Date.now(),
-          sessionId: 'login-debug'
-        })
-      }).catch(() => {});
-      // #endregion
       try {
         // Login returns StandardResponse[TokenResponse]
         console.log("Attempting login to:", `${import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"}/api/v1/auth/login`);
@@ -73,6 +61,9 @@ export function useAuth() {
 
         // Store both tokens using setAuth (which handles localStorage)
         setAuth(user, tokenData.access_token, tokenData.refresh_token);
+
+        // Schedule proactive token refresh
+        scheduleProactiveRefresh(tokenData.access_token);
 
         // Fetch encryption secret after successful login
         try {

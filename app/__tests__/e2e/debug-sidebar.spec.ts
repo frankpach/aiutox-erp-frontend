@@ -72,3 +72,12 @@ test("Debug: Ver contenido del sidebar", async ({ page }) => {
   console.log("\n✅ Test de debug completado!");
 });
 
+
+
+
+
+
+
+
+
+

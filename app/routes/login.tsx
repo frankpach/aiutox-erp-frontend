@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useRef } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { useAuth } from "~/hooks/useAuth";
@@ -13,6 +13,7 @@ import { PublicLayout } from "~/components/public/PublicLayout";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { Checkbox } from "~/components/ui/checkbox";
 import { loginSchema, type LoginFormData } from "~/lib/validations/auth.schema";
 import { Loader2 } from "lucide-react";
 import { checkRateLimit } from "~/lib/security/rateLimit";
@@ -40,9 +41,13 @@ export default function LoginPage() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
+    defaultValues: {
+      remember_me: false,
+    },
   });
 
   // Handle navigation after login success using useEffect
@@ -93,19 +98,6 @@ export default function LoginPage() {
   }
 
   const onSubmit = async (data: LoginFormData, e?: React.BaseSyntheticEvent) => {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/bd91a56b-aa7d-44fb-ac11-0977789d60c5', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        location: 'login.tsx:onSubmit',
-        message: 'onSubmit function called',
-        data: { email: data.email, hasPassword: !!data.password },
-        timestamp: Date.now(),
-        sessionId: 'login-debug'
-      })
-    }).catch(() => {});
-    // #endregion
 
     // Prevent default form submission (handleSubmit already does this, but be explicit)
     if (e) {
@@ -240,22 +232,9 @@ export default function LoginPage() {
     <PublicLayout title="Iniciar Sesión">
       <form
         onSubmit={(e) => {
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/bd91a56b-aa7d-44fb-ac11-0977789d60c5', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              location: 'login.tsx:form.onSubmit',
-              message: 'Form onSubmit triggered',
-              data: { target: e?.target?.constructor?.name },
-              timestamp: Date.now(),
-              sessionId: 'login-debug'
-            })
-          }).catch(() => {});
-          // #endregion
+          e.preventDefault(); // Prevent default form submission
           handleSubmit(onSubmit)(e);
         }}
-        method="post"
         className="space-y-6"
       >
         {/* Error Message */}
@@ -295,6 +274,28 @@ export default function LoginPage() {
           {errors.password && (
             <p className="text-sm text-red-600">{errors.password.message}</p>
           )}
+        </div>
+
+        {/* Remember Me Checkbox */}
+        <div className="flex items-center space-x-2">
+          <Controller
+            name="remember_me"
+            control={control}
+            render={({ field }) => (
+              <Checkbox
+                id="remember_me"
+                checked={field.value}
+                onCheckedChange={field.onChange}
+                disabled={isLoading}
+              />
+            )}
+          />
+          <Label
+            htmlFor="remember_me"
+            className="text-sm font-normal cursor-pointer"
+          >
+            Recordarme
+          </Label>
         </div>
 
         {/* Forgot Password Link */}

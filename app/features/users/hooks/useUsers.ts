@@ -2,18 +2,20 @@
  * React hooks for user management
  *
  * Provides CRUD operations and state management for users
- * with encrypted caching support
+ * using React Query for intelligent caching and state management
  */
 
-import { useCallback, useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   listUsers,
   getUser,
   createUser,
   updateUser,
   deleteUser,
+  bulkUsersAction,
+  type BulkUsersActionRequest,
+  type BulkUsersActionResponse,
 } from "../api/users.api";
-import { cacheUserData, getCachedUserData } from "~/lib/storage/encryptedStorage";
 import { useAuthStore } from "~/stores/authStore";
 import type {
   User,
@@ -22,217 +24,243 @@ import type {
   UsersListParams,
 } from "../types/user.types";
 
-/**
- * Get encryption secret (should come from secure source in production)
- */
-function getSecret(): string {
-  return import.meta.env.VITE_ENCRYPTION_SECRET || "default-secret-change-in-production";
-}
+// Query keys for React Query
+export const userKeys = {
+  all: ["users"] as const,
+  lists: () => [...userKeys.all, "list"] as const,
+  list: (params?: UsersListParams) => [...userKeys.lists(), params] as const,
+  details: () => [...userKeys.all, "detail"] as const,
+  detail: (id: string) => [...userKeys.details(), id] as const,
+};
 
 /**
  * Hook to list users with pagination
+ * Uses React Query for intelligent caching and automatic refetching
  */
 export function useUsers(params?: UsersListParams) {
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-  const [pagination, setPagination] = useState<{
-    total: number;
-    page: number;
-    page_size: number;
-    total_pages: number;
-  } | null>(null);
+  const {
+    data: response,
+    isLoading: loading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: userKeys.list(params),
+    queryFn: () => listUsers(params),
+    staleTime: 1000 * 60 * 2, // 2 minutes
+  });
 
-  const fetchUsers = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await listUsers(params);
-      setUsers(response.data);
-      if (response.meta && "total" in response.meta) {
-        setPagination({
+  return {
+    users: response?.data || [],
+    loading,
+    error: error as Error | null,
+    pagination: response?.meta
+      ? {
           total: response.meta.total,
           page: response.meta.page,
           page_size: response.meta.page_size,
           total_pages: response.meta.total_pages,
-        });
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to load users"));
-    } finally {
-      setLoading(false);
-    }
-  }, [params]);
-
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
-
-  return {
-    users,
-    loading,
-    error,
-    pagination,
-    refresh: fetchUsers,
+        }
+      : null,
+    refresh: () => refetch(),
   };
 }
 
 /**
  * Hook to get a single user by ID
- * Uses encrypted cache for performance
+ * Uses React Query for intelligent caching
  */
 export function useUser(userId: string | null) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-  const currentUser = useAuthStore((state) => state.user);
-  const tenantId = currentUser?.tenant_id || "default-tenant";
-  const secret = getSecret();
-
-  const fetchUser = useCallback(async () => {
-    if (!userId) {
-      setUser(null);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      // Try cache first
-      const cached = await getCachedUserData<User>(userId, tenantId, secret);
-      if (cached) {
-        setUser(cached);
-        setLoading(false);
-        // Still fetch fresh data in background
-      }
-
-      // Fetch fresh data
-      const response = await getUser(userId);
-      const userData = response.data;
-      setUser(userData);
-
-      // Cache the data
-      await cacheUserData(userId, userData, tenantId, secret);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to load user"));
-    } finally {
-      setLoading(false);
-    }
-  }, [userId, tenantId, secret]);
-
-  useEffect(() => {
-    fetchUser();
-  }, [fetchUser]);
+  const {
+    data: response,
+    isLoading: loading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: userKeys.detail(userId || ""),
+    queryFn: () => {
+      if (!userId) throw new Error("User ID is required");
+      return getUser(userId);
+    },
+    enabled: !!userId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
   return {
-    user,
+    user: response?.data || null,
     loading,
-    error,
-    refresh: fetchUser,
+    error: error as Error | null,
+    refresh: () => refetch(),
   };
 }
 
 /**
  * Hook to create a user
+ * Uses React Query mutation with automatic cache invalidation
  */
 export function useCreateUser() {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+  const queryClient = useQueryClient();
 
-  const create = useCallback(async (data: UserCreate): Promise<User | null> => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await createUser(data);
-      return response.data;
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to create user"));
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const mutation = useMutation({
+    mutationFn: (data: UserCreate) => createUser(data),
+    onSuccess: () => {
+      // Invalidate users list to refetch with new user
+      queryClient.invalidateQueries({ queryKey: userKeys.lists() });
+    },
+  });
 
   return {
-    create,
-    loading,
-    error,
+    create: async (data: UserCreate): Promise<User | null> => {
+      try {
+        const response = await mutation.mutateAsync(data);
+        return response.data;
+      } catch {
+        return null;
+      }
+    },
+    loading: mutation.isPending,
+    error: mutation.error as Error | null,
   };
 }
 
 /**
  * Hook to update a user
+ * Uses React Query mutation with optimistic updates and cache invalidation
  */
 export function useUpdateUser() {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-  const currentUser = useAuthStore((state) => state.user);
-  const tenantId = currentUser?.tenant_id || "default-tenant";
-  const secret = getSecret();
+  const queryClient = useQueryClient();
 
-  const update = useCallback(
-    async (userId: string, data: UserUpdate): Promise<User | null> => {
-      setLoading(true);
-      setError(null);
+  const mutation = useMutation({
+    mutationFn: ({ userId, data }: { userId: string; data: UserUpdate }) => {
+      console.log("[useUpdateUser] Calling updateUser API:", { userId, data });
+      return updateUser(userId, data);
+    },
+    onMutate: async ({ userId, data }) => {
+      console.log("[useUpdateUser] Optimistic update starting:", { userId });
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: userKeys.detail(userId) });
 
-      try {
-        const response = await updateUser(userId, data);
-        const userData = response.data;
+      // Snapshot previous value for rollback
+      const previousUserResponse = queryClient.getQueryData<{ data: User }>(
+        userKeys.detail(userId)
+      );
+      const previousUser = previousUserResponse?.data;
 
-        // Update cache
-        await cacheUserData(userId, userData, tenantId, secret);
-
-        return userData;
-      } catch (err) {
-        setError(
-          err instanceof Error ? err : new Error("Failed to update user")
+      // Optimistically update cache
+      if (previousUser) {
+        queryClient.setQueryData(
+          userKeys.detail(userId),
+          { data: { ...previousUser, ...data } }
         );
-        return null;
-      } finally {
-        setLoading(false);
+        console.log("[useUpdateUser] Cache updated optimistically");
+      }
+
+      return { previousUser };
+    },
+    onError: (err, { userId }, context) => {
+      console.error("[useUpdateUser] Error updating user:", err);
+      // Rollback on error
+      if (context?.previousUser) {
+        queryClient.setQueryData(userKeys.detail(userId), {
+          data: context.previousUser,
+        });
+        console.log("[useUpdateUser] Cache rolled back due to error");
       }
     },
-    [tenantId, secret]
-  );
+    onSuccess: (data, { userId }) => {
+      console.log("[useUpdateUser] User update successful:", { userId, data });
+      // Invalidate to refetch fresh data
+      queryClient.invalidateQueries({ queryKey: userKeys.detail(userId) });
+      queryClient.invalidateQueries({ queryKey: userKeys.lists() });
+      console.log("[useUpdateUser] Cache invalidated for refresh");
+    },
+  });
 
   return {
-    update,
-    loading,
-    error,
+    // Expose mutateAsync directly for flexibility (used in users.$id.edit.tsx)
+    mutateAsync: mutation.mutateAsync,
+    // Expose isPending for consistency with React Query naming
+    isPending: mutation.isPending,
+    // Keep update method for backward compatibility
+    update: async (userId: string, data: UserUpdate): Promise<User | null> => {
+      try {
+        const response = await mutation.mutateAsync({ userId, data });
+        return response.data;
+      } catch {
+        return null;
+      }
+    },
+    // Keep loading as alias for isPending for backward compatibility
+    loading: mutation.isPending,
+    error: mutation.error as Error | null,
   };
 }
 
 /**
  * Hook to delete a user (soft delete)
+ * Uses React Query mutation with automatic cache invalidation
  */
 export function useDeleteUser() {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+  const queryClient = useQueryClient();
 
-  const remove = useCallback(async (userId: string): Promise<boolean> => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      await deleteUser(userId);
-      return true;
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to delete user"));
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const mutation = useMutation({
+    mutationFn: (userId: string) => deleteUser(userId),
+    onSuccess: (_data, userId) => {
+      // Remove user from cache
+      queryClient.removeQueries({ queryKey: userKeys.detail(userId) });
+      // Invalidate users list to refetch
+      queryClient.invalidateQueries({ queryKey: userKeys.lists() });
+    },
+  });
 
   return {
-    remove,
-    loading,
-    error,
+    remove: async (userId: string): Promise<boolean> => {
+      try {
+        await mutation.mutateAsync(userId);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    loading: mutation.isPending,
+    error: mutation.error as Error | null,
   };
 }
+
+/**
+ * Hook to perform bulk actions on users
+ * Uses React Query mutation with automatic cache invalidation
+ */
+export function useBulkUsersAction() {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: (data: BulkUsersActionRequest) => bulkUsersAction(data),
+    onSuccess: () => {
+      // Invalidate users list to refetch after bulk action
+      queryClient.invalidateQueries({ queryKey: userKeys.lists() });
+    },
+  });
+
+  return {
+    execute: async (
+      action: "activate" | "deactivate" | "delete",
+      userIds: string[]
+    ): Promise<BulkUsersActionResponse | null> => {
+      try {
+        const response = await mutation.mutateAsync({
+          action,
+          user_ids: userIds,
+        });
+        return response.data;
+      } catch {
+        return null;
+      }
+    },
+    loading: mutation.isPending,
+    error: mutation.error as Error | null,
+  };
+}
+
 
 
 

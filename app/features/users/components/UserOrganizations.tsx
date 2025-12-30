@@ -8,6 +8,7 @@ import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Plus, X } from "lucide-react";
 import { LoadingSpinner } from "~/components/common/LoadingSpinner";
+import { useTranslation } from "~/lib/i18n/useTranslation";
 import { useOrganizations } from "../hooks/useOrganizations";
 import type { Organization, User } from "../types/user.types";
 
@@ -23,6 +24,7 @@ interface UserOrganizationsProps {
  * For now, this component displays organizations that might be related
  */
 export function UserOrganizations({ user, onUpdate }: UserOrganizationsProps) {
+  const { t } = useTranslation();
   const { organizations, loading } = useOrganizations();
   const [selectedOrganizations, setSelectedOrganizations] = useState<string[]>(
     []
@@ -52,7 +54,7 @@ export function UserOrganizations({ user, onUpdate }: UserOrganizationsProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <LoadingSpinner size="md" text="Cargando organizaciones..." />
+        <LoadingSpinner size="md" text={t("users.loadingOrganizations") || "Cargando organizaciones..."} />
       </div>
     );
   }
@@ -105,6 +107,11 @@ export function UserOrganizations({ user, onUpdate }: UserOrganizationsProps) {
     </div>
   );
 }
+
+
+
+
+
 
 
 

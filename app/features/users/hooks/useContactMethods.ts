@@ -2,9 +2,10 @@
  * React hooks for contact methods management
  *
  * Provides CRUD operations for contact methods (polymorphic)
+ * Uses React Query for intelligent caching and automatic cache invalidation
  */
 
-import { useCallback, useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getContactMethods,
   getContactMethod,
@@ -19,211 +20,215 @@ import type {
   EntityType,
 } from "../types/user.types";
 
+// Query keys for React Query
+export const contactMethodKeys = {
+  all: ["contactMethods"] as const,
+  lists: () => [...contactMethodKeys.all, "list"] as const,
+  list: (entityType: EntityType, entityId: string) =>
+    [...contactMethodKeys.lists(), entityType, entityId] as const,
+  details: () => [...contactMethodKeys.all, "detail"] as const,
+  detail: (id: string) => [...contactMethodKeys.details(), id] as const,
+};
+
 /**
  * Hook to get contact methods for an entity
+ * Uses React Query for intelligent caching and automatic refetching
  */
 export function useContactMethods(
   entityType: EntityType | null,
   entityId: string | null
 ) {
-  const [contactMethods, setContactMethods] = useState<ContactMethod[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-
-  const fetchContactMethods = useCallback(async () => {
-    if (!entityType || !entityId) {
-      setContactMethods([]);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await getContactMethods(entityType, entityId);
-      setContactMethods(response.data);
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err
-          : new Error("Failed to load contact methods")
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [entityType, entityId]);
-
-  useEffect(() => {
-    fetchContactMethods();
-  }, [fetchContactMethods]);
+  const {
+    data: response,
+    isLoading: loading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: contactMethodKeys.list(
+      entityType || "user",
+      entityId || ""
+    ),
+    queryFn: async () => {
+      if (!entityType || !entityId) {
+        return Promise.resolve({ data: [] });
+      }
+      try {
+        const result = await getContactMethods(entityType, entityId);
+        console.log("[useContactMethods] Successfully fetched contact methods:", result);
+        return result;
+      } catch (err) {
+        console.error("[useContactMethods] Error fetching contact methods:", err);
+        // Re-throw to let React Query handle it
+        throw err;
+      }
+    },
+    enabled: !!entityType && !!entityId,
+    staleTime: 0, // Always refetch to ensure fresh data after mutations
+    retry: 1, // Only retry once on failure
+  });
 
   return {
-    contactMethods,
+    contactMethods: response?.data || [],
     loading,
-    error,
-    refresh: fetchContactMethods,
+    error: error as Error | null,
+    refresh: refetch,
   };
 }
 
 /**
  * Hook to get a single contact method by ID
+ * Uses React Query for intelligent caching
  */
 export function useContactMethod(contactMethodId: string | null) {
-  const [contactMethod, setContactMethod] = useState<ContactMethod | null>(
-    null
-  );
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-
-  const fetchContactMethod = useCallback(async () => {
-    if (!contactMethodId) {
-      setContactMethod(null);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await getContactMethod(contactMethodId);
-      setContactMethod(response.data);
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err
-          : new Error("Failed to load contact method")
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [contactMethodId]);
-
-  useEffect(() => {
-    fetchContactMethod();
-  }, [fetchContactMethod]);
+  const {
+    data: response,
+    isLoading: loading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: contactMethodKeys.detail(contactMethodId || ""),
+    queryFn: () => {
+      if (!contactMethodId) {
+        return Promise.resolve({ data: null });
+      }
+      return getContactMethod(contactMethodId);
+    },
+    enabled: !!contactMethodId,
+    staleTime: 1000 * 60 * 2, // 2 minutes
+  });
 
   return {
-    contactMethod,
+    contactMethod: response?.data || null,
     loading,
-    error,
-    refresh: fetchContactMethod,
+    error: error as Error | null,
+    refresh: refetch,
   };
 }
 
 /**
  * Hook to create a contact method
+ * Uses React Query mutation with automatic cache invalidation
  */
 export function useCreateContactMethod() {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+  const queryClient = useQueryClient();
 
-  const create = useCallback(
-    async (data: ContactMethodCreate): Promise<ContactMethod | null> => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const response = await createContactMethod(data);
-        return response.data;
-      } catch (err) {
-        setError(
-          err instanceof Error
-            ? err
-            : new Error("Failed to create contact method")
-        );
-        return null;
-      } finally {
-        setLoading(false);
-      }
+  const mutation = useMutation({
+    mutationFn: (data: ContactMethodCreate) => createContactMethod(data),
+    onSuccess: (_data, variables) => {
+      // Invalidate contact methods list for the entity
+      queryClient.invalidateQueries({
+        queryKey: contactMethodKeys.list(
+          variables.entity_type,
+          variables.entity_id
+        ),
+      });
+      // Also invalidate all lists to ensure consistency
+      queryClient.invalidateQueries({
+        queryKey: contactMethodKeys.lists(),
+      });
     },
-    []
-  );
+  });
 
   return {
-    create,
-    loading,
-    error,
+    create: async (
+      data: ContactMethodCreate
+    ): Promise<ContactMethod | null> => {
+      try {
+        const response = await mutation.mutateAsync(data);
+        return response.data;
+      } catch (error) {
+        console.error("[useCreateContactMethod] Error creating contact method:", error);
+        // Re-throw the error so the component can handle it
+        throw error;
+      }
+    },
+    loading: mutation.isPending,
+    error: mutation.error as Error | null,
   };
 }
 
 /**
  * Hook to update a contact method
+ * Uses React Query mutation with automatic cache invalidation
  */
 export function useUpdateContactMethod() {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+  const queryClient = useQueryClient();
 
-  const update = useCallback(
-    async (
+  const mutation = useMutation({
+    mutationFn: ({
+      contactMethodId,
+      data,
+    }: {
+      contactMethodId: string;
+      data: ContactMethodUpdate;
+    }) => updateContactMethod(contactMethodId, data),
+    onSuccess: (response, variables) => {
+      // Update the specific contact method in cache
+      queryClient.setQueryData(
+        contactMethodKeys.detail(variables.contactMethodId),
+        response
+      );
+      // Invalidate lists to ensure consistency
+      queryClient.invalidateQueries({
+        queryKey: contactMethodKeys.lists(),
+      });
+    },
+  });
+
+  return {
+    update: async (
       contactMethodId: string,
       data: ContactMethodUpdate
     ): Promise<ContactMethod | null> => {
-      setLoading(true);
-      setError(null);
-
       try {
-        const response = await updateContactMethod(contactMethodId, data);
+        const response = await mutation.mutateAsync({
+          contactMethodId,
+          data,
+        });
         return response.data;
       } catch (err) {
-        setError(
-          err instanceof Error
-            ? err
-            : new Error("Failed to update contact method")
-        );
+        console.error("[useUpdateContactMethod] Error updating contact method:", err);
         return null;
-      } finally {
-        setLoading(false);
       }
     },
-    []
-  );
-
-  return {
-    update,
-    loading,
-    error,
+    loading: mutation.isPending,
+    error: mutation.error as Error | null,
   };
 }
 
 /**
  * Hook to delete a contact method
+ * Uses React Query mutation with automatic cache invalidation
  */
 export function useDeleteContactMethod() {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+  const queryClient = useQueryClient();
 
-  const remove = useCallback(
-    async (contactMethodId: string): Promise<boolean> => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        await deleteContactMethod(contactMethodId);
-        return true;
-      } catch (err) {
-        setError(
-          err instanceof Error
-            ? err
-            : new Error("Failed to delete contact method")
-        );
-        return false;
-      } finally {
-        setLoading(false);
-      }
+  const mutation = useMutation({
+    mutationFn: (contactMethodId: string) =>
+      deleteContactMethod(contactMethodId),
+    onSuccess: (_data, contactMethodId) => {
+      // Remove the contact method from cache
+      queryClient.removeQueries({
+        queryKey: contactMethodKeys.detail(contactMethodId),
+      });
+      // Invalidate all lists to ensure consistency
+      queryClient.invalidateQueries({
+        queryKey: contactMethodKeys.lists(),
+      });
     },
-    []
-  );
+  });
 
   return {
-    remove,
-    loading,
-    error,
+    remove: async (contactMethodId: string): Promise<boolean> => {
+      try {
+        await mutation.mutateAsync(contactMethodId);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    loading: mutation.isPending,
+    error: mutation.error as Error | null,
   };
 }
-
-
-
-
-
-
 

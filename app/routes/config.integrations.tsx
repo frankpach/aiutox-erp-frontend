@@ -1,432 +1,467 @@
+/**
+ * Integrations Configuration Page
+ *
+ * Manage external integrations (Stripe, Twilio, Google Calendar, Slack, Zapier, Webhooks)
+ * Uses ConfigPageLayout and shared components for visual consistency
+ */
+
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
-import { Badge } from "~/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { useTranslation } from "~/lib/i18n/useTranslation";
 import {
   listIntegrations,
   activateIntegration,
   deactivateIntegration,
-  deleteIntegration,
   testIntegration,
+  deleteIntegration,
+  createIntegration,
   type Integration,
-  type IntegrationActivateRequest,
+  type IntegrationCreate,
 } from "~/lib/api/integrations.api";
+import { ConfigPageLayout } from "~/components/config/ConfigPageLayout";
+import { ConfigLoadingState } from "~/components/config/ConfigLoadingState";
+import { ConfigErrorState } from "~/components/config/ConfigErrorState";
+import { ConfigEmptyState } from "~/components/config/ConfigEmptyState";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "~/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "~/components/ui/alert-dialog";
+import { showToast } from "~/components/common/Toast";
+import { PlugIcon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 
-// Available integration types
+export function meta() {
+  return [
+    { title: "Integraciones - AiutoX ERP" },
+    { name: "description", content: "Conecta AiutoX con servicios externos" },
+  ];
+}
+
 const AVAILABLE_INTEGRATIONS = [
-  {
-    type: "stripe",
-    name: "Stripe",
-    description: "Procesamiento de pagos con Stripe",
-    icon: "💳",
-  },
-  {
-    type: "twilio",
-    name: "Twilio",
-    description: "Envío de SMS y notificaciones",
-    icon: "📱",
-  },
-  {
-    type: "google_calendar",
-    name: "Google Calendar",
-    description: "Sincronización con Google Calendar",
-    icon: "📅",
-  },
-  {
-    type: "slack",
-    name: "Slack",
-    description: "Notificaciones a canales de Slack",
-    icon: "💬",
-  },
-  {
-    type: "zapier",
-    name: "Zapier",
-    description: "Automatización con Zapier",
-    icon: "⚡",
-  },
-  {
-    type: "webhook",
-    name: "Webhook Personalizado",
-    description: "Webhook personalizado para eventos",
-    icon: "🔗",
-  },
-];
+  { id: "stripe", name: "Stripe", description: "Procesamiento de pagos con Stripe" },
+  { id: "twilio", name: "Twilio", description: "Entrega de SMS y notificaciones" },
+  { id: "google-calendar", name: "Google Calendar", description: "Sincronización con Google Calendar" },
+  { id: "slack", name: "Slack", description: "Notificaciones a canales de Slack" },
+  { id: "zapier", name: "Zapier", description: "Automatización con Zapier" },
+  { id: "webhook", name: "Webhook Personalizado", description: "Webhook personalizado para eventos" },
+] as const;
 
 export default function IntegrationsConfigPage() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const [configDialogOpen, setConfigDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedIntegration, setSelectedIntegration] = useState<Integration | null>(null);
-  const [showActivateForm, setShowActivateForm] = useState(false);
-  const [configData, setConfigData] = useState<Record<string, string>>({});
+  const [integrationToDelete, setIntegrationToDelete] = useState<Integration | null>(null);
+  const [configFormData, setConfigFormData] = useState<Record<string, string>>({});
 
-  // Fetch integrations
   const { data, isLoading, error } = useQuery({
     queryKey: ["integrations"],
-    queryFn: async () => {
-      const response = await listIntegrations();
-      return response.data;
-    },
+    queryFn: () => listIntegrations(),
   });
 
-  // Mutations
+  const integrations = data?.data || [];
+  const configured = integrations.filter((i) => i.status !== "pending");
+  const available = AVAILABLE_INTEGRATIONS.filter(
+    (ai) => !integrations.some((i) => i.type === ai.id)
+  );
+
   const activateMutation = useMutation({
-    mutationFn: async ({ id, config }: { id: string; config: Record<string, unknown> }) => {
-      return await activateIntegration(id, { config });
-    },
+    mutationFn: ({ integrationId, config }: { integrationId: string; config: Record<string, unknown> }) =>
+      activateIntegration(integrationId, { config }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["integrations"] });
-      setShowActivateForm(false);
+      showToast(t("config.integrations.activateSuccess"), "success");
+      setConfigDialogOpen(false);
       setSelectedIntegration(null);
-      setConfigData({});
+      setConfigFormData({});
+    },
+    onError: (error: Error) => {
+      showToast(error.message || t("config.integrations.errorActivating"), "error");
     },
   });
 
   const deactivateMutation = useMutation({
-    mutationFn: async (id: string) => {
-      return await deactivateIntegration(id);
-    },
+    mutationFn: (integrationId: string) => deactivateIntegration(integrationId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["integrations"] });
+      showToast(t("config.integrations.deactivateSuccess"), "success");
     },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      return await deleteIntegration(id);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["integrations"] });
+    onError: (error: Error) => {
+      showToast(error.message || t("config.integrations.errorDeactivating"), "error");
     },
   });
 
   const testMutation = useMutation({
-    mutationFn: async (id: string) => {
-      return await testIntegration(id);
+    mutationFn: (integrationId: string) => testIntegration(integrationId),
+    onSuccess: (response) => {
+      if (response.data.success) {
+        showToast(t("config.integrations.testSuccess"), "success");
+      } else {
+        showToast(response.data.message || t("config.integrations.testError"), "error");
+      }
+    },
+    onError: (error: Error) => {
+      showToast(error.message || t("config.integrations.testError"), "error");
     },
   });
 
-  const handleActivate = (integrationType: string) => {
-    const integration = data?.find((i) => i.type === integrationType);
-    if (integration) {
-      setSelectedIntegration(integration);
-      setShowActivateForm(true);
-    } else {
-      // Create new integration
-      setSelectedIntegration({
-        id: "",
-        tenant_id: "",
-        name: AVAILABLE_INTEGRATIONS.find((a) => a.type === integrationType)?.name || integrationType,
-        type: integrationType,
-        status: "inactive",
-        config: {},
-        last_sync_at: null,
-        error_message: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
-      setShowActivateForm(true);
+  const deleteMutation = useMutation({
+    mutationFn: (integrationId: string) => deleteIntegration(integrationId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["integrations"] });
+      showToast(t("config.integrations.deleteSuccess"), "success");
+      setDeleteDialogOpen(false);
+      setIntegrationToDelete(null);
+    },
+    onError: (error: Error) => {
+      showToast(error.message || t("config.integrations.deleteError"), "error");
+    },
+  });
+
+  const createMutation = useMutation({
+    mutationFn: (data: IntegrationCreate) => createIntegration(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["integrations"] });
+      showToast(t("config.integrations.createSuccess"), "success");
+      setConfigDialogOpen(false);
+      setSelectedIntegration(null);
+      setConfigFormData({});
+    },
+    onError: (error: Error) => {
+      showToast(error.message || t("config.integrations.createError"), "error");
+    },
+  });
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "active":
+        return <Badge className="bg-green-50 text-green-700 border-green-200">{t("config.integrations.statusActive")}</Badge>;
+      case "inactive":
+        return <Badge variant="secondary">{t("config.integrations.statusInactive")}</Badge>;
+      case "error":
+        return <Badge variant="destructive">{t("config.integrations.statusError")}</Badge>;
+      case "pending":
+        return <Badge variant="outline">{t("config.integrations.statusPending")}</Badge>;
+      default:
+        return null;
     }
   };
 
-  const handleSubmitActivate = () => {
-    if (!selectedIntegration) return;
-    activateMutation.mutate({
-      id: selectedIntegration.id,
-      config: configData as Record<string, unknown>,
+  const handleConfigure = (integration: typeof AVAILABLE_INTEGRATIONS[number]) => {
+    setSelectedIntegration({
+      id: "",
+      tenant_id: "",
+      name: integration.name,
+      type: integration.id,
+      status: "pending",
+      config: {},
+      last_sync_at: null,
+      error_message: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     });
+    setConfigFormData({});
+    setConfigDialogOpen(true);
   };
 
-  const getStatusBadge = (status: string) => {
-    const statusColors: Record<string, string> = {
-      active: "bg-green-100 text-green-800 border-green-200",
-      inactive: "bg-gray-100 text-gray-800 border-gray-200",
-      error: "bg-red-100 text-red-800 border-red-200",
-      pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
-    };
-    return (
-      <Badge variant="outline" className={statusColors[status] || statusColors.inactive}>
-        {status === "active" ? "Activa" : status === "error" ? "Error" : status === "pending" ? "Pendiente" : "Inactiva"}
-      </Badge>
-    );
+  const handleActivate = (integration: Integration) => {
+    if (integration.status === "active") {
+      deactivateMutation.mutate(integration.id);
+    } else {
+      setSelectedIntegration(integration);
+      setConfigFormData(integration.config as Record<string, string> || {});
+      setConfigDialogOpen(true);
+    }
   };
 
-  const getConfigFields = (type: string): Array<{ key: string; label: string; type: string; placeholder?: string }> => {
-    const fields: Record<string, Array<{ key: string; label: string; type: string; placeholder?: string }>> = {
-      stripe: [
-        { key: "api_key", label: "API Key", type: "password", placeholder: "sk_live_..." },
-        { key: "webhook_secret", label: "Webhook Secret", type: "password", placeholder: "whsec_..." },
-      ],
-      twilio: [
-        { key: "account_sid", label: "Account SID", type: "text", placeholder: "AC..." },
-        { key: "auth_token", label: "Auth Token", type: "password", placeholder: "..." },
-        { key: "from_number", label: "From Number", type: "text", placeholder: "+1234567890" },
-      ],
-      google_calendar: [
-        { key: "client_id", label: "Client ID", type: "text", placeholder: "..." },
-        { key: "client_secret", label: "Client Secret", type: "password", placeholder: "..." },
-      ],
-      slack: [
-        { key: "webhook_url", label: "Webhook URL", type: "url", placeholder: "https://hooks.slack.com/..." },
-      ],
-      zapier: [
-        { key: "api_key", label: "API Key", type: "password", placeholder: "..." },
-      ],
-      webhook: [
-        { key: "url", label: "Webhook URL", type: "url", placeholder: "https://api.example.com/webhook" },
-        { key: "secret", label: "Secret (Opcional)", type: "password", placeholder: "..." },
-      ],
-    };
-    return fields[type] || [];
+  const handleTest = (integration: Integration) => {
+    testMutation.mutate(integration.id);
+  };
+
+  const handleDelete = (integration: Integration) => {
+    setIntegrationToDelete(integration);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleSaveConfig = () => {
+    if (!selectedIntegration) return;
+
+    if (selectedIntegration.id) {
+      // Activate existing integration
+      activateMutation.mutate({
+        integrationId: selectedIntegration.id,
+        config: configFormData,
+      });
+    } else {
+      // Create new integration
+      createMutation.mutate({
+        name: selectedIntegration.name,
+        type: selectedIntegration.type,
+        config: configFormData,
+      });
+    }
+  };
+
+  const getConfigFields = (type: string) => {
+    switch (type) {
+      case "stripe":
+        return [
+          { key: "api_key", label: t("config.integrations.apiKey"), type: "password" },
+          { key: "webhook_secret", label: t("config.integrations.webhookSecret"), type: "password" },
+        ];
+      case "twilio":
+        return [
+          { key: "account_sid", label: t("config.integrations.accountSid"), type: "text" },
+          { key: "auth_token", label: t("config.integrations.authToken"), type: "password" },
+          { key: "from_number", label: t("config.integrations.fromNumber"), type: "text", placeholder: t("config.integrations.fromNumberPlaceholder") },
+        ];
+      case "google-calendar":
+        return [
+          { key: "client_id", label: t("config.integrations.clientId"), type: "text" },
+          { key: "client_secret", label: t("config.integrations.clientSecret"), type: "password" },
+        ];
+      case "slack":
+        return [
+          { key: "webhook_url", label: t("config.integrations.webhookUrl"), type: "url" },
+        ];
+      case "zapier":
+        return [
+          { key: "api_key", label: t("config.integrations.apiKey"), type: "password" },
+        ];
+      case "webhook":
+        return [
+          { key: "url", label: t("config.integrations.webhookUrl"), type: "url" },
+          { key: "secret", label: t("config.integrations.webhookSecret"), type: "password" },
+        ];
+      default:
+        return [];
+    }
   };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <p>Cargando integraciones...</p>
-      </div>
+      <ConfigPageLayout
+        title={t("config.integrations.title")}
+        description={t("config.integrations.description")}
+        loading={true}
+      >
+        <ConfigLoadingState lines={6} />
+      </ConfigPageLayout>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-md p-4">
-        <p className="text-red-800">
-          Error al cargar integraciones: {error instanceof Error ? error.message : "Error desconocido"}
-        </p>
-      </div>
+      <ConfigPageLayout
+        title={t("config.integrations.title")}
+        description={t("config.integrations.description")}
+        error={error instanceof Error ? error : String(error)}
+      >
+        <ConfigErrorState message={t("config.integrations.errorLoading")} />
+      </ConfigPageLayout>
     );
   }
 
-  const configuredIntegrations = data || [];
-  const availableTypes = AVAILABLE_INTEGRATIONS.map((a) => a.type);
-  const configuredTypes = configuredIntegrations.map((i) => i.type);
-
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Integraciones</h1>
-          <p className="text-muted-foreground mt-1">
-            Conecta AiutoX con servicios externos
-          </p>
-        </div>
-      </div>
-
-      {showActivateForm && selectedIntegration && (
-        <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">
-              Configurar {selectedIntegration.name || AVAILABLE_INTEGRATIONS.find((a) => a.type === selectedIntegration.type)?.name}
-            </h2>
-            <Button variant="outline" onClick={() => {
-              setShowActivateForm(false);
-              setSelectedIntegration(null);
-              setConfigData({});
-            }}>
-              Cancelar
-            </Button>
-          </div>
-          <div className="space-y-4">
-            {getConfigFields(selectedIntegration.type).map((field) => (
-              <div key={field.key} className="space-y-2">
-                <Label htmlFor={field.key}>{field.label}</Label>
-                <Input
-                  id={field.key}
-                  type={field.type}
-                  placeholder={field.placeholder}
-                  value={configData[field.key] || ""}
-                  onChange={(e) =>
-                    setConfigData({ ...configData, [field.key]: e.target.value })
-                  }
-                />
-              </div>
-            ))}
-            <div className="flex gap-2">
-              <Button
-                onClick={handleSubmitActivate}
-                disabled={activateMutation.isPending}
-              >
-                {activateMutation.isPending ? "Activando..." : "Activar Integración"}
-              </Button>
-            </div>
-            {activateMutation.isError && (
-              <div className="bg-red-50 border border-red-200 rounded p-3">
-                <p className="text-sm text-red-800">
-                  Error: {activateMutation.error instanceof Error ? activateMutation.error.message : "Error desconocido"}
-                </p>
-              </div>
-            )}
-            {activateMutation.isSuccess && (
-              <div className="bg-green-50 border border-green-200 rounded p-3">
-                <p className="text-sm text-green-800">✅ Integración activada exitosamente</p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      <Tabs defaultValue="configured" className="w-full">
+    <ConfigPageLayout
+      title={t("config.integrations.title")}
+      description={t("config.integrations.description")}
+    >
+      <Tabs defaultValue="configured" className="space-y-6">
         <TabsList>
-          <TabsTrigger value="configured">Configuradas ({configuredIntegrations.length})</TabsTrigger>
-          <TabsTrigger value="available">Disponibles</TabsTrigger>
+          <TabsTrigger value="configured">
+            {t("config.integrations.tabsConfigured")} ({configured.length})
+          </TabsTrigger>
+          <TabsTrigger value="available">
+            {t("config.integrations.tabsAvailable")} ({available.length})
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="configured" className="space-y-4">
-          {configuredIntegrations.length > 0 ? (
+        <TabsContent value="configured">
+          {configured.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {configuredIntegrations.map((integration) => {
-                const integrationInfo = AVAILABLE_INTEGRATIONS.find((a) => a.type === integration.type);
-                return (
-                  <div
-                    key={integration.id}
-                    className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <h3 className="text-lg font-semibold">
-                          {integrationInfo?.icon} {integration.name}
-                        </h3>
-                        <div className="mt-2">{getStatusBadge(integration.status)}</div>
+              {configured.map((integration) => (
+                <Card key={integration.id} className="hover:shadow-md transition-shadow">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <HugeiconsIcon icon={PlugIcon} size={24} className="text-muted-foreground" />
+                        <CardTitle>{integration.name}</CardTitle>
                       </div>
-                      <Badge variant="outline">{integration.type}</Badge>
+                      {getStatusBadge(integration.status)}
                     </div>
-                    <p className="text-sm text-gray-600 mb-4">
-                      {integrationInfo?.description || integration.type}
-                    </p>
-                    {integration.error_message && (
-                      <div className="bg-red-50 border border-red-200 rounded p-2 mb-4">
-                        <p className="text-xs text-red-800">{integration.error_message}</p>
-                      </div>
-                    )}
+                    <CardDescription>{integration.type}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
                     {integration.last_sync_at && (
-                      <p className="text-xs text-gray-500 mb-4">
-                        Última sincronización: {new Date(integration.last_sync_at).toLocaleString()}
+                      <p className="text-sm text-muted-foreground">
+                        {t("config.integrations.lastSync")}: {new Date(integration.last_sync_at).toLocaleString()}
                       </p>
                     )}
+                    {integration.error_message && (
+                      <p className="text-sm text-destructive">{integration.error_message}</p>
+                    )}
                     <div className="flex gap-2">
-                      {integration.status === "active" ? (
-                        <>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedIntegration(integration);
-                              setShowActivateForm(true);
-                              setConfigData(integration.config as Record<string, string>);
-                            }}
-                          >
-                            Configurar
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => testMutation.mutate(integration.id)}
-                            disabled={testMutation.isPending}
-                          >
-                            {testMutation.isPending ? "Probando..." : "Probar"}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => deactivateMutation.mutate(integration.id)}
-                            disabled={deactivateMutation.isPending}
-                          >
-                            Desactivar
-                          </Button>
-                        </>
-                      ) : (
-                        <Button
-                          size="sm"
-                          onClick={() => handleActivate(integration.type)}
-                          className="w-full"
-                        >
-                          Activar
-                        </Button>
-                      )}
                       <Button
-                        variant="outline"
                         size="sm"
-                        className="text-red-600"
-                        onClick={() => {
-                          if (confirm("¿Estás seguro de eliminar esta integración?")) {
-                            deleteMutation.mutate(integration.id);
-                          }
-                        }}
+                        variant="outline"
+                        onClick={() => handleTest(integration)}
+                        disabled={testMutation.isPending}
+                      >
+                        {testMutation.isPending ? t("config.common.testing") : t("config.integrations.test")}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleActivate(integration)}
+                        disabled={activateMutation.isPending || deactivateMutation.isPending}
+                      >
+                        {integration.status === "active"
+                          ? t("config.integrations.deactivate")
+                          : t("config.integrations.activate")}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleDelete(integration)}
                         disabled={deleteMutation.isPending}
                       >
-                        Eliminar
+                        {t("config.integrations.delete")}
                       </Button>
                     </div>
-                    {testMutation.isSuccess && testMutation.data?.data && (
-                      <div className="mt-2 bg-green-50 border border-green-200 rounded p-2">
-                        <p className="text-xs text-green-800">
-                          ✅ {testMutation.data.data.message}
-                        </p>
-                      </div>
-                    )}
-                    {testMutation.isError && (
-                      <div className="mt-2 bg-red-50 border border-red-200 rounded p-2">
-                        <p className="text-xs text-red-800">
-                          Error: {testMutation.error instanceof Error ? testMutation.error.message : "Error desconocido"}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           ) : (
-            <div className="bg-white border border-gray-200 rounded-lg p-6 text-center">
-              <p className="text-gray-500">No hay integraciones configuradas</p>
-            </div>
+            <ConfigEmptyState
+              title={t("config.integrations.noIntegrations")}
+              description={t("config.integrations.noIntegrationsDesc")}
+            />
           )}
         </TabsContent>
 
-        <TabsContent value="available" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {AVAILABLE_INTEGRATIONS.map((integration) => {
-              const isConfigured = configuredTypes.includes(integration.type);
-              const configuredIntegration = configuredIntegrations.find((i) => i.type === integration.type);
-              return (
-                <div
-                  key={integration.type}
-                  className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <h3 className="text-lg font-semibold">
-                        {integration.icon} {integration.name}
-                      </h3>
-                      {isConfigured && configuredIntegration && (
-                        <div className="mt-2">{getStatusBadge(configuredIntegration.status)}</div>
-                      )}
+        <TabsContent value="available">
+          {available.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {available.map((integration) => (
+                <Card key={integration.id} className="hover:shadow-md transition-shadow">
+                  <CardHeader>
+                    <div className="flex items-center gap-2">
+                      <HugeiconsIcon icon={PlugIcon} size={24} className="text-muted-foreground" />
+                      <CardTitle>{integration.name}</CardTitle>
                     </div>
-                    <Badge variant="outline">{integration.type}</Badge>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-4">{integration.description}</p>
-                  <Button
-                    variant={isConfigured ? "outline" : "default"}
-                    className="w-full"
-                    onClick={() => {
-                      if (isConfigured && configuredIntegration) {
-                        setSelectedIntegration(configuredIntegration);
-                        setShowActivateForm(true);
-                        setConfigData(configuredIntegration.config as Record<string, string>);
-                      } else {
-                        handleActivate(integration.type);
-                      }
-                    }}
-                  >
-                    {isConfigured ? "Configurar" : "Activar"}
-                  </Button>
-                </div>
-              );
-            })}
-          </div>
+                    <CardDescription>{integration.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button onClick={() => handleConfigure(integration)}>
+                      {t("config.integrations.configure")}
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <ConfigEmptyState
+              title={t("config.integrations.allConfigured")}
+              description={t("config.integrations.allConfiguredDesc")}
+            />
+          )}
         </TabsContent>
       </Tabs>
-    </div>
+
+      {/* Configuration Dialog */}
+      <Dialog open={configDialogOpen} onOpenChange={setConfigDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              {t("config.integrations.configDialogTitle")} {selectedIntegration?.name}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedIntegration
+                ? AVAILABLE_INTEGRATIONS.find((i) => i.id === selectedIntegration.type)?.description ||
+                  selectedIntegration.name
+                : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            {selectedIntegration &&
+              getConfigFields(selectedIntegration.type).map((field) => (
+                <div key={field.key} className="space-y-2">
+                  <Label htmlFor={field.key}>{field.label}</Label>
+                  <Input
+                    id={field.key}
+                    type={field.type === "password" ? "password" : field.type === "url" ? "url" : "text"}
+                    value={configFormData[field.key] || ""}
+                    onChange={(e) =>
+                      setConfigFormData({ ...configFormData, [field.key]: e.target.value })
+                    }
+                    placeholder={field.placeholder}
+                  />
+                </div>
+              ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfigDialogOpen(false)}>
+              {t("config.common.cancel")}
+            </Button>
+            <Button
+              onClick={handleSaveConfig}
+              disabled={activateMutation.isPending || createMutation.isPending}
+            >
+              {activateMutation.isPending || createMutation.isPending
+                ? t("config.common.saving")
+                : selectedIntegration?.id
+                ? t("config.integrations.activate")
+                : t("config.integrations.configure")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("config.integrations.deleteConfirmTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {integrationToDelete
+                ? t("config.integrations.deleteConfirmMessage").replace(/{name}/g, integrationToDelete.name)
+                : t("config.integrations.deleteConfirm")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("config.common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => integrationToDelete && deleteMutation.mutate(integrationToDelete.id)}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {t("config.integrations.delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </ConfigPageLayout>
   );
 }

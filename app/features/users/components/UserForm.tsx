@@ -10,7 +10,7 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
-import { sanitizeString, sanitizeEmail, sanitizeUrl } from "~/lib/security/sanitize";
+import { sanitizeUserFormData } from "~/lib/security/sanitizeFormData";
 import {
   Select,
   SelectContent,
@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Switch } from "~/components/ui/switch";
+import { useTranslation } from "~/lib/i18n/useTranslation";
 import type { User, UserCreate, UserUpdate } from "../types/user.types";
 import {
   userCreateSchema,
@@ -43,6 +44,7 @@ export function UserForm({
   onCancel,
   loading = false,
 }: UserFormProps) {
+  const { t } = useTranslation();
   const isEditing = !!user;
   const schema = isEditing ? userUpdateSchema : userCreateSchema;
 
@@ -89,29 +91,61 @@ export function UserForm({
   const onSubmitForm = async (
     data: UserCreateFormData | UserUpdateFormData
   ) => {
-    // Sanitize inputs before submission
-    const sanitizedData = {
-      ...data,
-      email: sanitizeEmail(data.email || ""),
-      first_name: data.first_name ? sanitizeString(data.first_name) : null,
-      last_name: data.last_name ? sanitizeString(data.last_name) : null,
-      middle_name: data.middle_name ? sanitizeString(data.middle_name) : null,
-      job_title: data.job_title ? sanitizeString(data.job_title) : null,
-      department: data.department ? sanitizeString(data.department) : null,
-      avatar_url: data.avatar_url ? sanitizeUrl(data.avatar_url) : null,
-      bio: data.bio ? sanitizeString(data.bio) : null,
-      notes: data.notes ? sanitizeString(data.notes) : null,
-    };
+    console.log("[UserForm] onSubmitForm called:", { isEditing, data });
+    try {
+      // Sanitize inputs before submission
+      const sanitizedData = sanitizeUserFormData(data);
+      console.log("[UserForm] Data sanitized:", sanitizedData);
 
-    await onSubmit(sanitizedData as UserCreate | UserUpdate);
+      // Remove empty strings and convert to null for optional fields
+      const cleanedData: any = {};
+      for (const [key, value] of Object.entries(sanitizedData)) {
+        if (value !== undefined) {
+          // Convert empty strings to null for optional fields
+          if (value === "" && (key !== "email" || !isEditing)) {
+            cleanedData[key] = null;
+          } else {
+            cleanedData[key] = value;
+          }
+        }
+      }
+      console.log("[UserForm] Data cleaned:", cleanedData);
+
+      await onSubmit(cleanedData as UserCreate | UserUpdate);
+      console.log("[UserForm] onSubmit completed successfully");
+    } catch (error: any) {
+      console.error("[UserForm] Error in onSubmitForm:", error);
+      // Log detailed error information
+      if (error?.response) {
+        console.error("[UserForm] Error response details:", {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data,
+        });
+      }
+      // Re-throw to let react-hook-form handle it and show validation errors
+      throw error;
+    }
   };
 
+  // Log form state for debugging
+  if (Object.keys(errors).length > 0) {
+    console.log("[UserForm] Form validation errors:", errors);
+  }
+
   return (
-    <form onSubmit={handleSubmit(onSubmitForm)} className="space-y-6">
+    <form
+      onSubmit={(e) => {
+        console.log("[UserForm] Form submit event triggered");
+        e.preventDefault();
+        handleSubmit(onSubmitForm)(e);
+      }}
+      className="space-y-6"
+    >
       {/* Email */}
       <div className="space-y-2">
         <Label htmlFor="email">
-          Email <span className="text-destructive">*</span>
+          {t("users.email") || "Email"} <span className="text-destructive">*</span>
         </Label>
         <Input
           id="email"
@@ -128,7 +162,7 @@ export function UserForm({
       {!isEditing && (
         <div className="space-y-2">
           <Label htmlFor="password">
-            Contraseña <span className="text-destructive">*</span>
+            {t("users.password") || "Contraseña"} <span className="text-destructive">*</span>
           </Label>
           <Input
             id="password"
@@ -147,42 +181,45 @@ export function UserForm({
       {/* Name fields */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div className="space-y-2">
-          <Label htmlFor="first_name">Nombre</Label>
+          <Label htmlFor="first_name">{t("users.firstName") || "Nombre"}</Label>
           <Input
             id="first_name"
             {...register("first_name")}
             disabled={loading || isSubmitting}
+            aria-describedby={errors.first_name ? "first_name-error" : undefined}
           />
           {errors.first_name && (
-            <p className="text-sm text-destructive">
+            <p id="first_name-error" className="text-sm text-destructive">
               {errors.first_name.message}
             </p>
           )}
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="middle_name">Segundo Nombre</Label>
+          <Label htmlFor="middle_name">{t("users.middleName") || "Segundo Nombre"}</Label>
           <Input
             id="middle_name"
             {...register("middle_name")}
             disabled={loading || isSubmitting}
+            aria-describedby={errors.middle_name ? "middle_name-error" : undefined}
           />
           {errors.middle_name && (
-            <p className="text-sm text-destructive">
+            <p id="middle_name-error" className="text-sm text-destructive">
               {errors.middle_name.message}
             </p>
           )}
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="last_name">Apellido</Label>
+          <Label htmlFor="last_name">{t("users.lastName") || "Apellido"}</Label>
           <Input
             id="last_name"
             {...register("last_name")}
             disabled={loading || isSubmitting}
+            aria-describedby={errors.last_name ? "last_name-error" : undefined}
           />
           {errors.last_name && (
-            <p className="text-sm text-destructive">
+            <p id="last_name-error" className="text-sm text-destructive">
               {errors.last_name.message}
             </p>
           )}
@@ -192,35 +229,36 @@ export function UserForm({
       {/* Personal Information */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="date_of_birth">Fecha de Nacimiento</Label>
+          <Label htmlFor="date_of_birth">{t("users.dateOfBirth") || "Fecha de Nacimiento"}</Label>
           <Input
             id="date_of_birth"
             type="date"
             {...register("date_of_birth")}
             disabled={loading || isSubmitting}
+            aria-describedby={errors.date_of_birth ? "date_of_birth-error" : undefined}
           />
           {errors.date_of_birth && (
-            <p className="text-sm text-destructive">
+            <p id="date_of_birth-error" className="text-sm text-destructive">
               {errors.date_of_birth.message}
             </p>
           )}
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="gender">Género</Label>
+          <Label htmlFor="gender">{t("users.gender") || "Género"}</Label>
           <Select
             onValueChange={(value) => setValue("gender", value)}
             defaultValue={watch("gender") || ""}
             disabled={loading || isSubmitting}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Seleccionar género" />
+              <SelectValue placeholder={t("users.selectGender") || "Seleccionar género"} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="male">Masculino</SelectItem>
-              <SelectItem value="female">Femenino</SelectItem>
-              <SelectItem value="other">Otro</SelectItem>
-              <SelectItem value="prefer_not_to_say">Prefiero no decir</SelectItem>
+              <SelectItem value="male">{t("users.genderMale") || "Masculino"}</SelectItem>
+              <SelectItem value="female">{t("users.genderFemale") || "Femenino"}</SelectItem>
+              <SelectItem value="other">{t("users.genderOther") || "Otro"}</SelectItem>
+              <SelectItem value="prefer_not_to_say">{t("users.genderPreferNotToSay") || "Prefiero no decir"}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -229,28 +267,30 @@ export function UserForm({
       {/* Professional Information */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="job_title">Cargo</Label>
+          <Label htmlFor="job_title">{t("users.jobTitle") || "Cargo"}</Label>
           <Input
             id="job_title"
             {...register("job_title")}
             disabled={loading || isSubmitting}
+            aria-describedby={errors.job_title ? "job_title-error" : undefined}
           />
           {errors.job_title && (
-            <p className="text-sm text-destructive">
+            <p id="job_title-error" className="text-sm text-destructive">
               {errors.job_title.message}
             </p>
           )}
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="department">Departamento</Label>
+          <Label htmlFor="department">{t("users.department") || "Departamento"}</Label>
           <Input
             id="department"
             {...register("department")}
             disabled={loading || isSubmitting}
+            aria-describedby={errors.department ? "department-error" : undefined}
           />
           {errors.department && (
-            <p className="text-sm text-destructive">
+            <p id="department-error" className="text-sm text-destructive">
               {errors.department.message}
             </p>
           )}
@@ -260,7 +300,7 @@ export function UserForm({
       {/* Preferences */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="preferred_language">Idioma Preferido</Label>
+          <Label htmlFor="preferred_language">{t("users.preferredLanguage") || "Idioma Preferido"}</Label>
           <Select
             onValueChange={(value) => setValue("preferred_language", value)}
             defaultValue={watch("preferred_language") || "es"}
@@ -277,10 +317,10 @@ export function UserForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="timezone">Zona Horaria</Label>
+          <Label htmlFor="timezone">{t("users.timezone") || "Zona Horaria"}</Label>
           <Input
             id="timezone"
-            placeholder="America/Bogota"
+            placeholder={t("users.timezonePlaceholder") || "America/Bogota"}
             {...register("timezone")}
             disabled={loading || isSubmitting}
           />
@@ -289,7 +329,7 @@ export function UserForm({
 
       {/* Additional fields */}
       <div className="space-y-2">
-        <Label htmlFor="bio">Biografía</Label>
+        <Label htmlFor="bio">{t("users.bio") || "Biografía"}</Label>
         <Textarea
           id="bio"
           {...register("bio")}
@@ -299,7 +339,7 @@ export function UserForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="notes">Notas</Label>
+        <Label htmlFor="notes">{t("users.notes") || "Notas"}</Label>
         <Textarea
           id="notes"
           {...register("notes")}
@@ -313,9 +353,9 @@ export function UserForm({
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="is_active">Usuario Activo</Label>
+              <Label htmlFor="is_active">{t("users.isActive") || "Usuario Activo"}</Label>
               <p className="text-sm text-muted-foreground">
-                Desactivar un usuario lo deshabilita sin eliminarlo
+                {t("users.isActiveDescription") || "Desactivar un usuario lo deshabilita sin eliminarlo"}
               </p>
             </div>
             <Switch
@@ -328,9 +368,9 @@ export function UserForm({
 
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="two_factor_enabled">Autenticación de Dos Factores</Label>
+              <Label htmlFor="two_factor_enabled">{t("users.twoFactorEnabled") || "Autenticación de Dos Factores"}</Label>
               <p className="text-sm text-muted-foreground">
-                Habilitar 2FA para mayor seguridad
+                {t("users.twoFactorDescription") || "Habilitar 2FA para mayor seguridad"}
               </p>
             </div>
             <Switch
@@ -354,20 +394,21 @@ export function UserForm({
             onClick={onCancel}
             disabled={loading || isSubmitting}
           >
-            Cancelar
+            {t("users.cancel") || "Cancelar"}
           </Button>
         )}
         <Button type="submit" disabled={loading || isSubmitting}>
           {loading || isSubmitting
-            ? "Guardando..."
+            ? t("users.saving") || "Guardando..."
             : isEditing
-            ? "Actualizar Usuario"
-            : "Crear Usuario"}
+            ? t("users.updateUser") || "Actualizar Usuario"
+            : t("users.createUser") || "Crear Usuario"}
         </Button>
       </div>
     </form>
   );
 }
+
 
 
 

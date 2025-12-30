@@ -8,6 +8,7 @@ import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { showToast } from "~/components/common/Toast";
+import { useTranslation } from "~/lib/i18n/useTranslation";
 import {
   Select,
   SelectContent,
@@ -37,6 +38,7 @@ export function UserRolesManager({
   user,
   onUpdate,
 }: UserRolesManagerProps) {
+  const { t } = useTranslation();
   const { roles, loading, refresh } = useUserRoles(user.id);
   const { availableRoles } = useAvailableRoles();
   const { roles: customRoles } = useCustomRoles();
@@ -48,23 +50,23 @@ export function UserRolesManager({
   const handleAssignRole = async (roleName: string) => {
     const result = await assign(user.id, roleName as GlobalRole);
     if (result) {
-      showToast("Rol asignado exitosamente", "success");
+      showToast(t("users.roleAssignedSuccess") || "Rol asignado exitosamente", "success");
       setSelectedRole("");
       refresh();
       onUpdate?.();
     } else {
-      showToast("Error al asignar el rol", "error");
+      showToast(t("users.roleAssignedError") || "Error al asignar el rol", "error");
     }
   };
 
   const handleRemoveRole = async (roleName: GlobalRole) => {
     const success = await remove(user.id, roleName);
     if (success) {
-      showToast("Rol removido exitosamente", "success");
+      showToast(t("users.roleRemovedSuccess") || "Rol removido exitosamente", "success");
       refresh();
       onUpdate?.();
     } else {
-      showToast("Error al remover el rol", "error");
+      showToast(t("users.roleRemovedError") || "Error al remover el rol", "error");
     }
   };
 
@@ -80,7 +82,7 @@ export function UserRolesManager({
 
   if (loading) {
     return (
-      <div className="text-sm text-muted-foreground">Cargando roles...</div>
+      <div className="text-sm text-muted-foreground">{t("users.loadingRoles") || "Cargando roles..."}</div>
     );
   }
 
@@ -88,9 +90,9 @@ export function UserRolesManager({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold">Roles Asignados</h3>
+          <h3 className="text-lg font-semibold">{t("users.assignedRoles") || "Roles Asignados"}</h3>
           <p className="text-sm text-muted-foreground">
-            Gestiona los roles globales y personalizados del usuario
+            {t("users.assignedRolesDescription") || "Gestiona los roles globales y personalizados del usuario"}
           </p>
         </div>
       </div>
@@ -99,18 +101,18 @@ export function UserRolesManager({
       <div className="flex items-center gap-2">
         <Select value={selectedRole} onValueChange={setSelectedRole}>
           <SelectTrigger className="w-[250px]">
-            <SelectValue placeholder="Seleccionar rol para asignar" />
+            <SelectValue placeholder={t("users.selectRoleToAssign") || "Seleccionar rol para asignar"} />
           </SelectTrigger>
           <SelectContent>
             {availableGlobalRoles.length > 0 && (
               <>
                 <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                  Roles Globales
+                  {t("users.globalRoles") || "Roles Globales"}
                 </div>
                 {availableGlobalRoles.map((role) => (
                   <SelectItem key={role.role} value={role.role}>
                     {role.role.charAt(0).toUpperCase() + role.role.slice(1)} (
-                    {role.permissions.length} permisos)
+                    {role.permissions.length} {t("users.permissions") || "permisos"})
                   </SelectItem>
                 ))}
               </>
@@ -118,11 +120,11 @@ export function UserRolesManager({
             {availableCustomRolesForUser.length > 0 && (
               <>
                 <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                  Roles Personalizados
+                  {t("users.customRoles") || "Roles Personalizados"}
                 </div>
                 {availableCustomRolesForUser.map((role) => (
                   <SelectItem key={role.id} value={role.id}>
-                    {role.name} ({role.permissions.length} permisos)
+                    {role.name} ({role.permissions.length} {t("users.permissions") || "permisos"})
                   </SelectItem>
                 ))}
               </>
@@ -139,7 +141,7 @@ export function UserRolesManager({
           disabled={!selectedRole || assigning}
         >
           <Shield className="h-4 w-4 mr-2" />
-          Asignar Rol
+          {t("users.assignRole") || "Asignar Rol"}
         </Button>
       </div>
 
@@ -147,7 +149,7 @@ export function UserRolesManager({
       {roles.length === 0 ? (
         <div className="rounded-md border p-8 text-center">
           <p className="text-sm text-muted-foreground">
-            El usuario no tiene roles asignados
+            {t("users.noRolesAssigned") || "El usuario no tiene roles asignados"}
           </p>
         </div>
       ) : (
@@ -178,14 +180,14 @@ export function UserRolesManager({
                           userRole.role.slice(1)}
                     </p>
                     <Badge variant="outline">
-                      {isCustomRole ? "Personalizado" : "Global"}
+                      {isCustomRole ? (t("users.custom") || "Personalizado") : (t("users.global") || "Global")}
                     </Badge>
                     {roleInfo && (
                       <span className="text-xs text-muted-foreground">
                         ({isCustomRole
                           ? customRole!.permissions.length
                           : roleInfo.permissions.length}{" "}
-                        permisos)
+                        {t("users.permissions") || "permisos"})
                       </span>
                     )}
                   </div>
@@ -196,7 +198,7 @@ export function UserRolesManager({
                   )}
                   {userRole.granted_by && (
                     <p className="text-xs text-muted-foreground">
-                      Asignado el{" "}
+                      {t("users.assignedOn") || "Asignado el"}{" "}
                       {new Date(userRole.created_at).toLocaleDateString()}
                     </p>
                   )}
@@ -219,6 +221,11 @@ export function UserRolesManager({
     </div>
   );
 }
+
+
+
+
+
 
 
 

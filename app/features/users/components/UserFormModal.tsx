@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { UserForm } from "./UserForm";
+import { useTranslation } from "~/lib/i18n/useTranslation";
 import type { User, UserCreate, UserUpdate } from "../types/user.types";
 
 interface UserFormModalProps {
@@ -32,6 +33,8 @@ export function UserFormModal({
   onSubmit,
   loading = false,
 }: UserFormModalProps) {
+  const { t } = useTranslation();
+
   const handleSubmit = async (data: UserCreate | UserUpdate) => {
     await onSubmit(data);
     onClose();
@@ -42,12 +45,12 @@ export function UserFormModal({
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {user ? "Editar Usuario" : "Crear Nuevo Usuario"}
+            {user ? t("users.editUser") || "Editar Usuario" : t("users.createUser") || "Crear Nuevo Usuario"}
           </DialogTitle>
           <DialogDescription>
             {user
-              ? "Actualiza la información del usuario"
-              : "Completa el formulario para crear un nuevo usuario"}
+              ? t("users.editUserDescription") || "Actualiza la información del usuario"
+              : t("users.createUserDescription") || "Completa el formulario para crear un nuevo usuario"}
           </DialogDescription>
         </DialogHeader>
 
@@ -61,6 +64,7 @@ export function UserFormModal({
     </Dialog>
   );
 }
+
 
 
 

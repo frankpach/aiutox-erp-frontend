@@ -30,10 +30,32 @@ export async function loginAsAdmin(page: Page) {
     return;
   }
 
+  // Check if page shows an error
+  const pageTitle = await page.title();
+  const pageText = await page.textContent("body");
+
+  if (pageTitle === "Error" || (pageText && pageText.trim().length === 0)) {
+    console.error(`[AUTH] Page shows error. Title: ${pageTitle}`);
+    console.error(`[AUTH] Page content: ${pageText?.substring(0, 500)}`);
+
+    // Try to get more info from the page
+    const errorElement = page.locator('text=/Error|error|Failed/i').first();
+    if (await errorElement.count() > 0) {
+      const errorText = await errorElement.textContent();
+      console.error(`[AUTH] Error text found: ${errorText}`);
+    }
+
+    // Check if it's a network error
+    const response = await page.goto(loginURL, { waitUntil: "domcontentloaded", timeout: 10000 }).catch(() => null);
+    if (!response || !response.ok()) {
+      throw new Error(`Server returned error: ${response?.status()} ${response?.statusText()}. Make sure the frontend server is running on ${baseURL}`);
+    }
+  }
+
   // Wait for page to be ready - check for either login form or already logged in
   try {
     // Try multiple selectors for email input
-    const emailInput = page.locator('input[type="email"], input[id="email"], input[placeholder*="email" i]').first();
+    const emailInput = page.locator('input[type="email"], input[id="email"], input[name="email"], input[placeholder*="email" i]').first();
     console.log("[AUTH] Waiting for email input...");
     await emailInput.waitFor({ state: "visible", timeout: 20000 });
     console.log("[AUTH] Email input found");

@@ -1,45 +1,88 @@
+/**
+ * Modules Configuration Page
+ *
+ * Manage enabled/disabled modules in the system
+ * Uses ConfigPageLayout and shared components for visual consistency
+ */
+
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button } from "~/components/ui/button";
-import { Badge } from "~/components/ui/badge";
-import { Switch } from "~/components/ui/switch";
+import { useTranslation } from "~/lib/i18n/useTranslation";
+import { showToast } from "~/components/common/Toast";
 import { getModules, enableModule, disableModule } from "~/lib/api/modules.api";
 import type { ModuleListItem } from "~/lib/modules/types";
+import { ConfigPageLayout } from "~/components/config/ConfigPageLayout";
+import { ConfigLoadingState } from "~/components/config/ConfigLoadingState";
+import { ConfigErrorState } from "~/components/config/ConfigErrorState";
+import { ConfigEmptyState } from "~/components/config/ConfigEmptyState";
+import { Card, CardContent } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
+import { Switch } from "~/components/ui/switch";
+import { Label } from "~/components/ui/label";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "~/components/ui/tooltip";
+import { AlertTriangle } from "lucide-react";
+
+type FilterType = "all" | "core" | "business";
+
+export function meta() {
+  return [
+    { title: "Módulos del Sistema - AiutoX ERP" },
+    { name: "description", content: "Gestiona los módulos habilitados en tu sistema" },
+  ];
+}
 
 export default function ModulesConfigPage() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const [filter, setFilter] = useState<"all" | "core" | "business">("all");
+  const [filter, setFilter] = useState<FilterType>("all");
 
-  // Fetch modules
   const { data, isLoading, error } = useQuery({
-    queryKey: ["config", "modules"],
-    queryFn: async () => {
-      const response = await getModules();
-      return response.data;
-    },
+    queryKey: ["modules"],
+    queryFn: getModules,
   });
 
-  // Enable module mutation
   const enableMutation = useMutation({
-    mutationFn: async (moduleId: string) => {
-      await enableModule(moduleId);
-    },
+    mutationFn: enableModule,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["config", "modules"] });
+      queryClient.invalidateQueries({ queryKey: ["modules"] });
+      showToast(t("config.modules.enableSuccess"), "success");
+    },
+    onError: (err) => {
+      showToast(
+        err instanceof Error ? err.message : "Error al habilitar el módulo",
+        "error"
+      );
     },
   });
 
-  // Disable module mutation
   const disableMutation = useMutation({
-    mutationFn: async (moduleId: string) => {
-      await disableModule(moduleId);
-    },
+    mutationFn: disableModule,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["config", "modules"] });
+      queryClient.invalidateQueries({ queryKey: ["modules"] });
+      showToast(t("config.modules.disableSuccess"), "success");
+    },
+    onError: (err) => {
+      showToast(
+        err instanceof Error ? err.message : "Error al deshabilitar el módulo",
+        "error"
+      );
     },
   });
 
-  const handleToggleModule = (module: ModuleListItem) => {
+  const handleToggle = (module: ModuleListItem) => {
+    const isCritical = module.id === "auth" || module.id === "users";
+
+    if (isCritical && module.enabled) {
+      showToast(t("config.modules.tooltipCritical"), "error");
+      return;
+    }
+
     if (module.enabled) {
       disableMutation.mutate(module.id);
     } else {
@@ -47,159 +90,151 @@ export default function ModulesConfigPage() {
     }
   };
 
-  const filteredModules = data?.filter((module: ModuleListItem) => {
-    if (filter === "all") return true;
-    return module.type === filter;
-  });
-
-  const coreModules = filteredModules?.filter((m: ModuleListItem) => m.type === "core") || [];
-  const businessModules = filteredModules?.filter((m: ModuleListItem) => m.type === "business") || [];
-
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <p>Cargando módulos...</p>
-      </div>
+      <ConfigPageLayout
+        title={t("config.modules.title")}
+        description={t("config.modules.description")}
+        loading={true}
+      >
+        <ConfigLoadingState lines={6} />
+      </ConfigPageLayout>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-md p-4">
-        <p className="text-red-800">Error al cargar módulos: {error.toString()}</p>
-      </div>
+      <ConfigPageLayout
+        title={t("config.modules.title")}
+        description={t("config.modules.description")}
+        error={error instanceof Error ? error : String(error)}
+      >
+        <ConfigErrorState
+          message={t("config.modules.errorLoading")}
+        />
+      </ConfigPageLayout>
     );
   }
 
-  return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Módulos del Sistema</h1>
-          <p className="text-muted-foreground mt-1">
-            Gestiona los módulos habilitados en tu sistema
-          </p>
-        </div>
-      </div>
+  const modules = data?.data || [];
+  const coreModules = modules.filter((m) => m.type === "core");
+  const businessModules = modules.filter((m) => m.type === "business");
 
-      {/* Filter tabs */}
-      <div className="flex gap-2">
-        <Button
-          variant={filter === "all" ? "default" : "outline"}
-          onClick={() => setFilter("all")}
-        >
-          Todos ({data?.length || 0})
-        </Button>
-        <Button
-          variant={filter === "core" ? "default" : "outline"}
-          onClick={() => setFilter("core")}
-        >
-          Core ({coreModules.length})
-        </Button>
-        <Button
-          variant={filter === "business" ? "default" : "outline"}
-          onClick={() => setFilter("business")}
-        >
-          Empresariales ({businessModules.length})
-        </Button>
-      </div>
+  const filteredModules =
+    filter === "all"
+      ? modules
+      : filter === "core"
+      ? coreModules
+      : businessModules;
 
-      {/* Core Modules */}
-      {(filter === "all" || filter === "core") && coreModules.length > 0 && (
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Módulos Core</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {coreModules.map((module: ModuleListItem) => (
-              <ModuleCard
-                key={module.id}
-                module={module}
-                onToggle={handleToggleModule}
-                isToggling={
-                  enableMutation.isPending || disableMutation.isPending
-                }
-              />
-            ))}
-          </div>
-        </div>
-      )}
+  const renderModuleCard = (module: ModuleListItem) => {
+    const isCritical = module.id === "auth" || module.id === "users";
+    const isPending = enableMutation.isPending || disableMutation.isPending;
 
-      {/* Business Modules */}
-      {(filter === "all" || filter === "business") && businessModules.length > 0 && (
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Módulos Empresariales</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {businessModules.map((module: ModuleListItem) => (
-              <ModuleCard
-                key={module.id}
-                module={module}
-                onToggle={handleToggleModule}
-                isToggling={
-                  enableMutation.isPending || disableMutation.isPending
-                }
-              />
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ModuleCard({
-  module,
-  onToggle,
-  isToggling,
-}: {
-  module: ModuleListItem;
-  onToggle: (module: ModuleListItem) => void;
-  isToggling: boolean;
-}) {
-  const isCritical = ["auth", "users"].includes(module.id);
-
-  return (
-    <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-2">
-            <h3 className="text-lg font-semibold">{module.name}</h3>
-            <Badge variant={module.type === "core" ? "default" : "secondary"}>
-              {module.type === "core" ? "Core" : "Empresarial"}
-            </Badge>
-            {module.enabled && (
-              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                Activo
-              </Badge>
-            )}
-            {isCritical && (
-              <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
-                Crítico
-              </Badge>
-            )}
-          </div>
-          <p className="text-sm text-gray-600 mb-3">{module.description}</p>
-          {module.dependencies && module.dependencies.length > 0 && (
-            <div className="text-xs text-gray-500">
-              <span className="font-medium">Dependencias:</span>{" "}
-              {module.dependencies.join(", ")}
+    return (
+      <Card key={module.id} className="hover:shadow-md transition-shadow">
+        <CardContent className="p-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 space-y-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h4 className="font-semibold text-base">{module.name}</h4>
+                <Badge variant={module.type === "core" ? "default" : "secondary"}>
+                  {module.type === "core" ? t("config.modules.badgeCore") : t("config.modules.badgeBusiness")}
+                </Badge>
+                {module.enabled && (
+                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                    {t("config.modules.badgeActive")}
+                  </Badge>
+                )}
+                {isCritical && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge variant="destructive" className="cursor-help">
+                          <AlertTriangle size={14} className="mr-1" />
+                          {t("config.modules.badgeCritical")}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{t("config.modules.tooltipCritical")}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
+              {module.description && (
+                <p className="text-sm text-muted-foreground">{module.description}</p>
+              )}
+              {module.dependencies && module.dependencies.length > 0 && (
+                <div className="text-xs text-muted-foreground">
+                  <span className="font-medium">{t("config.modules.dependencies")}:</span>{" "}
+                  {module.dependencies.join(", ")}
+                </div>
+              )}
             </div>
-          )}
-        </div>
-        <div className="ml-4">
-          <Switch
-            checked={module.enabled}
-            onCheckedChange={() => onToggle(module)}
-            disabled={isToggling || isCritical}
-            title={
-              isCritical
-                ? "Los módulos críticos no pueden ser deshabilitados"
-                : module.enabled
-                ? "Deshabilitar módulo"
-                : "Habilitar módulo"
-            }
+            <div className="flex items-center gap-2">
+              <Switch
+                checked={module.enabled}
+                onCheckedChange={() => handleToggle(module)}
+                disabled={isCritical || isPending}
+                aria-label={`${module.enabled ? t("config.modules.tooltipDisable") : t("config.modules.tooltipEnable")} ${module.name}`}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  return (
+    <ConfigPageLayout
+      title={t("config.modules.title") || "Módulos del Sistema"}
+      description={t("config.modules.description") || "Gestiona los módulos habilitados en tu sistema"}
+    >
+      <div className="space-y-6">
+        {/* Filtros con Tabs */}
+        <Tabs value={filter} onValueChange={(value) => setFilter(value as FilterType)}>
+          <TabsList>
+            <TabsTrigger value="all">{t("config.modules.filterAll")} ({modules.length})</TabsTrigger>
+            <TabsTrigger value="core">{t("config.modules.filterCore")} ({coreModules.length})</TabsTrigger>
+            <TabsTrigger value="business">{t("config.modules.filterBusiness")} ({businessModules.length})</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        {/* Lista de módulos Core */}
+        {(filter === "all" || filter === "core") && coreModules.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <h3 className="text-xl font-semibold">{t("config.modules.sectionCore")}</h3>
+              <Badge variant="default">{coreModules.length}</Badge>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {coreModules.map(renderModuleCard)}
+            </div>
+          </div>
+        )}
+
+        {/* Lista de módulos Empresariales */}
+        {(filter === "all" || filter === "business") && businessModules.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <h3 className="text-xl font-semibold">{t("config.modules.sectionBusiness")}</h3>
+              <Badge variant="secondary">{businessModules.length}</Badge>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {businessModules.map(renderModuleCard)}
+            </div>
+          </div>
+        )}
+
+        {/* Estado vacío */}
+        {filteredModules.length === 0 && (
+          <ConfigEmptyState
+            title={t("config.common.noData")}
+            description={t("config.common.noData")}
           />
-        </div>
+        )}
       </div>
-    </div>
+    </ConfigPageLayout>
   );
 }
-

@@ -84,10 +84,64 @@ export function useSavedFilters(
           error: null,
         });
       } catch (error) {
+        // Determine if this is a real error that should be shown to the user
+        // Network errors, CORS errors, and server errors (5xx) are real errors
+        // Empty responses (no filters) are not errors
+        let isRealError = false;
+        let errorToSet: Error | null = null;
+
+        if (error instanceof Error) {
+          const errorMessage = error.message.toLowerCase();
+          const isAxiosError = (error as any).isAxiosError;
+          const status = (error as any).response?.status;
+
+          // Check for network errors (no response from server)
+          if (errorMessage.includes('network') || errorMessage.includes('network error')) {
+            isRealError = true;
+            errorToSet = error;
+          }
+          // Check for CORS errors
+          else if (errorMessage.includes('cors') || errorMessage.includes('blocked by cors')) {
+            isRealError = true;
+            errorToSet = error;
+          }
+          // Check for server errors (5xx)
+          else if (isAxiosError && status >= 500) {
+            isRealError = true;
+            errorToSet = error;
+          }
+          // Check for client errors (4xx) - these are also real errors
+          else if (isAxiosError && status >= 400 && status < 500) {
+            isRealError = true;
+            errorToSet = error;
+          }
+          // Other errors (timeout, etc.)
+          else if (errorMessage.includes('timeout') || errorMessage.includes('failed')) {
+            isRealError = true;
+            errorToSet = error;
+          }
+          // If it's an AxiosError but we don't know the status, it's likely a real error
+          else if (isAxiosError) {
+            isRealError = true;
+            errorToSet = error;
+          }
+          // For other errors, check if they seem like real errors
+          else if (!errorMessage.includes('empty') && errorMessage.includes('error')) {
+            isRealError = true;
+            errorToSet = error;
+          }
+        } else {
+          // Non-Error objects are treated as real errors
+          isRealError = true;
+          errorToSet = new Error(String(error));
+        }
+
         setState((prev) => ({
           ...prev,
           loading: false,
-          error: error instanceof Error ? error : new Error("Failed to load filters"),
+          // Only set error if it's a real error (network, server error, etc.)
+          // Empty response (no filters) is not an error
+          error: errorToSet,
         }));
       }
     },

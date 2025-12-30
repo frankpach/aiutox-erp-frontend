@@ -32,31 +32,31 @@ export function TenantSwitcher({ isCollapsed = false }: TenantSwitcherProps) {
         className="flex items-center justify-center p-2"
         title={currentTenant.name}
       >
-        <Building2 className="h-5 w-5 text-[#023E87]" />
+        <Building2 className="h-5 w-5 text-primary" />
       </div>
     );
   }
 
   return (
     <button
-      className="flex items-center gap-2 w-full px-3 py-2 rounded-md transition-all duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[#023E87] focus:ring-offset-2 text-sm"
+      className="flex items-center gap-2 w-full px-3 py-2.5 rounded-lg transition-all duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-sm bg-muted/60"
       aria-label="Cambiar organización"
       title="Cambiar organización"
       // TODO: Implementar funcionalidad de cambio de tenant cuando haya múltiples
       disabled
     >
-      <div className="flex items-center justify-center h-8 w-8 rounded-md bg-[#023E87]/10 flex-shrink-0">
-        <Building2 className="h-4 w-4 text-[#023E87]" />
+      <div className="flex items-center justify-center h-8 w-8 rounded-md bg-primary/10 flex-shrink-0">
+        <Building2 className="h-4 w-4 text-primary" />
       </div>
       <div className="flex flex-col items-start flex-1 min-w-0">
-        <span className="text-xs font-semibold text-[#121212] truncate w-full">
+        <span className="text-xs font-semibold text-foreground truncate w-full">
           {currentTenant.name}
         </span>
-        <span className="text-xs text-gray-500 truncate w-full">
+        <span className="text-xs text-muted-foreground truncate w-full">
           Tenant actual
         </span>
       </div>
-      <ChevronsUpDown className="h-4 w-4 text-gray-400 flex-shrink-0" />
+      <ChevronsUpDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
     </button>
   );
 }

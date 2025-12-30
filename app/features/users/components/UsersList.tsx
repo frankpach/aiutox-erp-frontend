@@ -4,6 +4,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router";
 import { Button } from "~/components/ui/button";
 import {
@@ -12,7 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import { Save, MoreVertical, Eye, Edit, Trash2, Shield } from "lucide-react";
+import { Save, CheckSquare, Square, Trash2, Power, PowerOff } from "lucide-react";
 import { ConfirmDialog } from "~/components/common/ConfirmDialog";
 import { showToast } from "~/components/common/Toast";
 import { UserListSkeleton } from "~/components/common/UserListSkeleton";
@@ -23,15 +24,17 @@ import {
   TooltipTrigger,
 } from "~/components/ui/tooltip";
 import { useTranslation } from "~/lib/i18n/useTranslation";
+import { useDebouncedValue } from "~/hooks/useDebouncedValue";
 import { SavedFilters } from "../../views/components/SavedFilters";
 import { FilterEditorModal } from "../../views/components/FilterEditorModal";
 import { FilterManagementModal } from "../../views/components/FilterManagementModal";
 import { userFieldsConfig } from "../../views/config/userFields";
 import { useSavedFilters } from "../../views/hooks/useSavedFilters";
 import { useFilterUrlSync } from "../../views/hooks/useFilterUrlSync";
-import { useUsers, useDeleteUser } from "../hooks/useUsers";
-import type { User } from "../types/user.types";
+import { useUsers, useDeleteUser, useBulkUsersAction, userKeys } from "../hooks/useUsers";
 import type { SavedFilter, SavedFilterCreate } from "../../views/types/savedFilter.types";
+import { getUser } from "../api/users.api";
+import { UserRow } from "./UserRow";
 
 export interface UsersListProps {
   onManageFiltersClick?: () => void;
@@ -44,6 +47,7 @@ export function UsersList({ onManageFiltersClick }: UsersListProps) {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [isActiveFilter, setIsActiveFilter] = useState<boolean | undefined>(
     undefined
   );
@@ -56,26 +60,53 @@ export function UsersList({ onManageFiltersClick }: UsersListProps) {
     open: boolean;
     userId: string | null;
   }>({ open: false, userId: null });
+  const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
+  const [bulkActionConfirm, setBulkActionConfirm] = useState<{
+    open: boolean;
+    action: "activate" | "deactivate" | "delete" | null;
+  }>({ open: false, action: null });
   const { t } = useTranslation();
 
   const { filterId, updateFilterId } = useFilterUrlSync();
+  const savedFiltersHook = useSavedFilters("users", true);
   const {
     defaultFilter: _defaultFilter,
     getDefaultFilter,
     refreshFilters,
     createFilter,
-  } = useSavedFilters("users", true);
+    filters: savedFiltersList,
+    defaultFilter: savedFiltersDefaultFilter,
+    loading: savedFiltersLoading,
+    error: savedFiltersError,
+    getMyFilters: savedFiltersGetMyFilters,
+    getSharedFilters: savedFiltersGetSharedFilters,
+  } = savedFiltersHook;
 
-  // Use the new useUsers hook
+  // Use the new useUsers hook with debounced search
   const { users, loading, error, pagination, refresh } = useUsers({
     page,
     page_size: pageSize,
-    search: search || undefined,
+    search: debouncedSearch || undefined,
     is_active: isActiveFilter,
     saved_filter_id: filterId || undefined,
   });
 
   const { remove: deleteUser, loading: deleting } = useDeleteUser();
+  const { execute: bulkAction, loading: bulkActionLoading } = useBulkUsersAction();
+  const queryClient = useQueryClient();
+
+  // Define handleDeleteUser first
+  const handleDeleteUser = useCallback(async (userId: string) => {
+    setDeleteConfirm({ open: true, userId });
+  }, []);
+
+  // Memoize delete handler (now handleDeleteUser is defined)
+  const handleDeleteUserMemoized = useCallback(
+    (userId: string) => {
+      handleDeleteUser(userId);
+    },
+    [handleDeleteUser]
+  );
 
   // Apply default filter on mount if no filter in URL
   useEffect(() => {
@@ -95,10 +126,6 @@ export function UsersList({ onManageFiltersClick }: UsersListProps) {
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
-  };
-
-  const handleDeleteUser = async (userId: string) => {
-    setDeleteConfirm({ open: true, userId });
   };
 
   const confirmDelete = async () => {
@@ -148,6 +175,75 @@ export function UsersList({ onManageFiltersClick }: UsersListProps) {
     }
   };
 
+  // Bulk selection handlers
+  const handleSelectAll = useCallback(() => {
+    if (selectedUserIds.size === users.length) {
+      setSelectedUserIds(new Set());
+    } else {
+      setSelectedUserIds(new Set(users.map((u) => u.id)));
+    }
+  }, [selectedUserIds.size, users]);
+
+  const handleSelectUser = useCallback((userId: string) => {
+    setSelectedUserIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(userId)) {
+        newSet.delete(userId);
+      } else {
+        newSet.add(userId);
+      }
+      return newSet;
+    });
+  }, []);
+
+  // Bulk action handlers
+  const handleBulkAction = useCallback(
+    async (action: "activate" | "deactivate" | "delete") => {
+      if (selectedUserIds.size === 0) return;
+
+      const result = await bulkAction(action, Array.from(selectedUserIds));
+      if (result) {
+        const successMsg =
+          action === "activate"
+            ? `${result.success} ${t("users.bulkActivateSuccess") || "usuarios activados exitosamente"}`
+            : action === "deactivate"
+            ? `${result.success} ${t("users.bulkDeactivateSuccess") || "usuarios desactivados exitosamente"}`
+            : `${result.success} ${t("users.bulkDeleteSuccess") || "usuarios eliminados exitosamente"}`;
+
+        if (result.failed > 0) {
+          showToast(
+            `${successMsg}. ${result.failed} fallaron.`,
+            "warning"
+          );
+        } else {
+          showToast(successMsg, "success");
+        }
+        setSelectedUserIds(new Set());
+        refresh();
+      } else {
+        showToast(
+          t("users.bulkActionError") || "Error al realizar la acción masiva",
+          "error"
+        );
+      }
+    },
+    [selectedUserIds, bulkAction, refresh, t]
+  );
+
+  const handleBulkActionClick = useCallback(
+    (action: "activate" | "deactivate" | "delete") => {
+      setBulkActionConfirm({ open: true, action });
+    },
+    []
+  );
+
+  const confirmBulkAction = useCallback(async () => {
+    if (bulkActionConfirm.action) {
+      await handleBulkAction(bulkActionConfirm.action);
+      setBulkActionConfirm({ open: false, action: null });
+    }
+  }, [bulkActionConfirm.action, handleBulkAction]);
+
   const _currentFilter = filterId
     ? users.length > 0 || loading
       ? t("savedFilters.applying")
@@ -166,6 +262,15 @@ export function UsersList({ onManageFiltersClick }: UsersListProps) {
             onApply={handleApplyFilter}
             currentFilterId={filterId}
             onManageClick={handleManageFilters}
+            filters={savedFiltersList}
+            defaultFilter={savedFiltersDefaultFilter}
+            loading={savedFiltersLoading}
+            error={savedFiltersError}
+            getMyFilters={savedFiltersGetMyFilters}
+            getSharedFilters={savedFiltersGetSharedFilters}
+            refreshFilters={refreshFilters}
+            createFilter={createFilter}
+            autoLoad={false}
           />
           {filterId && (
             <Button
@@ -179,6 +284,51 @@ export function UsersList({ onManageFiltersClick }: UsersListProps) {
             </Button>
           )}
         </div>
+        {/* Bulk Actions Bar */}
+        {selectedUserIds.size > 0 && (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">
+              {selectedUserIds.size} {t("users.selected") || "seleccionados"}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleBulkActionClick("activate")}
+              disabled={bulkActionLoading}
+              className="gap-2"
+            >
+              <Power className="h-4 w-4" />
+              {t("users.activate") || "Activar"}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleBulkActionClick("deactivate")}
+              disabled={bulkActionLoading}
+              className="gap-2"
+            >
+              <PowerOff className="h-4 w-4" />
+              {t("users.deactivate") || "Desactivar"}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleBulkActionClick("delete")}
+              disabled={bulkActionLoading}
+              className="gap-2 text-destructive hover:text-destructive"
+            >
+              <Trash2 className="h-4 w-4" />
+              {t("users.delete") || "Eliminar"}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedUserIds(new Set())}
+            >
+              {t("users.clearSelection") || "Limpiar"}
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Loading State */}
@@ -240,9 +390,9 @@ export function UsersList({ onManageFiltersClick }: UsersListProps) {
           {users.length === 0 ? (
             <div className="rounded-md border p-8 text-center">
               <p className="text-muted-foreground">
-                {filterId
-                  ? t("users.noUsersWithFilter") || "No se encontraron usuarios con el filtro aplicado"
-                  : t("users.noUsers") || "No hay usuarios"}
+                {debouncedSearch || filterId || isActiveFilter !== undefined
+                  ? t("users.noUsersFound") || "No se encontraron usuarios que coincidan con la búsqueda"
+                  : t("users.noUsers") || "No hay usuarios registrados"}
               </p>
             </div>
           ) : (
@@ -251,6 +401,19 @@ export function UsersList({ onManageFiltersClick }: UsersListProps) {
                 <table className="w-full min-w-[640px]">
                   <thead>
                     <tr className="border-b bg-muted/50">
+                      <th className="px-4 py-3 text-left text-sm font-medium w-12">
+                        <button
+                          onClick={handleSelectAll}
+                          className="flex items-center justify-center"
+                          aria-label={t("users.selectAll") || "Seleccionar todos"}
+                        >
+                          {selectedUserIds.size === users.length && users.length > 0 ? (
+                            <CheckSquare className="h-5 w-5" />
+                          ) : (
+                            <Square className="h-5 w-5" />
+                          )}
+                        </button>
+                      </th>
                       <th className="px-4 py-3 text-left text-sm font-medium">{t("users.email") || "Email"}</th>
                       <th className="px-4 py-3 text-left text-sm font-medium hidden md:table-cell">{t("users.name") || "Nombre"}</th>
                       <th className="px-4 py-3 text-left text-sm font-medium hidden lg:table-cell">{t("users.jobTitle") || "Cargo"}</th>
@@ -261,76 +424,14 @@ export function UsersList({ onManageFiltersClick }: UsersListProps) {
                   </thead>
                   <tbody>
                     {users.map((user) => (
-                      <tr key={user.id} className="border-b hover:bg-muted/50">
-                        <td className="px-4 py-3 text-sm font-medium">{user.email}</td>
-                        <td className="px-4 py-3 text-sm hidden md:table-cell">
-                          {user.full_name || `${user.first_name || ""} ${user.last_name || ""}`.trim() || "—"}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-muted-foreground hidden lg:table-cell">
-                          {user.job_title || "—"}
-                        </td>
-                        <td className="px-4 py-3 text-sm">
-                          <span
-                            className={`inline-flex items-center rounded-full px-2 py-1 text-xs ${
-                              user.is_active
-                                ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                                : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                            }`}
-                          >
-                            {user.is_active ? t("users.active") || "Activo" : t("users.inactive") || "Inactivo"}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-sm text-muted-foreground hidden xl:table-cell">
-                          {new Date(user.created_at).toLocaleDateString()}
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <TooltipProvider>
-                            <DropdownMenu>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="sm">
-                                      <MoreVertical className="h-4 w-4" />
-                                      <span className="sr-only">Acciones</span>
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Acciones del usuario</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem asChild>
-                                <Link to={`/users/${user.id}`} className="flex items-center gap-2">
-                                  <Eye className="h-4 w-4" />
-                                  {t("users.view") || "Ver"}
-                                </Link>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem asChild>
-                                <Link to={`/users/${user.id}/edit`} className="flex items-center gap-2">
-                                  <Edit className="h-4 w-4" />
-                                  {t("users.edit") || "Editar"}
-                                </Link>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem asChild>
-                                <Link to={`/users/${user.id}/roles`} className="flex items-center gap-2">
-                                  <Shield className="h-4 w-4" />
-                                  {t("users.manageRoles") || "Gestionar Roles"}
-                                </Link>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleDeleteUser(user.id)}
-                                disabled={deleting}
-                                className="text-destructive focus:text-destructive"
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                {t("users.delete") || "Eliminar"}
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                          </TooltipProvider>
-                        </td>
-                      </tr>
+                      <UserRow
+                        key={user.id}
+                        user={user}
+                        onDelete={handleDeleteUserMemoized}
+                        deleting={deleting}
+                        selected={selectedUserIds.has(user.id)}
+                        onSelect={() => handleSelectUser(user.id)}
+                      />
                     ))}
                   </tbody>
                 </table>
@@ -406,6 +507,37 @@ export function UsersList({ onManageFiltersClick }: UsersListProps) {
         onClose={() => setManagementOpen(false)}
         module="users"
         onEditFilter={handleEditFilter}
+      />
+
+      {/* Bulk Action Confirmation Dialog */}
+      <ConfirmDialog
+        open={bulkActionConfirm.open}
+        onClose={() => setBulkActionConfirm({ open: false, action: null })}
+        onConfirm={confirmBulkAction}
+        title={
+          bulkActionConfirm.action === "activate"
+            ? t("users.confirmBulkActivateTitle") || "Activar Usuarios"
+            : bulkActionConfirm.action === "deactivate"
+            ? t("users.confirmBulkDeactivateTitle") || "Desactivar Usuarios"
+            : t("users.confirmBulkDeleteTitle") || "Eliminar Usuarios"
+        }
+        description={
+          bulkActionConfirm.action === "activate"
+            ? (t("users.confirmBulkActivate") || `¿Estás seguro de que deseas activar ${selectedUserIds.size} usuario(s)?`).replace("{count}", selectedUserIds.size.toString())
+            : bulkActionConfirm.action === "deactivate"
+            ? (t("users.confirmBulkDeactivate") || `¿Estás seguro de que deseas desactivar ${selectedUserIds.size} usuario(s)? Los usuarios quedarán inactivos pero no se eliminarán.`).replace("{count}", selectedUserIds.size.toString())
+            : (t("users.confirmBulkDelete") || `¿Estás seguro de que deseas ELIMINAR PERMANENTEMENTE ${selectedUserIds.size} usuario(s)? Esta acción NO se puede deshacer y eliminará todos los datos relacionados (cascade).`).replace("{count}", selectedUserIds.size.toString())
+        }
+        confirmText={
+          bulkActionConfirm.action === "activate"
+            ? t("users.activate") || "Activar"
+            : bulkActionConfirm.action === "deactivate"
+            ? t("users.deactivate") || "Desactivar"
+            : t("users.delete") || "Eliminar"
+        }
+        cancelText={t("users.cancel") || "Cancelar"}
+        variant={bulkActionConfirm.action === "delete" ? "destructive" : "default"}
+        loading={bulkActionLoading}
       />
     </div>
     </TooltipProvider>

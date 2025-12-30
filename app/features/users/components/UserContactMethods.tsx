@@ -10,6 +10,7 @@ import { Plus, Edit, Trash2, Mail, Phone, MapPin, Globe } from "lucide-react";
 import { ConfirmDialog } from "~/components/common/ConfirmDialog";
 import { showToast } from "~/components/common/Toast";
 import { LoadingSpinner } from "~/components/common/LoadingSpinner";
+import { useTranslation } from "~/lib/i18n/useTranslation";
 import {
   useContactMethods,
   useCreateContactMethod,
@@ -50,13 +51,14 @@ export function UserContactMethods({
   user,
   onUpdate,
 }: UserContactMethodsProps) {
-  const { contactMethods, loading, refresh } = useContactMethods(
+  const { t } = useTranslation();
+  const { contactMethods, loading, refresh, error: contactMethodsError } = useContactMethods(
     "user",
     user.id
   );
-  const { create, loading: creating } = useCreateContactMethod();
-  const { update, loading: updating } = useUpdateContactMethod();
-  const { remove, loading: deleting } = useDeleteContactMethod();
+  const { create, loading: creating, error: createError } = useCreateContactMethod();
+  const { update, loading: updating, error: updateError } = useUpdateContactMethod();
+  const { remove, loading: deleting, error: deleteError } = useDeleteContactMethod();
 
   const [editingMethod, setEditingMethod] =
     useState<ContactMethod | null>(null);
@@ -79,32 +81,94 @@ export function UserContactMethods({
     postal_code?: string | null;
     country?: string | null;
   }) => {
-    if (!data.method_type || !data.value) {
-      showToast("Tipo de método y valor son requeridos", "error");
+    if (!data.method_type) {
+      showToast(t("users.contactMethodRequired") || "Tipo de método es requerido", "error");
       return;
     }
-    const result = await create({
+
+    // For address type, construct value from address fields
+    let contactValue = data.value;
+    if (data.method_type === "address") {
+      // Validate required address fields
+      if (!data.address_line1 || !data.city || !data.country) {
+        showToast(
+          t("users.addressFieldsRequired") || "Dirección línea 1, ciudad y país son requeridos",
+          "error"
+        );
+        return;
+      }
+      // Construct value from address fields
+      const addressParts = [
+        data.address_line1,
+        data.address_line2,
+        data.city,
+        data.state_province,
+        data.postal_code,
+        data.country,
+      ].filter(Boolean);
+      contactValue = addressParts.join(", ");
+    } else if (!contactValue) {
+      // For non-address types, value is required
+      showToast(t("users.contactMethodRequired") || "Tipo de método y valor son requeridos", "error");
+      return;
+    }
+
+    // Check for existing errors before attempting creation
+    if (createError) {
+      console.error("[UserContactMethods] Create error before attempt:", createError);
+      showToast(
+        t("users.contactMethodCreateError") || "Error al crear el método de contacto",
+        "error"
+      );
+      return;
+    }
+
+    console.log("[UserContactMethods] Creating contact method:", {
       entity_type: "user",
       entity_id: user.id,
       method_type: data.method_type,
-      value: data.value,
-      label: data.label,
-      is_primary: data.is_primary ?? false,
-      address_line1: data.address_line1,
-      address_line2: data.address_line2,
-      city: data.city,
-      state_province: data.state_province,
-      postal_code: data.postal_code,
-      country: data.country,
+      value: contactValue,
+      isAddress: data.method_type === "address",
     });
 
-    if (result) {
-      showToast("Método de contacto creado exitosamente", "success");
-      setShowForm(false);
-      refresh();
-      onUpdate?.();
-    } else {
-      showToast("Error al crear el método de contacto", "error");
+    try {
+      const result = await create({
+        entity_type: "user",
+        entity_id: user.id,
+        method_type: data.method_type,
+        value: contactValue || "", // Use constructed value for addresses
+        label: data.label,
+        is_primary: data.is_primary ?? false,
+        address_line1: data.address_line1,
+        address_line2: data.address_line2,
+        city: data.city,
+        state_province: data.state_province,
+        postal_code: data.postal_code,
+        country: data.country,
+      });
+
+      if (result) {
+        console.log("[UserContactMethods] Contact method created successfully:", result);
+        showToast(t("users.contactMethodCreateSuccess") || "Método de contacto creado exitosamente", "success");
+        setShowForm(false);
+        // Refresh is now handled automatically by React Query cache invalidation
+        // but we call it explicitly to ensure immediate UI update
+        refresh();
+        onUpdate?.();
+      } else {
+        // Check for error after creation attempt
+        const errorMessage = createError?.message || t("users.contactMethodCreateError") || "Error al crear el método de contacto";
+        console.error("[UserContactMethods] Failed to create contact method:", createError);
+        showToast(errorMessage, "error");
+      }
+    } catch (error) {
+      console.error("[UserContactMethods] Exception during contact method creation:", error);
+      showToast(
+        error instanceof Error
+          ? error.message
+          : t("users.contactMethodCreateError") || "Error al crear el método de contacto",
+        "error"
+      );
     }
   };
 
@@ -116,14 +180,41 @@ export function UserContactMethods({
       is_primary?: boolean | null;
     }
   ) => {
-    const result = await update(methodId, data);
-    if (result) {
-      showToast("Método de contacto actualizado exitosamente", "success");
-      setEditingMethod(null);
-      refresh();
-      onUpdate?.();
-    } else {
-      showToast("Error al actualizar el método de contacto", "error");
+    // Check for existing errors before attempting update
+    if (updateError) {
+      console.error("[UserContactMethods] Update error before attempt:", updateError);
+      showToast(
+        t("users.contactMethodUpdateError") || "Error al actualizar el método de contacto",
+        "error"
+      );
+      return;
+    }
+
+    console.log("[UserContactMethods] Updating contact method:", { methodId, data });
+
+    try {
+      const result = await update(methodId, data);
+      if (result) {
+        console.log("[UserContactMethods] Contact method updated successfully:", result);
+        showToast(t("users.contactMethodUpdateSuccess") || "Método de contacto actualizado exitosamente", "success");
+        setEditingMethod(null);
+        // Refresh is now handled automatically by React Query cache invalidation
+        refresh();
+        onUpdate?.();
+      } else {
+        // Check for error after update attempt
+        const errorMessage = updateError?.message || t("users.contactMethodUpdateError") || "Error al actualizar el método de contacto";
+        console.error("[UserContactMethods] Failed to update contact method:", updateError);
+        showToast(errorMessage, "error");
+      }
+    } catch (error) {
+      console.error("[UserContactMethods] Exception during contact method update:", error);
+      showToast(
+        error instanceof Error
+          ? error.message
+          : t("users.contactMethodUpdateError") || "Error al actualizar el método de contacto",
+        "error"
+      );
     }
   };
 
@@ -134,21 +225,73 @@ export function UserContactMethods({
   const confirmDelete = async () => {
     if (!deleteConfirm.methodId) return;
 
-    const success = await remove(deleteConfirm.methodId);
-    if (success) {
-      showToast("Método de contacto eliminado exitosamente", "success");
-      refresh();
-      onUpdate?.();
-    } else {
-      showToast("Error al eliminar el método de contacto", "error");
+    // Check for existing errors before attempting delete
+    if (deleteError) {
+      console.error("[UserContactMethods] Delete error before attempt:", deleteError);
+      showToast(
+        t("users.contactMethodDeleteError") || "Error al eliminar el método de contacto",
+        "error"
+      );
+      setDeleteConfirm({ open: false, methodId: null });
+      return;
+    }
+
+    console.log("[UserContactMethods] Deleting contact method:", deleteConfirm.methodId);
+
+    try {
+      const success = await remove(deleteConfirm.methodId);
+      if (success) {
+        console.log("[UserContactMethods] Contact method deleted successfully");
+        showToast(t("users.contactMethodDeleteSuccess") || "Método de contacto eliminado exitosamente", "success");
+        // Refresh is now handled automatically by React Query cache invalidation
+        refresh();
+        onUpdate?.();
+      } else {
+        // Check for error after delete attempt
+        const errorMessage = deleteError?.message || t("users.contactMethodDeleteError") || "Error al eliminar el método de contacto";
+        console.error("[UserContactMethods] Failed to delete contact method:", deleteError);
+        showToast(errorMessage, "error");
+      }
+    } catch (error) {
+      console.error("[UserContactMethods] Exception during contact method deletion:", error);
+      showToast(
+        error instanceof Error
+          ? error.message
+          : t("users.contactMethodDeleteError") || "Error al eliminar el método de contacto",
+        "error"
+      );
     }
     setDeleteConfirm({ open: false, methodId: null });
   };
 
+  // Log errors for debugging
+  // Log errors for debugging
+  if (contactMethodsError) {
+    console.error("[UserContactMethods] Error loading contact methods:", contactMethodsError);
+    // Log more details about the error
+    if (contactMethodsError instanceof Error) {
+      console.error("[UserContactMethods] Error details:", {
+        message: contactMethodsError.message,
+        name: contactMethodsError.name,
+        stack: contactMethodsError.stack,
+      });
+    }
+  }
+
+  // Log current state for debugging
+  console.log("[UserContactMethods] Current state:", {
+    contactMethodsCount: contactMethods.length,
+    loading,
+    error: contactMethodsError?.message,
+    errorType: contactMethodsError?.constructor?.name,
+    userId: user.id,
+    apiBaseUrl: import.meta.env.VITE_API_BASE_URL || "http://localhost:8000",
+  });
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <LoadingSpinner size="md" text="Cargando métodos de contacto..." />
+        <LoadingSpinner size="md" text={t("users.loadingContactMethods") || "Cargando métodos de contacto..."} />
       </div>
     );
   }
@@ -156,7 +299,7 @@ export function UserContactMethods({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Métodos de Contacto</h3>
+        <h3 className="text-lg font-semibold">{t("users.contactMethodsTitle") || "Métodos de Contacto"}</h3>
         <Button
           size="sm"
           variant="outline"
@@ -166,17 +309,68 @@ export function UserContactMethods({
           }}
         >
           <Plus className="h-4 w-4 mr-2" />
-          Agregar Método
+          {t("users.addContactMethod") || "Agregar Método"}
         </Button>
       </div>
 
-      {contactMethods.length === 0 ? (
+      {/* Loading state */}
+      {loading && (
         <div className="rounded-md border p-8 text-center">
-          <p className="text-sm text-muted-foreground">
-            No hay métodos de contacto registrados
+          <LoadingSpinner size="sm" />
+          <p className="text-sm text-muted-foreground mt-2">
+            {t("users.loadingContactMethods") || "Cargando métodos de contacto..."}
           </p>
         </div>
-      ) : (
+      )}
+
+      {/* Error state */}
+      {!loading && contactMethodsError && (
+        <div className="rounded-md border border-destructive/50 bg-destructive/10 p-4">
+          <p className="text-sm text-destructive font-medium">
+            {t("users.contactMethodCreateError") || "Error al cargar métodos de contacto"}
+          </p>
+          <p className="text-xs text-destructive/80 mt-1">
+            {contactMethodsError.message || "Error desconocido"}
+          </p>
+          {contactMethodsError.message?.includes("Network Error") && (
+            <div className="mt-2 space-y-1">
+              <p className="text-xs text-destructive/60">
+                Verifica que el servidor del backend esté corriendo en:
+              </p>
+              <p className="text-xs font-mono text-destructive/80">
+                {import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"}
+              </p>
+              <p className="text-xs text-destructive/60 mt-1">
+                Endpoint esperado: /api/v1/contact-methods
+              </p>
+            </div>
+          )}
+          <div className="mt-3 flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                console.log("[UserContactMethods] Retry button clicked");
+                refresh();
+              }}
+            >
+              {t("users.retry") || "Reintentar"}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Empty state */}
+      {!loading && !contactMethodsError && contactMethods.length === 0 && (
+        <div className="rounded-md border p-8 text-center">
+          <p className="text-sm text-muted-foreground">
+            {t("users.noContactMethods") || "No hay métodos de contacto registrados"}
+          </p>
+        </div>
+      )}
+
+      {/* List of contact methods */}
+      {!loading && !contactMethodsError && contactMethods.length > 0 && (
         <div className="space-y-2">
           {contactMethods.map((method) => {
             const Icon = getContactMethodIcon(method.method_type);
@@ -219,7 +413,7 @@ export function UserContactMethods({
                       )}
                       {method.is_verified && (
                         <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800">
-                          Verificado
+                          {t("users.verified") || "Verificado"}
                         </span>
                       )}
                     </div>
@@ -270,16 +464,17 @@ export function UserContactMethods({
         open={deleteConfirm.open}
         onClose={() => setDeleteConfirm({ open: false, methodId: null })}
         onConfirm={confirmDelete}
-        title="Eliminar Método de Contacto"
-        description="¿Estás seguro de que deseas eliminar este método de contacto?"
-        confirmText="Eliminar"
-        cancelText="Cancelar"
+        title={t("users.deleteContactMethodTitle") || "Eliminar Método de Contacto"}
+        description={t("users.deleteContactMethodDescription") || "¿Estás seguro de que deseas eliminar este método de contacto?"}
+        confirmText={t("users.delete") || "Eliminar"}
+        cancelText={t("users.cancel") || "Cancelar"}
         variant="destructive"
         loading={deleting}
       />
     </div>
   );
 }
+
 
 
 

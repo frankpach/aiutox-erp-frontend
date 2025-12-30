@@ -31,26 +31,15 @@ export function useNavigation(): NavigationTree | null {
       return null;
     }
 
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/bd91a56b-aa7d-44fb-ac11-0977789d60c5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useNavigation.ts:30',message:'useNavigation: starting filter',data:{categoriesCount:navigationTree.categories.size,userPermissions:permissions},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-    // #endregion
-
     // Filter navigation tree by permissions
     const filteredCategories = new Map<string, CategoryNode>();
 
     for (const [categoryName, categoryNode] of navigationTree.categories) {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/bd91a56b-aa7d-44fb-ac11-0977789d60c5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useNavigation.ts:38',message:'useNavigation: processing category',data:{categoryName,modulesCount:categoryNode.modules.size},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-      // #endregion
-
       // Check if category has requiresAnyPermission
       const requiresAnyPerm = (categoryNode as any).requiresAnyPermission;
       if (requiresAnyPerm && requiresAnyPerm.length > 0) {
         // Check if user has at least one of the required permissions
         const hasAny = hasAnyPermission(requiresAnyPerm);
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/bd91a56b-aa7d-44fb-ac11-0977789d60c5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useNavigation.ts:45',message:'useNavigation: checking requiresAnyPermission',data:{categoryName,requiresAnyPerm,hasAny},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-        // #endregion
         if (!hasAny) {
           continue; // Skip this category
         }
@@ -70,9 +59,6 @@ export function useNavigation(): NavigationTree | null {
             return true; // No permission required
           }
           const hasItemPerm = hasPermission(item.permission);
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/bd91a56b-aa7d-44fb-ac11-0977789d60c5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useNavigation.ts:60',message:'useNavigation: filtering item',data:{itemId:item.id,itemLabel:item.label,itemPermission:item.permission,hasItemPerm},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-          // #endregion
           return hasItemPerm;
         });
 
@@ -101,10 +87,6 @@ export function useNavigation(): NavigationTree | null {
         allItems.push(...moduleNode.items);
       }
     }
-
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/bd91a56b-aa7d-44fb-ac11-0977789d60c5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useNavigation.ts:88',message:'useNavigation: filter complete',data:{filteredCategoriesCount:filteredCategories.size,allItemsCount:allItems.length,allItemLabels:allItems.map(i=>i.label)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-    // #endregion
 
     return {
       categories: filteredCategories,

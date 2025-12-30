@@ -1,327 +1,726 @@
-import { useState } from "react";
+/**
+ * Theme Configuration Page
+ *
+ * Allows users to customize theme colors, logos, typography, and component styles
+ * Uses ConfigPageLayout and shared components for visual consistency
+ */
+
+import { useEffect } from "react";
+import { useTranslation } from "~/lib/i18n/useTranslation";
 import { useThemeConfig } from "~/hooks/useThemeConfig";
-import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
-import { Card } from "~/components/ui/card";
+import { showToast } from "~/components/common/Toast";
+import { ConfigPageLayout } from "~/components/config/ConfigPageLayout";
+import { ConfigColorInput } from "~/components/config/ConfigColorInput";
+import { ConfigFormField } from "~/components/config/ConfigFormField";
+import { ConfigSection } from "~/components/config/ConfigSection";
+import { ConfigLoadingState } from "~/components/config/ConfigLoadingState";
+import { ConfigErrorState } from "~/components/config/ConfigErrorState";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import { Card, CardContent } from "~/components/ui/card";
+import { useConfigForm } from "~/hooks/useConfigForm";
+
+interface ThemeConfigValues extends Record<string, string> {
+  // Main colors
+  primary_color: string;
+  secondary_color: string;
+  accent_color: string;
+  background_color: string;
+  surface_color: string;
+  // Status colors
+  error_color: string;
+  warning_color: string;
+  success_color: string;
+  info_color: string;
+  // Text colors
+  text_primary: string;
+  text_secondary: string;
+  text_disabled: string;
+  // Component colors
+  sidebar_bg: string;
+  sidebar_text: string;
+  navbar_bg: string;
+  navbar_text: string;
+  // Logos
+  logo_primary: string;
+  logo_white: string;
+  logo_small: string;
+  logo_name: string;
+  favicon: string;
+  login_background: string;
+  // Typography
+  font_family_primary: string;
+  font_family_secondary: string;
+  font_family_monospace: string;
+  font_size_base: string;
+  font_size_small: string;
+  font_size_large: string;
+  font_size_heading: string;
+  // Component styles
+  button_radius: string;
+  card_radius: string;
+  input_radius: string;
+}
+
+const FONT_FAMILIES = [
+  { value: "Manrope", label: "Manrope" },
+  { value: "Roboto", label: "Roboto" },
+  { value: "Inter", label: "Inter" },
+  { value: "Open Sans", label: "Open Sans" },
+  { value: "Lato", label: "Lato" },
+  { value: "Montserrat", label: "Montserrat" },
+  { value: "Poppins", label: "Poppins" },
+  { value: "Noto Sans", label: "Noto Sans" },
+];
+
+const FONT_SIZES = [
+  { value: "12px", label: "12px (Pequeño)" },
+  { value: "14px", label: "14px (Base)" },
+  { value: "16px", label: "16px (Mediano)" },
+  { value: "18px", label: "18px (Grande)" },
+];
+
+const RADIUS_OPTIONS = [
+  { value: "0px", label: "Sin radio" },
+  { value: "0.25rem", label: "Pequeño (0.25rem)" },
+  { value: "0.5rem", label: "Mediano (0.5rem)" },
+  { value: "0.75rem", label: "Grande (0.75rem)" },
+  { value: "1rem", label: "Muy grande (1rem)" },
+];
+
+export function meta() {
+  return [
+    { title: "Tema y Apariencia - AiutoX ERP" },
+    { name: "description", content: "Personaliza los colores, logos y estilos de la aplicación" },
+  ];
+}
 
 export default function ThemeConfigPage() {
-  const { theme, isLoading, isUpdating, updateTheme, error } = useThemeConfig();
-  const [editedTheme, setEditedTheme] = useState(theme);
+  const { t } = useTranslation();
+  const { theme, isLoading, error, updateTheme, isUpdating } = useThemeConfig();
 
-  // Update local state when theme loads
-  if (theme && !editedTheme) {
-    setEditedTheme(theme);
-  }
-
-  const handleColorChange = (key: string, value: string) => {
-    setEditedTheme((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
+  const defaultValues: ThemeConfigValues = {
+    primary_color: "#023E87",
+    secondary_color: "#00B6BC",
+    accent_color: "#FFC107",
+    background_color: "#FFFFFF",
+    surface_color: "#F5F5F5",
+    error_color: "#F44336",
+    warning_color: "#FF9800",
+    success_color: "#4CAF50",
+    info_color: "#2196F3",
+    text_primary: "#212121",
+    text_secondary: "#757575",
+    text_disabled: "#BDBDBD",
+    sidebar_bg: "#2C3E50",
+    sidebar_text: "#ECF0F1",
+    navbar_bg: "#34495E",
+    navbar_text: "#FFFFFF",
+    logo_primary: "/assets/logos/logo.png",
+    logo_white: "/assets/logos/logo-white.png",
+    logo_small: "/assets/logos/logo-sm.png",
+    logo_name: "/assets/logos/logo-name.png",
+    favicon: "/favicon.ico",
+    login_background: "",
+    font_family_primary: "Manrope",
+    font_family_secondary: "Arial",
+    font_family_monospace: "Courier New",
+    font_size_base: "14px",
+    font_size_small: "12px",
+    font_size_large: "18px",
+    font_size_heading: "24px",
+    button_radius: "0.25rem",
+    card_radius: "0.5rem",
+    input_radius: "0.25rem",
   };
 
-  const handleSave = () => {
-    if (editedTheme) {
-      updateTheme(editedTheme);
+  const initialValues: ThemeConfigValues = {
+    ...defaultValues,
+    ...theme,
+  };
+
+  const form = useConfigForm<ThemeConfigValues>({
+    initialValues,
+  });
+
+  // Actualizar valores cuando se carga la data
+  useEffect(() => {
+    if (theme && Object.keys(theme).length > 0) {
+      const updatedValues = { ...defaultValues, ...theme };
+      form.updateOriginalValues(updatedValues);
+    }
+  }, [theme]);
+
+  const handleSave = async () => {
+    try {
+      updateTheme(form.values);
+      form.updateOriginalValues(form.values);
+      showToast(t("config.theme.saveSuccess"), "success");
+    } catch (err) {
+      showToast(t("config.theme.errorSaving"), "error");
     }
   };
 
+
   const handleReset = () => {
-    setEditedTheme(theme);
+    form.reset();
   };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <p>Cargando configuración del tema...</p>
-      </div>
+      <ConfigPageLayout
+      title={t("config.theme.title")}
+      description={t("config.theme.description")}
+        loading={true}
+      >
+        <ConfigLoadingState lines={8} />
+      </ConfigPageLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <ConfigPageLayout
+      title={t("config.theme.title")}
+      description={t("config.theme.description")}
+        error={error instanceof Error ? error : String(error)}
+      >
+        <ConfigErrorState
+          message={t("config.theme.errorLoading")}
+        />
+      </ConfigPageLayout>
     );
   }
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Tema y Apariencia</h1>
-          <p className="text-muted-foreground mt-1">
-            Personaliza los colores, logos y estilos de tu aplicación
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handleReset} disabled={isUpdating}>
-            Restablecer
-          </Button>
-          <Button onClick={handleSave} disabled={isUpdating}>
-            {isUpdating ? "Guardando..." : "Guardar Cambios"}
-          </Button>
-        </div>
-      </div>
-
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-md p-4">
-          <p className="text-red-800">Error al cargar el tema: {error.toString()}</p>
-        </div>
-      )}
-
-      <Tabs defaultValue="colors" className="w-full">
+    <ConfigPageLayout
+      title={t("config.theme.title")}
+      description={t("config.theme.description")}
+      hasChanges={form.hasChanges}
+      isSaving={isUpdating}
+      onReset={handleReset}
+      onSave={handleSave}
+    >
+      <Tabs defaultValue="colors" className="space-y-6">
         <TabsList>
-          <TabsTrigger value="colors">Colores</TabsTrigger>
-          <TabsTrigger value="logos">Logos</TabsTrigger>
-          <TabsTrigger value="typography">Tipografía</TabsTrigger>
-          <TabsTrigger value="components">Componentes</TabsTrigger>
+          <TabsTrigger value="colors">{t("config.theme.tabColors")}</TabsTrigger>
+          <TabsTrigger value="logos">{t("config.theme.tabLogos")}</TabsTrigger>
+          <TabsTrigger value="typography">{t("config.theme.tabTypography")}</TabsTrigger>
+          <TabsTrigger value="components">{t("config.theme.tabComponents")}</TabsTrigger>
         </TabsList>
 
+        {/* Tab: Colores */}
         <TabsContent value="colors" className="space-y-6">
-          <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-            <h2 className="text-xl font-semibold mb-4">Colores Principales</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <ColorInput
-                label="Color Primario"
-                value={editedTheme?.primary_color || "#1976D2"}
-                onChange={(value) => handleColorChange("primary_color", value)}
+          <ConfigSection
+            title={t("config.theme.sectionMainColors")}
+            description={t("config.theme.sectionMainColorsDesc")}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ConfigColorInput
+                label={t("config.theme.primaryColor")}
+                id="primary_color"
+                value={form.values.primary_color}
+                onChange={(value) => form.setValue("primary_color", value)}
+                description={t("config.theme.primaryColorDesc")}
               />
-              <ColorInput
-                label="Color Secundario"
-                value={editedTheme?.secondary_color || "#DC004E"}
-                onChange={(value) => handleColorChange("secondary_color", value)}
+              <ConfigColorInput
+                label={t("config.theme.secondaryColor")}
+                id="secondary_color"
+                value={form.values.secondary_color}
+                onChange={(value) => form.setValue("secondary_color", value)}
+                description={t("config.theme.secondaryColorDesc")}
               />
-              <ColorInput
-                label="Color de Acento"
-                value={editedTheme?.accent_color || "#FFC107"}
-                onChange={(value) => handleColorChange("accent_color", value)}
+              <ConfigColorInput
+                label={t("config.theme.accentColor")}
+                id="accent_color"
+                value={form.values.accent_color}
+                onChange={(value) => form.setValue("accent_color", value)}
+                description={t("config.theme.accentColorDesc")}
               />
-              <ColorInput
-                label="Fondo"
-                value={editedTheme?.background_color || "#FFFFFF"}
-                onChange={(value) => handleColorChange("background_color", value)}
+              <ConfigColorInput
+                label={t("config.theme.backgroundColor")}
+                id="background_color"
+                value={form.values.background_color}
+                onChange={(value) => form.setValue("background_color", value)}
+                description={t("config.theme.backgroundColorDesc")}
               />
-              <ColorInput
-                label="Superficie"
-                value={editedTheme?.surface_color || "#F5F5F5"}
-                onChange={(value) => handleColorChange("surface_color", value)}
+              <ConfigColorInput
+                label={t("config.theme.surfaceColor")}
+                id="surface_color"
+                value={form.values.surface_color}
+                onChange={(value) => form.setValue("surface_color", value)}
+                description={t("config.theme.surfaceColorDesc")}
               />
             </div>
-          </div>
+          </ConfigSection>
 
-          <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-            <h2 className="text-xl font-semibold mb-4">Colores de Estado</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <ColorInput
-                label="Error"
-                value={editedTheme?.error_color || "#F44336"}
-                onChange={(value) => handleColorChange("error_color", value)}
+          <ConfigSection
+            title={t("config.theme.sectionStatusColors")}
+            description={t("config.theme.sectionStatusColorsDesc")}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ConfigColorInput
+                label={t("config.theme.errorColor")}
+                id="error_color"
+                value={form.values.error_color}
+                onChange={(value) => form.setValue("error_color", value)}
               />
-              <ColorInput
-                label="Advertencia"
-                value={editedTheme?.warning_color || "#FF9800"}
-                onChange={(value) => handleColorChange("warning_color", value)}
+              <ConfigColorInput
+                label={t("config.theme.warningColor")}
+                id="warning_color"
+                value={form.values.warning_color}
+                onChange={(value) => form.setValue("warning_color", value)}
               />
-              <ColorInput
-                label="Éxito"
-                value={editedTheme?.success_color || "#4CAF50"}
-                onChange={(value) => handleColorChange("success_color", value)}
+              <ConfigColorInput
+                label={t("config.theme.successColor")}
+                id="success_color"
+                value={form.values.success_color}
+                onChange={(value) => form.setValue("success_color", value)}
               />
-              <ColorInput
-                label="Información"
-                value={editedTheme?.info_color || "#2196F3"}
-                onChange={(value) => handleColorChange("info_color", value)}
+              <ConfigColorInput
+                label={t("config.theme.infoColor")}
+                id="info_color"
+                value={form.values.info_color}
+                onChange={(value) => form.setValue("info_color", value)}
               />
             </div>
-          </div>
+          </ConfigSection>
 
-          <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-            <h2 className="text-xl font-semibold mb-4">Colores de Texto</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <ColorInput
-                label="Texto Principal"
-                value={editedTheme?.text_primary || "#212121"}
-                onChange={(value) => handleColorChange("text_primary", value)}
+          <ConfigSection
+            title={t("config.theme.sectionTextColors")}
+            description={t("config.theme.sectionTextColorsDesc")}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ConfigColorInput
+                label={t("config.theme.textPrimary")}
+                id="text_primary"
+                value={form.values.text_primary}
+                onChange={(value) => form.setValue("text_primary", value)}
               />
-              <ColorInput
-                label="Texto Secundario"
-                value={editedTheme?.text_secondary || "#757575"}
-                onChange={(value) => handleColorChange("text_secondary", value)}
+              <ConfigColorInput
+                label={t("config.theme.textSecondary")}
+                id="text_secondary"
+                value={form.values.text_secondary}
+                onChange={(value) => form.setValue("text_secondary", value)}
               />
-              <ColorInput
-                label="Texto Deshabilitado"
-                value={editedTheme?.text_disabled || "#BDBDBD"}
-                onChange={(value) => handleColorChange("text_disabled", value)}
+              <ConfigColorInput
+                label={t("config.theme.textDisabled")}
+                id="text_disabled"
+                value={form.values.text_disabled}
+                onChange={(value) => form.setValue("text_disabled", value)}
               />
             </div>
-          </div>
+          </ConfigSection>
 
-          <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-            <h2 className="text-xl font-semibold mb-4">Colores de Componentes</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <ColorInput
-                label="Fondo Sidebar"
-                value={editedTheme?.sidebar_bg || "#2C3E50"}
-                onChange={(value) => handleColorChange("sidebar_bg", value)}
+          <ConfigSection
+            title={t("config.theme.sectionComponentColors")}
+            description={t("config.theme.sectionComponentColorsDesc")}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ConfigColorInput
+                label={t("config.theme.sidebarBg")}
+                id="sidebar_bg"
+                value={form.values.sidebar_bg}
+                onChange={(value) => form.setValue("sidebar_bg", value)}
               />
-              <ColorInput
-                label="Texto Sidebar"
-                value={editedTheme?.sidebar_text || "#ECF0F1"}
-                onChange={(value) => handleColorChange("sidebar_text", value)}
+              <ConfigColorInput
+                label={t("config.theme.sidebarText")}
+                id="sidebar_text"
+                value={form.values.sidebar_text}
+                onChange={(value) => form.setValue("sidebar_text", value)}
               />
-              <ColorInput
-                label="Fondo Navbar"
-                value={editedTheme?.navbar_bg || "#34495E"}
-                onChange={(value) => handleColorChange("navbar_bg", value)}
+              <ConfigColorInput
+                label={t("config.theme.navbarBg")}
+                id="navbar_bg"
+                value={form.values.navbar_bg}
+                onChange={(value) => form.setValue("navbar_bg", value)}
               />
-              <ColorInput
-                label="Texto Navbar"
-                value={editedTheme?.navbar_text || "#FFFFFF"}
-                onChange={(value) => handleColorChange("navbar_text", value)}
+              <ConfigColorInput
+                label={t("config.theme.navbarText")}
+                id="navbar_text"
+                value={form.values.navbar_text}
+                onChange={(value) => form.setValue("navbar_text", value)}
               />
             </div>
-          </div>
+          </ConfigSection>
         </TabsContent>
 
+        {/* Tab: Logos */}
         <TabsContent value="logos" className="space-y-6">
-          <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Logos y Recursos</h2>
-            <div className="space-y-4">
-              <TextInput
-                label="Logo Principal"
-                value={editedTheme?.logo_primary || "/assets/logos/logo.png"}
-                onChange={(value) => handleColorChange("logo_primary", value)}
+          <ConfigSection
+            title={t("config.theme.sectionLogos")}
+            description={t("config.theme.sectionLogosDesc")}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ConfigFormField
+                label={t("config.theme.logoPrimary")}
+                id="logo_primary"
+                value={form.values.logo_primary}
+                onChange={(value) => form.setValue("logo_primary", value)}
                 placeholder="/assets/logos/logo.png"
+                description={t("config.theme.logoPrimaryDesc")}
               />
-              <TextInput
-                label="Logo Blanco"
-                value={editedTheme?.logo_white || "/assets/logos/logo-white.png"}
-                onChange={(value) => handleColorChange("logo_white", value)}
+              <ConfigFormField
+                label={t("config.theme.logoWhite")}
+                id="logo_white"
+                value={form.values.logo_white}
+                onChange={(value) => form.setValue("logo_white", value)}
                 placeholder="/assets/logos/logo-white.png"
+                description={t("config.theme.logoWhiteDesc")}
               />
-              <TextInput
-                label="Logo Pequeño"
-                value={editedTheme?.logo_small || "/assets/logos/logo-sm.png"}
-                onChange={(value) => handleColorChange("logo_small", value)}
+              <ConfigFormField
+                label={t("config.theme.logoSmall")}
+                id="logo_small"
+                value={form.values.logo_small}
+                onChange={(value) => form.setValue("logo_small", value)}
                 placeholder="/assets/logos/logo-sm.png"
+                description={t("config.theme.logoSmallDesc")}
               />
-              <TextInput
-                label="Favicon"
-                value={editedTheme?.favicon || "/assets/logos/favicon.ico"}
-                onChange={(value) => handleColorChange("favicon", value)}
-                placeholder="/assets/logos/favicon.ico"
+              <ConfigFormField
+                label={t("config.theme.logoName")}
+                id="logo_name"
+                value={form.values.logo_name}
+                onChange={(value) => form.setValue("logo_name", value)}
+                placeholder="/assets/logos/logo-name.png"
+                description={t("config.theme.logoNameDesc")}
+              />
+              <ConfigFormField
+                label={t("config.theme.favicon")}
+                id="favicon"
+                value={form.values.favicon}
+                onChange={(value) => form.setValue("favicon", value)}
+                placeholder="/favicon.ico"
+                description={t("config.theme.faviconDesc")}
+              />
+              <ConfigFormField
+                label={t("config.theme.loginBackground")}
+                id="login_background"
+                value={form.values.login_background}
+                onChange={(value) => form.setValue("login_background", value)}
+                placeholder="/assets/login-background.jpg"
+                description={t("config.theme.loginBackgroundDesc")}
               />
             </div>
-          </Card>
+          </ConfigSection>
         </TabsContent>
 
+        {/* Tab: Tipografía */}
         <TabsContent value="typography" className="space-y-6">
-          <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Tipografía</h2>
-            <div className="space-y-4">
-              <TextInput
-                label="Fuente Principal"
-                value={editedTheme?.font_family_primary || "Roboto"}
-                onChange={(value) => handleColorChange("font_family_primary", value)}
-                placeholder="Roboto"
+          <ConfigSection
+            title={t("config.theme.sectionFonts")}
+            description={t("config.theme.sectionFontsDesc")}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ConfigFormField
+                label={t("config.theme.fontFamilyPrimary")}
+                id="font_family_primary"
+                value={form.values.font_family_primary}
+                onChange={(value) => form.setValue("font_family_primary", value)}
+                description={t("config.theme.fontFamilyPrimaryDesc")}
+                input={
+                  <Select
+                    value={form.values.font_family_primary}
+                    onValueChange={(value) => form.setValue("font_family_primary", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {FONT_FAMILIES.map((font) => (
+                        <SelectItem key={font.value} value={font.value}>
+                          {font.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                }
               />
-              <TextInput
-                label="Fuente Secundaria"
-                value={editedTheme?.font_family_secondary || "Arial"}
-                onChange={(value) => handleColorChange("font_family_secondary", value)}
-                placeholder="Arial"
+              <ConfigFormField
+                label={t("config.theme.fontFamilySecondary")}
+                id="font_family_secondary"
+                value={form.values.font_family_secondary}
+                onChange={(value) => form.setValue("font_family_secondary", value)}
+                description={t("config.theme.fontFamilySecondaryDesc")}
+                input={
+                  <Select
+                    value={form.values.font_family_secondary}
+                    onValueChange={(value) => form.setValue("font_family_secondary", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {FONT_FAMILIES.map((font) => (
+                        <SelectItem key={font.value} value={font.value}>
+                          {font.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                }
               />
-              <TextInput
-                label="Tamaño Base"
-                value={editedTheme?.font_size_base || "14px"}
-                onChange={(value) => handleColorChange("font_size_base", value)}
-                placeholder="14px"
+              <ConfigFormField
+                label={t("config.theme.fontFamilyMonospace")}
+                id="font_family_monospace"
+                value={form.values.font_family_monospace}
+                onChange={(value) => form.setValue("font_family_monospace", value)}
+                description={t("config.theme.fontFamilyMonospaceDesc")}
+                input={
+                  <Select
+                    value={form.values.font_family_monospace}
+                    onValueChange={(value) => form.setValue("font_family_monospace", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Courier New">Courier New</SelectItem>
+                      <SelectItem value="Monaco">Monaco</SelectItem>
+                      <SelectItem value="Consolas">Consolas</SelectItem>
+                      <SelectItem value="Menlo">Menlo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                }
               />
             </div>
-          </Card>
+          </ConfigSection>
+
+          <ConfigSection
+            title={t("config.theme.sectionFontSizes")}
+            description={t("config.theme.sectionFontSizesDesc")}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ConfigFormField
+                label={t("config.theme.fontSizeBase")}
+                id="font_size_base"
+                value={form.values.font_size_base}
+                onChange={(value) => form.setValue("font_size_base", value)}
+                description={t("config.theme.fontSizeBaseDesc")}
+                input={
+                  <Select
+                    value={form.values.font_size_base}
+                    onValueChange={(value) => form.setValue("font_size_base", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {FONT_SIZES.map((size) => (
+                        <SelectItem key={size.value} value={size.value}>
+                          {size.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                }
+              />
+              <ConfigFormField
+                label={t("config.theme.fontSizeSmall")}
+                id="font_size_small"
+                value={form.values.font_size_small}
+                onChange={(value) => form.setValue("font_size_small", value)}
+                description={t("config.theme.fontSizeSmallDesc")}
+                input={
+                  <Select
+                    value={form.values.font_size_small}
+                    onValueChange={(value) => form.setValue("font_size_small", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {FONT_SIZES.map((size) => (
+                        <SelectItem key={size.value} value={size.value}>
+                          {size.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                }
+              />
+              <ConfigFormField
+                label={t("config.theme.fontSizeLarge")}
+                id="font_size_large"
+                value={form.values.font_size_large}
+                onChange={(value) => form.setValue("font_size_large", value)}
+                description={t("config.theme.fontSizeLargeDesc")}
+                input={
+                  <Select
+                    value={form.values.font_size_large}
+                    onValueChange={(value) => form.setValue("font_size_large", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {FONT_SIZES.map((size) => (
+                        <SelectItem key={size.value} value={size.value}>
+                          {size.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                }
+              />
+              <ConfigFormField
+                label={t("config.theme.fontSizeHeading")}
+                id="font_size_heading"
+                value={form.values.font_size_heading}
+                onChange={(value) => form.setValue("font_size_heading", value)}
+                description={t("config.theme.fontSizeHeadingDesc")}
+                input={
+                  <Select
+                    value={form.values.font_size_heading}
+                    onValueChange={(value) => form.setValue("font_size_heading", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="20px">20px</SelectItem>
+                      <SelectItem value="24px">24px</SelectItem>
+                      <SelectItem value="28px">28px</SelectItem>
+                      <SelectItem value="32px">32px</SelectItem>
+                      <SelectItem value="36px">36px</SelectItem>
+                    </SelectContent>
+                  </Select>
+                }
+              />
+            </div>
+          </ConfigSection>
         </TabsContent>
 
+        {/* Tab: Componentes */}
         <TabsContent value="components" className="space-y-6">
-          <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Estilos de Componentes</h2>
-            <div className="space-y-4">
-              <TextInput
-                label="Radio de Botones"
-                value={editedTheme?.button_radius || "4px"}
-                onChange={(value) => handleColorChange("button_radius", value)}
-                placeholder="4px"
+          <ConfigSection
+            title={t("config.theme.sectionRadius")}
+            description={t("config.theme.sectionRadiusDesc")}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ConfigFormField
+                label={t("config.theme.buttonRadius")}
+                id="button_radius"
+                value={form.values.button_radius}
+                onChange={(value) => form.setValue("button_radius", value)}
+                description={t("config.theme.buttonRadiusDesc")}
+                input={
+                  <Select
+                    value={form.values.button_radius}
+                    onValueChange={(value) => form.setValue("button_radius", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {RADIUS_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                }
               />
-              <TextInput
-                label="Radio de Tarjetas"
-                value={editedTheme?.card_radius || "8px"}
-                onChange={(value) => handleColorChange("card_radius", value)}
-                placeholder="8px"
+              <ConfigFormField
+                label={t("config.theme.cardRadius")}
+                id="card_radius"
+                value={form.values.card_radius}
+                onChange={(value) => form.setValue("card_radius", value)}
+                description={t("config.theme.cardRadiusDesc")}
+                input={
+                  <Select
+                    value={form.values.card_radius}
+                    onValueChange={(value) => form.setValue("card_radius", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {RADIUS_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                }
               />
-              <TextInput
-                label="Radio de Inputs"
-                value={editedTheme?.input_radius || "4px"}
-                onChange={(value) => handleColorChange("input_radius", value)}
-                placeholder="4px"
+              <ConfigFormField
+                label={t("config.theme.inputRadius")}
+                id="input_radius"
+                value={form.values.input_radius}
+                onChange={(value) => form.setValue("input_radius", value)}
+                description={t("config.theme.inputRadiusDesc")}
+                input={
+                  <Select
+                    value={form.values.input_radius}
+                    onValueChange={(value) => form.setValue("input_radius", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {RADIUS_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                }
               />
             </div>
-          </Card>
+          </ConfigSection>
+
+          {/* Preview del tema */}
+          <ConfigSection
+            title={t("config.theme.sectionPreview")}
+            description={t("config.theme.sectionPreviewDesc")}
+          >
+            <Card>
+              <CardContent className="p-6 space-y-4">
+                <div className="flex items-center gap-4">
+                  <div
+                    className="h-12 w-12 rounded-md flex items-center justify-center text-white font-semibold"
+                    style={{ backgroundColor: form.values.primary_color }}
+                  >
+                    P
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold" style={{ color: form.values.text_primary }}>
+                      {t("config.theme.previewTitle")}
+                    </h4>
+                    <p className="text-sm" style={{ color: form.values.text_secondary }}>
+                      {t("config.theme.previewDescription")}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    className="px-4 py-2 rounded-md text-white font-medium"
+                    style={{
+                      backgroundColor: form.values.primary_color,
+                      borderRadius: form.values.button_radius,
+                    }}
+                  >
+                    {t("config.theme.buttonPrimary")}
+                  </button>
+                  <button
+                    className="px-4 py-2 rounded-md border font-medium"
+                    style={{
+                      borderColor: form.values.primary_color,
+                      color: form.values.primary_color,
+                      borderRadius: form.values.button_radius,
+                    }}
+                  >
+                    {t("config.theme.buttonSecondary")}
+                  </button>
+                </div>
+              </CardContent>
+            </Card>
+          </ConfigSection>
         </TabsContent>
       </Tabs>
-    </div>
+    </ConfigPageLayout>
   );
 }
-
-// Helper component for color inputs
-function ColorInput({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <div className="space-y-2">
-      <Label>{label}</Label>
-      <div className="flex gap-2">
-        <Input
-          type="color"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-20 h-10 p-1 cursor-pointer"
-        />
-        <Input
-          type="text"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="#000000"
-          pattern="^#[0-9A-Fa-f]{6}$"
-          className="flex-1"
-        />
-      </div>
-    </div>
-  );
-}
-
-// Helper component for text inputs
-function TextInput({
-  label,
-  value,
-  onChange,
-  placeholder,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-}) {
-  return (
-    <div className="space-y-2">
-      <Label>{label}</Label>
-      <Input
-        type="text"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-      />
-    </div>
-  );
-}
-

@@ -162,6 +162,8 @@ export function useThemeConfig() {
       if (data.config) {
         applyThemeToCSS(data.config);
       }
+      // Refetch to ensure we have the latest data from backend
+      refetch();
     },
   });
 
@@ -190,4 +192,11 @@ export function useThemeConfig() {
     refetchTheme: refetch,
   };
 }
+
+
+
+
+
+
+
 

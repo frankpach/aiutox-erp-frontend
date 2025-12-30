@@ -380,10 +380,6 @@ class ModuleRegistry {
           permission: undefined, // Category-level permission check
         };
 
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/bd91a56b-aa7d-44fb-ac11-0977789d60c5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'registry.ts:365',message:'registry: creating direct module',data:{categoryName,directModuleId,itemsCount:directModule.items.length,itemLabels:directModule.items.map(i=>i.label),itemPermissions:directModule.items.map(i=>i.permission)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-        // #endregion
-
         categoryNode.modules.set(directModuleId, directModule);
         allItems.push(...directModule.items);
 

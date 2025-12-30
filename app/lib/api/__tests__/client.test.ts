@@ -4,7 +4,7 @@
 
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import axios from "axios";
-import apiClient from "../client";
+import apiClient, { scheduleProactiveRefresh } from "../client";
 import { useAuthStore } from "../../../stores/authStore";
 import type { RefreshTokenResponse } from "../types/auth.types";
 
@@ -161,6 +161,26 @@ Object.defineProperty(window, "localStorage", {
   value: localStorageMock,
 });
 
+// Mock document.cookie
+let cookieStore: Record<string, string> = {};
+Object.defineProperty(document, "cookie", {
+  get: () => {
+    return Object.entries(cookieStore)
+      .map(([key, value]) => `${key}=${value}`)
+      .join("; ");
+  },
+  set: (cookie: string) => {
+    const [keyValue] = cookie.split(";");
+    const [key, value] = keyValue.split("=");
+    if (value) {
+      cookieStore[key.trim()] = value.trim();
+    } else {
+      delete cookieStore[key.trim()];
+    }
+  },
+  configurable: true,
+});
+
 // Mock window.location
 delete (window as { location?: unknown }).location;
 window.location = { href: "" } as Location;
@@ -170,7 +190,9 @@ describe("apiClient - Refresh Token", () => {
 
   beforeEach(() => {
     localStorageMock.clear();
+    cookieStore = {}; // Clear cookies
     vi.clearAllMocks();
+    // Don't use fake timers by default - individual tests will use real timers if needed
 
     // Reset call count and mock functions
     // NOTE: The module was already imported, so apiClient was already created (call #1)
@@ -209,6 +231,7 @@ describe("apiClient - Refresh Token", () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.useRealTimers();
   });
 
   describe("Request Interceptor", () => {
@@ -458,7 +481,243 @@ describe("apiClient - Refresh Token", () => {
       expect(mockAxiosInstance.request).not.toHaveBeenCalled();
     });
   });
+
+  describe("Cookie Support", () => {
+    it("should read refresh token from cookie first when both cookie and localStorage exist", async () => {
+      const cookieRefreshToken = "cookie_refresh_token_123";
+      const localStorageRefreshToken = "localStorage_refresh_token_456";
+      const newAccessToken = "new_access_token_789";
+
+      // Set both cookie and localStorage
+      cookieStore["refresh_token"] = cookieRefreshToken;
+      localStorageMock.setItem("refresh_token", localStorageRefreshToken);
+
+      // Mock refresh client to return success
+      // When cookie exists, the request body may be empty or contain the cookie token
+      // The cookie will be sent automatically via withCredentials
+      mockRefreshClientPost.fn.mockResolvedValue({
+        data: {
+          access_token: newAccessToken,
+          token_type: "bearer",
+        } as RefreshTokenResponse,
+      });
+
+      const originalRequest = {
+        headers: {},
+        _retry: false,
+      };
+
+      const error = {
+        response: { status: 401 },
+        config: originalRequest,
+      };
+
+      const mockRetryResponse = { data: "success" };
+      firstInstanceRequest.mockResolvedValue(mockRetryResponse);
+
+      expect(capturedInterceptors.responseError).toBeTruthy();
+      await capturedInterceptors.responseError!(error);
+
+      // Verify that refresh was called
+      expect(mockRefreshClientPost.fn).toHaveBeenCalled();
+      const refreshCall = mockRefreshClientPost.fn.mock.calls[0];
+      expect(refreshCall[0]).toBe("/auth/refresh");
+
+      // When cookie exists, body may be empty {} or contain token as fallback
+      // The important thing is that the refresh succeeds
+      expect(localStorageMock.getItem("auth_token")).toBe(newAccessToken);
+    });
+
+    it("should fallback to localStorage if cookie is not available", async () => {
+      const localStorageRefreshToken = "localStorage_refresh_token_456";
+      const newAccessToken = "new_access_token_789";
+
+      // Only set localStorage, no cookie
+      cookieStore = {};
+      localStorageMock.setItem("refresh_token", localStorageRefreshToken);
+
+      // Mock refresh client to return success
+      mockRefreshClientPost.fn.mockResolvedValue({
+        data: {
+          access_token: newAccessToken,
+          token_type: "bearer",
+        } as RefreshTokenResponse,
+      });
+
+      const originalRequest = {
+        headers: {},
+        _retry: false,
+      };
+
+      const error = {
+        response: { status: 401 },
+        config: originalRequest,
+      };
+
+      const mockRetryResponse = { data: "success" };
+      firstInstanceRequest.mockResolvedValue(mockRetryResponse);
+
+      expect(capturedInterceptors.responseError).toBeTruthy();
+      await capturedInterceptors.responseError!(error);
+
+      // Verify that refresh was called with localStorage token
+      expect(mockRefreshClientPost.fn).toHaveBeenCalledWith(
+        "/auth/refresh",
+        { refresh_token: localStorageRefreshToken }
+      );
+    });
+
+    it("should not store refresh token in localStorage when using cookies", async () => {
+      const cookieRefreshToken = "cookie_refresh_token_123";
+      const newAccessToken = "new_access_token_789";
+
+      cookieStore["refresh_token"] = cookieRefreshToken;
+      // Set an old token in localStorage (should not be updated)
+      localStorageMock.setItem("refresh_token", "old_localStorage_token");
+
+      mockRefreshClientPost.fn.mockResolvedValue({
+        data: {
+          access_token: newAccessToken,
+          token_type: "bearer",
+        } as RefreshTokenResponse,
+      });
+
+      const originalRequest = {
+        headers: {},
+        _retry: false,
+      };
+
+      const error = {
+        response: { status: 401 },
+        config: originalRequest,
+      };
+
+      const mockRetryResponse = { data: "success" };
+      firstInstanceRequest.mockResolvedValue(mockRetryResponse);
+
+      expect(capturedInterceptors.responseError).toBeTruthy();
+      await capturedInterceptors.responseError!(error);
+
+      // Access token should be stored
+      expect(localStorageMock.getItem("auth_token")).toBe(newAccessToken);
+
+      // Refresh token in localStorage should remain unchanged (cookie is used instead)
+      // The implementation doesn't update localStorage refresh_token when cookie exists
+      expect(localStorageMock.getItem("refresh_token")).toBe("old_localStorage_token");
+    });
+  });
+
+  describe("Proactive Refresh", () => {
+    it("should schedule proactive refresh correctly", () => {
+      vi.useRealTimers(); // Use real timers for this test
+
+      // Create a token that expires in 10 minutes
+      const now = Math.floor(Date.now() / 1000);
+      const exp = now + (10 * 60); // 10 minutes from now
+      const payload = { sub: "user123", exp, iat: now };
+      const token = `header.${btoa(JSON.stringify(payload))}.signature`;
+
+      // Mock refreshAccessToken to return a new token
+      // We can't directly call refreshAccessToken, but we can verify scheduleProactiveRefresh
+      // schedules correctly by checking that setTimeout was called
+      const setTimeoutSpy = vi.spyOn(global, "setTimeout");
+
+      scheduleProactiveRefresh(token);
+
+      // Verify setTimeout was called
+      expect(setTimeoutSpy).toHaveBeenCalled();
+
+      // The timeout should be scheduled for approximately 5 minutes (10 min - 5 min = 5 min)
+      const timeoutCall = setTimeoutSpy.mock.calls[0];
+      const scheduledTime = timeoutCall[1] as number;
+      const expectedTime = 5 * 60 * 1000; // 5 minutes in ms
+
+      // Allow some tolerance (within 1 second)
+      expect(Math.abs(scheduledTime - expectedTime)).toBeLessThan(1000);
+
+      setTimeoutSpy.mockRestore();
+    });
+
+    it("should not schedule refresh if token expires too soon", () => {
+      vi.useRealTimers(); // Use real timers for this test
+
+      // Create a token that expires in 2 minutes (less than 5 minutes threshold)
+      const now = Math.floor(Date.now() / 1000);
+      const exp = now + (2 * 60); // 2 minutes from now
+      const payload = { sub: "user123", exp, iat: now };
+      const token = `header.${btoa(JSON.stringify(payload))}.signature`;
+
+      const setTimeoutSpy = vi.spyOn(global, "setTimeout");
+
+      scheduleProactiveRefresh(token);
+
+      // setTimeout should not be called (or called with 0 or negative time)
+      // Since refreshTime would be negative (2 min - 5 min = -3 min), setTimeout should not be called
+      // But the function might still call setTimeout with a negative value, so we check the time
+      if (setTimeoutSpy.mock.calls.length > 0) {
+        const timeoutCall = setTimeoutSpy.mock.calls[0];
+        const scheduledTime = timeoutCall[1] as number;
+        // If called, time should be negative or very small (less than 0)
+        expect(scheduledTime).toBeLessThanOrEqual(0);
+      } else {
+        // Or setTimeout might not be called at all
+        expect(setTimeoutSpy).not.toHaveBeenCalled();
+      }
+
+      setTimeoutSpy.mockRestore();
+    });
+
+    it("should clear existing timeout before scheduling new one", () => {
+      vi.useRealTimers(); // Use real timers for this test
+
+      const now = Math.floor(Date.now() / 1000);
+      const exp1 = now + (10 * 60);
+      const exp2 = now + (15 * 60);
+      const payload1 = { sub: "user123", exp: exp1, iat: now };
+      const payload2 = { sub: "user123", exp: exp2, iat: now };
+      const token1 = `header.${btoa(JSON.stringify(payload1))}.signature`;
+      const token2 = `header.${btoa(JSON.stringify(payload2))}.signature`;
+
+      const clearTimeoutSpy = vi.spyOn(global, "clearTimeout");
+      const setTimeoutSpy = vi.spyOn(global, "setTimeout").mockReturnValue(123 as any);
+
+      // Schedule first refresh
+      scheduleProactiveRefresh(token1);
+      expect(setTimeoutSpy).toHaveBeenCalledTimes(1);
+
+      // Schedule second refresh (should clear first)
+      scheduleProactiveRefresh(token2);
+      expect(clearTimeoutSpy).toHaveBeenCalledWith(123);
+      expect(setTimeoutSpy).toHaveBeenCalledTimes(2);
+
+      clearTimeoutSpy.mockRestore();
+      setTimeoutSpy.mockRestore();
+    });
+
+    it("should handle invalid token gracefully", () => {
+      vi.useRealTimers(); // Use real timers for this test
+
+      const invalidToken = "invalid.token";
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      // Should not throw
+      expect(() => scheduleProactiveRefresh(invalidToken)).not.toThrow();
+
+      // Should log error
+      expect(consoleErrorSpy).toHaveBeenCalled();
+
+      consoleErrorSpy.mockRestore();
+    });
+  });
 });
+
+
+
+
+
+
+
+
 
 
 

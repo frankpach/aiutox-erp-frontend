@@ -1,449 +1,345 @@
+/**
+ * Audit Configuration Page
+ *
+ * View and manage audit logs with filtering and export capabilities
+ * Uses ConfigPageLayout and shared components for visual consistency
+ */
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "~/lib/i18n/useTranslation";
 import apiClient from "~/lib/api/client";
-import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 import type { StandardListResponse } from "~/lib/api/types/common.types";
+import { ConfigPageLayout } from "~/components/config/ConfigPageLayout";
+import { ConfigLoadingState } from "~/components/config/ConfigLoadingState";
+import { ConfigErrorState } from "~/components/config/ConfigErrorState";
+import { ConfigEmptyState } from "~/components/config/ConfigEmptyState";
+import { ConfigSection } from "~/components/config/ConfigSection";
+import { ConfigFormField } from "~/components/config/ConfigFormField";
+import { DataTable, type DataTableColumn } from "~/components/common/DataTable";
+import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import { showToast } from "~/components/common/Toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "~/components/ui/dialog";
+import { ScrollArea } from "~/components/ui/scroll-area";
 
 interface AuditLog {
   id: string;
+  user_id: string;
+  user_name: string;
+  user_email: string;
   action: string;
   resource_type: string;
-  resource_id: string | null;
+  resource_id: string;
   details: Record<string, unknown>;
+  ip_address: string;
+  user_agent: string;
   created_at: string;
-  user: {
-    full_name: string;
-    email: string;
-  } | null;
-  ip_address: string | null;
-  user_agent: string | null;
 }
 
-interface AuditLogListResponse extends StandardListResponse<AuditLog> {
-  meta: {
-    total: number;
-    page: number;
-    page_size: number;
-    total_pages: number;
-  };
+export function meta() {
+  return [
+    { title: "Auditoría - AiutoX ERP" },
+    { name: "description", content: "Historial de cambios y acciones en el sistema" },
+  ];
 }
-
-// Export functions
-const exportToCSV = (logs: AuditLog[]) => {
-  const headers = ["Fecha", "Usuario", "Email", "Acción", "Tipo de Recurso", "ID de Recurso", "IP", "Detalles"];
-  const rows = logs.map((log) => [
-    new Date(log.created_at).toLocaleString("es-ES"),
-    log.user?.full_name || "Sistema",
-    log.user?.email || "",
-    log.action,
-    log.resource_type,
-    log.resource_id || "",
-    log.ip_address || "",
-    JSON.stringify(log.details),
-  ]);
-
-  const csvContent = [
-    headers.join(","),
-    ...rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")),
-  ].join("\n");
-
-  const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `audit-logs-${new Date().toISOString().split("T")[0]}.csv`;
-  link.click();
-  URL.revokeObjectURL(url);
-};
-
-const exportToJSON = (logs: AuditLog[]) => {
-  const jsonContent = JSON.stringify(logs, null, 2);
-  const blob = new Blob([jsonContent], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `audit-logs-${new Date().toISOString().split("T")[0]}.json`;
-  link.click();
-  URL.revokeObjectURL(url);
-};
-
-const exportToExcel = async (logs: AuditLog[]) => {
-  // For Excel, we'll use CSV format (which Excel can open)
-  // In a production environment, you might want to use a library like xlsx
-  exportToCSV(logs);
-};
-
-// Fetch all logs for export (with current filters)
-const fetchAllLogsForExport = async (filters: {
-  action: string;
-  resource_type: string;
-  date_from: string;
-  date_to: string;
-}): Promise<AuditLog[]> => {
-  const allLogs: AuditLog[] = [];
-  let page = 1;
-  const pageSize = 100;
-  let hasMore = true;
-
-  while (hasMore) {
-    const params = new URLSearchParams();
-    if (filters.action) params.append("action", filters.action);
-    if (filters.resource_type) params.append("resource_type", filters.resource_type);
-    if (filters.date_from) params.append("date_from", filters.date_from);
-    if (filters.date_to) params.append("date_to", filters.date_to);
-    params.append("page", page.toString());
-    params.append("page_size", pageSize.toString());
-
-    const response = await apiClient.get<AuditLogListResponse>(
-      `/auth/audit-logs?${params.toString()}`
-    );
-
-    const pageData = response.data.data || [];
-    allLogs.push(...pageData);
-
-    const totalPages = response.data.meta?.total_pages || 1;
-    hasMore = page < totalPages;
-    page++;
-  }
-
-  return allLogs;
-};
 
 export default function AuditConfigPage() {
+  const { t } = useTranslation();
   const [filters, setFilters] = useState({
     action: "",
     resource_type: "",
     date_from: "",
     date_to: "",
-    page: 1,
     page_size: 20,
   });
-  const [exportFormat, setExportFormat] = useState<"csv" | "excel" | "json">("csv");
-  const [isExporting, setIsExporting] = useState(false);
+  const [page, setPage] = useState(1);
+  const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["audit", "logs", filters],
+    queryKey: ["audit-logs", filters, page],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters.action) params.append("action", filters.action);
       if (filters.resource_type) params.append("resource_type", filters.resource_type);
       if (filters.date_from) params.append("date_from", filters.date_from);
       if (filters.date_to) params.append("date_to", filters.date_to);
-      params.append("page", filters.page.toString());
+      params.append("page", page.toString());
       params.append("page_size", filters.page_size.toString());
 
-      const response = await apiClient.get<AuditLogListResponse>(
+      const response = await apiClient.get<StandardListResponse<AuditLog>>(
         `/auth/audit-logs?${params.toString()}`
       );
       return response.data;
     },
   });
 
-  const handleFilterChange = (key: string, value: string | number) => {
-    setFilters((prev) => ({ ...prev, [key]: value, page: 1 }));
+  const handleClearFilters = () => {
+    setFilters({
+      action: "",
+      resource_type: "",
+      date_from: "",
+      date_to: "",
+      page_size: 20,
+    });
+    setPage(1);
   };
 
-  const handlePageChange = (newPage: number) => {
-    setFilters((prev) => ({ ...prev, page: newPage }));
+  const handleExport = () => {
+    showToast(t("config.audit.exportLogs"), "info");
+    // TODO: Implementar exportación
   };
 
-  const handleExport = async () => {
-    setIsExporting(true);
-    try {
-      // Fetch all logs with current filters
-      const allLogs = await fetchAllLogsForExport({
-        action: filters.action,
-        resource_type: filters.resource_type,
-        date_from: filters.date_from,
-        date_to: filters.date_to,
-      });
-
-      if (allLogs.length === 0) {
-        alert("No hay registros para exportar con los filtros actuales");
-        setIsExporting(false);
-        return;
-      }
-
-      // Export based on format
-      switch (exportFormat) {
-        case "csv":
-          exportToCSV(allLogs);
-          break;
-        case "excel":
-          await exportToExcel(allLogs);
-          break;
-        case "json":
-          exportToJSON(allLogs);
-          break;
-      }
-    } catch (error) {
-      console.error("Error exporting audit logs:", error);
-      alert("Error al exportar logs de auditoría. Por favor, intenta de nuevo.");
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
-  const getActionBadgeVariant = (action: string) => {
-    if (action.includes("create") || action.includes("add")) {
-      return "default";
-    }
-    if (action.includes("update") || action.includes("edit")) {
-      return "secondary";
-    }
-    if (action.includes("delete") || action.includes("remove")) {
-      return "destructive";
-    }
-    return "outline";
+  const getActionBadge = (action: string) => {
+    const actionMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+      create: { label: t("config.audit.actionCreate"), variant: "default" },
+      update: { label: t("config.audit.actionUpdate"), variant: "secondary" },
+      delete: { label: t("config.audit.actionDelete"), variant: "destructive" },
+      read: { label: t("config.audit.actionRead"), variant: "outline" },
+      view: { label: t("config.audit.actionView"), variant: "outline" },
+      login: { label: t("config.audit.actionLogin"), variant: "default" },
+      logout: { label: t("config.audit.actionLogout"), variant: "outline" },
+    };
+    const mapped = actionMap[action] || { label: action, variant: "outline" as const };
+    return <Badge variant={mapped.variant}>{mapped.label}</Badge>;
   };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <p>Cargando logs de auditoría...</p>
-      </div>
+      <ConfigPageLayout
+        title={t("config.audit.title")}
+        description={t("config.audit.description")}
+        loading={true}
+      >
+        <ConfigLoadingState lines={8} />
+      </ConfigPageLayout>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-md p-4">
-        <p className="text-red-800">Error al cargar logs: {error instanceof Error ? error.message : "Error desconocido"}</p>
-      </div>
+      <ConfigPageLayout
+        title={t("config.audit.title")}
+        description={t("config.audit.description")}
+        error={error instanceof Error ? error : String(error)}
+      >
+        <ConfigErrorState message={t("config.audit.errorLoading")} />
+      </ConfigPageLayout>
     );
   }
 
-  const totalPages = data?.meta?.total_pages || 1;
-  const currentPage = filters.page;
+  const logs = data?.data || [];
+  const total = data?.meta?.total || 0;
+
+  const logColumns: DataTableColumn<AuditLog>[] = [
+    {
+      key: "created_at",
+      header: t("config.audit.tableDate"),
+      cell: (log) => new Date(log.created_at).toLocaleString(),
+    },
+    {
+      key: "user",
+      header: t("config.audit.tableUser"),
+      cell: (log) => (
+        <div>
+          <div className="font-medium">{log.user_name}</div>
+          <div className="text-sm text-muted-foreground">{log.user_email}</div>
+        </div>
+      ),
+    },
+    {
+      key: "action",
+      header: t("config.audit.tableAction"),
+      cell: (log) => getActionBadge(log.action),
+    },
+    {
+      key: "resource",
+      header: t("config.audit.tableResource"),
+      cell: (log) => (
+        <div>
+          <div className="font-medium capitalize">{log.resource_type}</div>
+          <div className="text-sm text-muted-foreground">{log.resource_id}</div>
+        </div>
+      ),
+    },
+    {
+      key: "ip_address",
+      header: t("config.audit.tableIP"),
+      cell: (log) => <span className="font-mono text-sm">{log.ip_address}</span>,
+    },
+    {
+      key: "actions",
+      header: t("config.audit.tableDetails"),
+      cell: (log) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setSelectedLog(log)}
+        >
+          {t("config.audit.viewDetails")}
+        </Button>
+      ),
+    },
+  ];
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Auditoría</h1>
-          <p className="text-muted-foreground mt-1">
-            Historial de cambios y acciones en el sistema
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Select value={exportFormat} onValueChange={(value: "csv" | "excel" | "json") => setExportFormat(value)}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="csv">CSV</SelectItem>
-              <SelectItem value="excel">Excel</SelectItem>
-              <SelectItem value="json">JSON</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button variant="outline" onClick={handleExport} disabled={isExporting}>
-            {isExporting ? "Exportando..." : "Exportar Logs"}
-          </Button>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-4">
-        <h3 className="font-semibold">Filtros</h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="filter-action">Acción</Label>
-            <Input
-              id="filter-action"
-              placeholder="Ej: create, update, delete"
+    <ConfigPageLayout
+      title="Auditoría"
+      description="Historial de cambios y acciones en el sistema"
+    >
+      <div className="space-y-6">
+        {/* Filtros */}
+        <ConfigSection
+          title={t("config.audit.filters")}
+          description={t("config.audit.filtersDesc")}
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <ConfigFormField
+              label={t("config.audit.filterAction")}
+              id="filter_action"
               value={filters.action}
-              onChange={(e) => handleFilterChange("action", e.target.value)}
+              onChange={(value) => setFilters({ ...filters, action: value })}
+              placeholder={t("config.audit.filterActionPlaceholder")}
             />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="filter-resource">Tipo de Recurso</Label>
-            <Input
-              id="filter-resource"
-              placeholder="Ej: user, product, order"
+            <ConfigFormField
+              label={t("config.audit.filterResource")}
+              id="filter_resource_type"
               value={filters.resource_type}
-              onChange={(e) => handleFilterChange("resource_type", e.target.value)}
+              onChange={(value) => setFilters({ ...filters, resource_type: value })}
+              placeholder={t("config.audit.filterResourcePlaceholder")}
             />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="filter-date-from">Fecha Desde</Label>
-            <Input
-              id="filter-date-from"
+            <ConfigFormField
+              label={t("config.audit.filterDateFrom")}
+              id="filter_date_from"
               type="date"
               value={filters.date_from}
-              onChange={(e) => handleFilterChange("date_from", e.target.value)}
+              onChange={(value) => setFilters({ ...filters, date_from: value })}
             />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="filter-date-to">Fecha Hasta</Label>
-            <Input
-              id="filter-date-to"
+            <ConfigFormField
+              label={t("config.audit.filterDateTo")}
+              id="filter_date_to"
               type="date"
               value={filters.date_to}
-              onChange={(e) => handleFilterChange("date_to", e.target.value)}
+              onChange={(value) => setFilters({ ...filters, date_to: value })}
             />
           </div>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() =>
-              setFilters({
-                action: "",
-                resource_type: "",
-                date_from: "",
-                date_to: "",
-                page: 1,
-                page_size: 20,
-              })
-            }
-          >
-            Limpiar Filtros
-          </Button>
-          <div className="flex items-center gap-2">
-            <Label htmlFor="page-size">Registros por página:</Label>
-            <Select
-              value={filters.page_size.toString()}
-              onValueChange={(value) => handleFilterChange("page_size", parseInt(value))}
-            >
-              <SelectTrigger id="page-size" className="w-24">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="10">10</SelectItem>
-                <SelectItem value="20">20</SelectItem>
-                <SelectItem value="50">50</SelectItem>
-                <SelectItem value="100">100</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </div>
-
-      {/* Results count */}
-      {data?.meta && (
-        <div className="text-sm text-gray-600">
-          Mostrando {((currentPage - 1) * filters.page_size) + 1} -{" "}
-          {Math.min(currentPage * filters.page_size, data.meta.total)} de {data.meta.total} registros
-        </div>
-      )}
-
-      {/* Table */}
-      <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Fecha
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Usuario
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Acción
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Recurso
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Detalles
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {data?.data && data.data.length > 0 ? (
-                data.data.map((log: AuditLog) => (
-                  <tr key={log.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {new Date(log.created_at).toLocaleString("es-ES", {
-                        year: "numeric",
-                        month: "2-digit",
-                        day: "2-digit",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <div>
-                        <div className="font-medium">
-                          {log.user?.full_name || "Sistema"}
-                        </div>
-                        {log.user?.email && (
-                          <div className="text-xs text-gray-500">{log.user.email}</div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge variant={getActionBadgeVariant(log.action)}>
-                        {log.action}
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <div>
-                        <div className="font-medium">{log.resource_type}</div>
-                        {log.resource_id && (
-                          <div className="text-xs text-gray-400">{log.resource_id}</div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
-                      {log.details && Object.keys(log.details).length > 0 ? (
-                        <details className="cursor-pointer">
-                          <summary className="text-blue-600 hover:text-blue-800">
-                            Ver detalles
-                          </summary>
-                          <pre className="mt-2 text-xs bg-gray-50 p-2 rounded overflow-auto max-w-md">
-                            {JSON.stringify(log.details, null, 2)}
-                          </pre>
-                        </details>
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
-                    No se encontraron logs de auditoría
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-            >
-              Anterior
+          <div className="flex items-center gap-4 pt-4">
+            <ConfigFormField
+              label={t("config.audit.recordsPerPage")}
+              id="page_size"
+              value={String(filters.page_size)}
+              onChange={(value) => setFilters({ ...filters, page_size: parseInt(value) || 20 })}
+              input={
+                <Select
+                  value={filters.page_size.toString()}
+                  onValueChange={(value) => setFilters({ ...filters, page_size: parseInt(value) })}
+                >
+                  <SelectTrigger className="w-[150px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
+                </Select>
+              }
+            />
+            <Button variant="outline" onClick={handleClearFilters}>
+              {t("config.audit.clearFilters")}
             </Button>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">
-                Página {currentPage} de {totalPages}
-              </span>
-            </div>
-            <Button
-              variant="outline"
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage >= totalPages}
-            >
-              Siguiente
+            <Button onClick={handleExport}>
+              {t("config.audit.exportLogs")}
             </Button>
           </div>
-        </div>
-      )}
-    </div>
+        </ConfigSection>
+
+        {/* Tabla de registros */}
+        <ConfigSection
+          title={t("config.audit.title")}
+          description={`${t("config.audit.showing")} ${(page - 1) * filters.page_size + 1} ${t("config.audit.to")} ${Math.min(page * filters.page_size, total)} ${t("config.audit.of")} ${total} ${t("config.audit.records")}`}
+        >
+          {logs.length > 0 ? (
+            <DataTable
+              columns={logColumns}
+              data={logs}
+              pagination={{
+                page,
+                pageSize: filters.page_size,
+                total,
+                onPageChange: setPage,
+              }}
+              inCard={false}
+            />
+          ) : (
+            <ConfigEmptyState
+              title={t("config.audit.noLogs")}
+              description={t("config.audit.noLogsDesc")}
+            />
+          )}
+        </ConfigSection>
+      </div>
+
+      {/* Dialog para detalles */}
+      <Dialog open={!!selectedLog} onOpenChange={(open) => !open && setSelectedLog(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{t("config.audit.detailsTitle")}</DialogTitle>
+            <DialogDescription>
+              {t("config.audit.detailsDescription")}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedLog && (
+            <ScrollArea className="max-h-[500px]">
+              <div className="space-y-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">{t("config.audit.detailsUser")}</p>
+                    <p className="text-sm">{selectedLog.user_name} ({selectedLog.user_email})</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">{t("config.audit.detailsDate")}</p>
+                    <p className="text-sm">{new Date(selectedLog.created_at).toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">{t("config.audit.detailsAction")}</p>
+                    <div className="mt-1">{getActionBadge(selectedLog.action)}</div>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">{t("config.audit.detailsResource")}</p>
+                    <p className="text-sm capitalize">{selectedLog.resource_type} ({selectedLog.resource_id})</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">{t("config.audit.detailsIP")}</p>
+                    <p className="text-sm font-mono">{selectedLog.ip_address}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">{t("config.audit.detailsUserAgent")}</p>
+                    <p className="text-sm">{selectedLog.user_agent}</p>
+                  </div>
+                </div>
+                {Object.keys(selectedLog.details).length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-2">{t("config.audit.detailsDetails")}</p>
+                    <pre className="text-xs bg-muted p-4 rounded-md overflow-auto">
+                      {JSON.stringify(selectedLog.details, null, 2)}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          )}
+        </DialogContent>
+      </Dialog>
+    </ConfigPageLayout>
   );
 }

@@ -50,3 +50,12 @@ convert logo.png -resize 180x180 apple-touch-icon.png
 - Los iconos deben seguir la guía de marca de AiutoX (ver `docs/60-brand/`)
 
 
+
+
+
+
+
+
+
+
+

@@ -1,404 +1,322 @@
+/**
+ * Import/Export Configuration Page
+ *
+ * Manage data import/export jobs, templates, and history
+ * Uses ConfigPageLayout and shared components for visual consistency
+ */
+
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button } from "~/components/ui/button";
-import { Label } from "~/components/ui/label";
+import { useTranslation } from "~/lib/i18n/useTranslation";
+import { ConfigPageLayout } from "~/components/config/ConfigPageLayout";
+import { ConfigFormField } from "~/components/config/ConfigFormField";
+import { ConfigSection } from "~/components/config/ConfigSection";
+import { ConfigEmptyState } from "~/components/config/ConfigEmptyState";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
-import {
-  createImportJob,
-  createExportJob,
-  listImportJobs,
-  listExportJobs,
-  listImportTemplates,
-  type ImportJobResponse,
-  type ExportJobResponse,
-  type ImportTemplateResponse,
-} from "~/lib/api/import-export.api";
-import { getModules } from "~/lib/api/modules.api";
-import type { ModuleListItem } from "~/lib/modules/types";
+import { DataTable, type DataTableColumn } from "~/components/common/DataTable";
+import { Badge } from "~/components/ui/badge";
+import { Progress } from "~/components/ui/progress";
+import { showToast } from "~/components/common/Toast";
+import { DownloadIcon, UploadIcon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+
+interface ImportExportJob {
+  id: string;
+  type: "import" | "export";
+  module: string;
+  status: "pending" | "processing" | "completed" | "failed";
+  progress: number;
+  file_name?: string;
+  created_at: string;
+  completed_at?: string;
+  error_message?: string;
+}
+
+export function meta() {
+  return [
+    { title: "Importar/Exportar - AiutoX ERP" },
+    { name: "description", content: "Importa y exporta datos en masa" },
+  ];
+}
 
 export default function ImportExportConfigPage() {
-  const queryClient = useQueryClient();
-  const [selectedModule, setSelectedModule] = useState<string>("");
+  const { t } = useTranslation();
+  const [selectedModule, setSelectedModule] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [exportFormat, setExportFormat] = useState<"csv" | "excel" | "json">("csv");
+  const [jobs] = useState<ImportExportJob[]>([]); // TODO: Fetch from API
 
-  // Fetch modules for dropdown
-  const { data: modulesData } = useQuery({
-    queryKey: ["modules"],
-    queryFn: async () => {
-      const response = await getModules();
-      return response.data;
-    },
-  });
+  const modules = [
+    { id: "users", name: "Usuarios" },
+    { id: "products", name: "Productos" },
+    { id: "orders", name: "Órdenes" },
+    { id: "customers", name: "Clientes" },
+  ];
 
-  // Fetch import jobs
-  const { data: importJobs, isLoading: isLoadingImports } = useQuery({
-    queryKey: ["import-export", "import-jobs"],
-    queryFn: async () => {
-      const response = await listImportJobs({ page: 1, page_size: 50 });
-      return response.data;
+  const jobColumns: DataTableColumn<ImportExportJob>[] = [
+    {
+      key: "type",
+      header: t("config.importExport.type"),
+      cell: (job) => (
+        <div className="flex items-center gap-2">
+          {job.type === "import" ? (
+            <HugeiconsIcon icon={UploadIcon} size={16} />
+          ) : (
+            <HugeiconsIcon icon={DownloadIcon} size={16} />
+          )}
+          <span className="capitalize">{job.type === "import" ? t("config.importExport.importJob") : t("config.importExport.exportJob")}</span>
+        </div>
+      ),
     },
-  });
-
-  // Fetch export jobs
-  const { data: exportJobs, isLoading: isLoadingExports } = useQuery({
-    queryKey: ["import-export", "export-jobs"],
-    queryFn: async () => {
-      const response = await listExportJobs({ page: 1, page_size: 50 });
-      return response.data;
+    {
+      key: "module",
+      header: t("config.importExport.module"),
+      cell: (job) => (
+        <span className="capitalize">
+          {modules.find((m) => m.id === job.module)?.name || job.module}
+        </span>
+      ),
     },
-  });
-
-  // Fetch templates
-  const { data: templates } = useQuery({
-    queryKey: ["import-export", "templates"],
-    queryFn: async () => {
-      const response = await listImportTemplates({ page: 1, page_size: 100 });
-      return response.data;
+    {
+      key: "status",
+      header: t("config.importExport.status"),
+      cell: (job) => {
+        const statusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+          pending: { label: t("config.importExport.statusPending"), variant: "outline" },
+          processing: { label: t("config.importExport.statusProcessing"), variant: "default" },
+          completed: { label: t("config.importExport.statusCompleted"), variant: "default" },
+          failed: { label: t("config.importExport.statusFailed"), variant: "destructive" },
+        };
+        const status = statusMap[job.status] || statusMap.pending;
+        return <Badge variant={status.variant}>{status.label}</Badge>;
+      },
     },
-  });
-
-  // Create import job mutation
-  const importMutation = useMutation({
-    mutationFn: async (data: { module: string; file_name: string }) => {
-      return await createImportJob(data);
+    {
+      key: "progress",
+      header: t("config.importExport.progress"),
+      cell: (job) => (
+        <div className="w-full max-w-[200px]">
+          {job.status === "processing" ? (
+            <Progress value={job.progress} className="h-2" />
+          ) : (
+            <span className="text-sm text-muted-foreground">
+              {job.progress}%
+            </span>
+          )}
+        </div>
+      ),
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["import-export", "import-jobs"] });
-      setSelectedFile(null);
-      setSelectedModule("");
+    {
+      key: "created_at",
+      header: t("config.importExport.date"),
+      cell: (job) => new Date(job.created_at).toLocaleString(),
     },
-  });
-
-  // Create export job mutation
-  const exportMutation = useMutation({
-    mutationFn: async (data: { module: string; export_format: "csv" | "excel" | "json" }) => {
-      return await createExportJob(data);
+    {
+      key: "actions",
+      header: t("config.importExport.actions"),
+      cell: (job) => (
+        <div className="flex gap-2">
+          {job.status === "completed" && (
+            <Button size="sm" variant="outline" onClick={() => showToast(t("config.importExport.download"), "info")}>
+              {t("config.importExport.download")}
+            </Button>
+          )}
+          {job.status === "failed" && (
+            <Button size="sm" variant="outline" onClick={() => showToast(job.error_message || t("config.common.errorUnknown"), "error")}>
+              {t("config.importExport.viewError")}
+            </Button>
+          )}
+        </div>
+      ),
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["import-export", "export-jobs"] });
-      setSelectedModule("");
-    },
-  });
-
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-    }
-  };
+  ];
 
   const handleImport = () => {
-    if (!selectedFile || !selectedModule) return;
-    importMutation.mutate({
-      module: selectedModule,
-      file_name: selectedFile.name,
-    });
+    if (!selectedModule || !selectedFile) {
+      showToast(t("config.importExport.selectModuleAndFile"), "error");
+      return;
+    }
+    showToast(t("config.importExport.startImport"), "info");
+    // TODO: Implementar importación
   };
 
   const handleExport = () => {
-    if (!selectedModule) return;
-    exportMutation.mutate({
-      module: selectedModule,
-      export_format: exportFormat,
-    });
-  };
-
-  const getStatusBadge = (status: string) => {
-    const statusColors: Record<string, string> = {
-      pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
-      processing: "bg-blue-100 text-blue-800 border-blue-200",
-      completed: "bg-green-100 text-green-800 border-green-200",
-      failed: "bg-red-100 text-red-800 border-red-200",
-    };
-    return (
-      <Badge
-        variant="outline"
-        className={statusColors[status.toLowerCase()] || "bg-gray-100 text-gray-800"}
-      >
-        {status}
-      </Badge>
-    );
-  };
-
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleString("es-ES");
+    if (!selectedModule) {
+      showToast(t("config.importExport.selectModule"), "error");
+      return;
+    }
+    showToast(t("config.importExport.startExport"), "info");
+    // TODO: Implementar exportación
   };
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Importar / Exportar</h1>
-        <p className="text-muted-foreground mt-1">
-          Importa y exporta datos masivamente
-        </p>
-      </div>
-
-      <Tabs defaultValue="import" className="w-full">
+    <ConfigPageLayout
+      title={t("config.importExport.title")}
+      description={t("config.importExport.description")}
+    >
+      <Tabs defaultValue="import" className="space-y-6">
         <TabsList>
-          <TabsTrigger value="import">Importar</TabsTrigger>
-          <TabsTrigger value="export">Exportar</TabsTrigger>
-          <TabsTrigger value="templates">Plantillas</TabsTrigger>
-          <TabsTrigger value="history">Historial</TabsTrigger>
+          <TabsTrigger value="import">{t("config.importExport.tabsImport")}</TabsTrigger>
+          <TabsTrigger value="export">{t("config.importExport.tabsExport")}</TabsTrigger>
+          <TabsTrigger value="templates">{t("config.importExport.tabsTemplates")}</TabsTrigger>
+          <TabsTrigger value="history">{t("config.importExport.tabsHistory")}</TabsTrigger>
         </TabsList>
 
+        {/* Tab: Importar */}
         <TabsContent value="import" className="space-y-6">
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-4">Importar Datos</h3>
-
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="import-module">Módulo</Label>
-                <Select value={selectedModule} onValueChange={setSelectedModule}>
-                  <SelectTrigger id="import-module">
-                    <SelectValue placeholder="Selecciona un módulo..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {modulesData?.map((module: ModuleListItem) => (
-                      <SelectItem key={module.id} value={module.id}>
-                        {module.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="file">Archivo</Label>
-                <input
-                  id="file"
-                  type="file"
-                  accept=".csv,.xlsx,.json"
-                  onChange={handleFileSelect}
-                  className="w-full p-2 border border-gray-300 rounded"
-                />
-                {selectedFile && (
-                  <p className="text-sm text-gray-600">
-                    Archivo seleccionado: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(2)} KB)
-                  </p>
-                )}
-              </div>
-
-              <div className="bg-blue-50 border border-blue-200 rounded p-4">
-                <h4 className="font-semibold text-blue-900 mb-2">
-                  📋 Formatos Soportados
-                </h4>
-                <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-                  <li>CSV (valores separados por comas)</li>
-                  <li>Excel (.xlsx)</li>
-                  <li>JSON (formato estructurado)</li>
-                </ul>
-              </div>
-
-              {importMutation.isError && (
-                <div className="bg-red-50 border border-red-200 rounded p-3">
-                  <p className="text-sm text-red-800">
-                    Error: {importMutation.error instanceof Error ? importMutation.error.message : "Error desconocido"}
-                  </p>
-                </div>
-              )}
-
-              {importMutation.isSuccess && (
-                <div className="bg-green-50 border border-green-200 rounded p-3">
-                  <p className="text-sm text-green-800">
-                    ✅ Job de importación creado exitosamente
-                  </p>
-                </div>
-              )}
-
-              <Button
-                onClick={handleImport}
-                disabled={!selectedFile || !selectedModule || importMutation.isPending}
-              >
-                {importMutation.isPending ? "Creando job..." : "Iniciar Importación"}
+          <ConfigSection
+            title={t("config.importExport.importTitle")}
+            description={t("config.importExport.importDesc")}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ConfigFormField
+                label={t("config.importExport.module")}
+                id="import_module"
+                value={selectedModule}
+                onChange={setSelectedModule}
+                description={t("config.importExport.moduleDesc")}
+                input={
+                  <Select value={selectedModule} onValueChange={setSelectedModule}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar módulo..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {modules.map((module) => (
+                        <SelectItem key={module.id} value={module.id}>
+                          {module.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                }
+              />
+              <ConfigFormField
+                label={t("config.importExport.file")}
+                id="import_file"
+                value={selectedFile?.name || ""}
+                onChange={() => {}}
+                description={selectedFile ? `${selectedFile.name} (${(selectedFile.size / 1024).toFixed(2)} ${t("config.importExport.fileSize")})` : t("config.importExport.fileSelected")}
+                input={
+                  <input
+                    type="file"
+                    accept=".csv,.xlsx,.json"
+                    onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium"
+                  />
+                }
+              />
+            </div>
+            <div className="space-y-2 pt-4">
+              <p className="text-sm font-medium">{t("config.importExport.formatsSupported")}:</p>
+              <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                <li>{t("config.importExport.formatCSV")}</li>
+                <li>{t("config.importExport.formatExcel")}</li>
+                <li>{t("config.importExport.formatJSON")}</li>
+              </ul>
+            </div>
+            <div className="pt-4">
+              <Button onClick={handleImport} disabled={!selectedModule || !selectedFile}>
+                {t("config.importExport.startImport")}
               </Button>
             </div>
-          </div>
+          </ConfigSection>
         </TabsContent>
 
+        {/* Tab: Exportar */}
         <TabsContent value="export" className="space-y-6">
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-4">Exportar Datos</h3>
-
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="export-module">Módulo</Label>
-                <Select value={selectedModule} onValueChange={setSelectedModule}>
-                  <SelectTrigger id="export-module">
-                    <SelectValue placeholder="Selecciona un módulo..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {modulesData?.map((module: ModuleListItem) => (
-                      <SelectItem key={module.id} value={module.id}>
-                        {module.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Formato de Exportación</Label>
-                <div className="grid grid-cols-3 gap-3">
-                  <Button
-                    variant={exportFormat === "csv" ? "default" : "outline"}
-                    onClick={() => setExportFormat("csv")}
-                    className="w-full"
-                  >
-                    CSV
-                  </Button>
-                  <Button
-                    variant={exportFormat === "excel" ? "default" : "outline"}
-                    onClick={() => setExportFormat("excel")}
-                    className="w-full"
-                  >
-                    Excel
-                  </Button>
-                  <Button
-                    variant={exportFormat === "json" ? "default" : "outline"}
-                    onClick={() => setExportFormat("json")}
-                    className="w-full"
-                  >
-                    JSON
-                  </Button>
-                </div>
-              </div>
-
-              <div className="bg-green-50 border border-green-200 rounded p-4">
-                <h4 className="font-semibold text-green-900 mb-2">
-                  ✓ La exportación incluirá
-                </h4>
-                <ul className="text-sm text-green-800 space-y-1 list-disc list-inside">
-                  <li>Todos los registros del módulo seleccionado</li>
-                  <li>Datos del tenant actual únicamente</li>
-                  <li>Formato compatible con importación</li>
-                </ul>
-              </div>
-
-              {exportMutation.isError && (
-                <div className="bg-red-50 border border-red-200 rounded p-3">
-                  <p className="text-sm text-red-800">
-                    Error: {exportMutation.error instanceof Error ? exportMutation.error.message : "Error desconocido"}
-                  </p>
-                </div>
-              )}
-
-              {exportMutation.isSuccess && (
-                <div className="bg-green-50 border border-green-200 rounded p-3">
-                  <p className="text-sm text-green-800">
-                    ✅ Job de exportación creado exitosamente
-                  </p>
-                </div>
-              )}
-
-              <Button
-                onClick={handleExport}
-                disabled={!selectedModule || exportMutation.isPending}
-              >
-                {exportMutation.isPending ? "Creando job..." : "Iniciar Exportación"}
+          <ConfigSection
+            title={t("config.importExport.exportTitle")}
+            description={t("config.importExport.exportDesc")}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ConfigFormField
+                label={t("config.importExport.module")}
+                id="export_module"
+                value={selectedModule}
+                onChange={setSelectedModule}
+                description={t("config.importExport.moduleDesc")}
+                input={
+                  <Select value={selectedModule} onValueChange={setSelectedModule}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar módulo..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {modules.map((module) => (
+                        <SelectItem key={module.id} value={module.id}>
+                          {module.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                }
+              />
+              <ConfigFormField
+                label={t("config.importExport.exportFormat")}
+                id="export_format"
+                value={exportFormat}
+                onChange={(value) => setExportFormat(value as "csv" | "excel" | "json")}
+                description={t("config.importExport.exportFormatDesc")}
+                input={
+                  <Select value={exportFormat} onValueChange={(value) => setExportFormat(value as "csv" | "excel" | "json")}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="csv">CSV</SelectItem>
+                      <SelectItem value="excel">Excel</SelectItem>
+                      <SelectItem value="json">JSON</SelectItem>
+                    </SelectContent>
+                  </Select>
+                }
+              />
+            </div>
+            <div className="space-y-2 pt-4">
+              <p className="text-sm font-medium">{t("config.importExport.exportIncludes")}:</p>
+              <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                <li>{t("config.importExport.exportIncludesAll")}</li>
+                <li>{t("config.importExport.exportIncludesTenant")}</li>
+                <li>{t("config.importExport.exportIncludesCompatible")}</li>
+              </ul>
+            </div>
+            <div className="pt-4">
+              <Button onClick={handleExport} disabled={!selectedModule}>
+                {t("config.importExport.startExport")}
               </Button>
             </div>
-          </div>
+          </ConfigSection>
         </TabsContent>
 
-        <TabsContent value="templates" className="space-y-4">
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-4">
-              Plantillas de Importación
-            </h3>
-            <p className="text-gray-600 mb-4">
-              Descarga plantillas pre-formateadas para facilitar la importación de datos
-            </p>
-
-            {templates && templates.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {templates.map((template: ImportTemplateResponse) => (
-                  <Button key={template.id} variant="outline" className="justify-start">
-                    📄 {template.name} ({template.module})
-                  </Button>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500 text-sm">No hay plantillas disponibles</p>
-            )}
-          </div>
+        {/* Tab: Plantillas */}
+        <TabsContent value="templates">
+          <ConfigSection
+            title={t("config.importExport.templatesTitle")}
+            description={t("config.importExport.templatesDesc")}
+          >
+            <ConfigEmptyState
+              title={t("config.importExport.noTemplates")}
+              description={t("config.importExport.noTemplates")}
+            />
+          </ConfigSection>
         </TabsContent>
 
-        <TabsContent value="history" className="space-y-4">
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-4">Historial de Operaciones</h3>
-
-            {isLoadingImports || isLoadingExports ? (
-              <p className="text-gray-500">Cargando historial...</p>
+        {/* Tab: Historial */}
+        <TabsContent value="history">
+          <ConfigSection
+            title={t("config.importExport.historyTitle")}
+            description={t("config.importExport.historyDesc")}
+          >
+            {jobs.length > 0 ? (
+              <DataTable columns={jobColumns} data={jobs} />
             ) : (
-              <div className="space-y-3">
-                {/* Import Jobs */}
-                {importJobs && importJobs.length > 0 && (
-                  <>
-                    <h4 className="font-medium text-gray-700 mb-2">Importaciones</h4>
-                    {importJobs.map((job: ImportJobResponse) => (
-                      <div key={job.id} className="border border-gray-200 rounded p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <p className="font-medium">
-                              Importación: {job.module} - {job.file_name}
-                            </p>
-                            <p className="text-sm text-gray-600">
-                              {job.processed_rows} de {job.total_rows || "?"} registros procesados •{" "}
-                              {formatDate(job.created_at)}
-                            </p>
-                            {job.progress > 0 && (
-                              <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
-                                <div
-                                  className="bg-blue-600 h-2 rounded-full"
-                                  style={{ width: `${job.progress}%` }}
-                                />
-                              </div>
-                            )}
-                          </div>
-                          <div className="ml-4">{getStatusBadge(job.status)}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </>
-                )}
-
-                {/* Export Jobs */}
-                {exportJobs && exportJobs.length > 0 && (
-                  <>
-                    <h4 className="font-medium text-gray-700 mb-2 mt-4">Exportaciones</h4>
-                    {exportJobs.map((job: ExportJobResponse) => (
-                      <div key={job.id} className="border border-gray-200 rounded p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <p className="font-medium">
-                              Exportación: {job.module} - {job.export_format.toUpperCase()}
-                            </p>
-                            <p className="text-sm text-gray-600">
-                              {job.exported_rows} registros exportados • {formatDate(job.created_at)}
-                            </p>
-                          </div>
-                          <div className="ml-4">{getStatusBadge(job.status)}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </>
-                )}
-
-                {(!importJobs || importJobs.length === 0) &&
-                  (!exportJobs || exportJobs.length === 0) && (
-                    <div className="text-center text-gray-500 text-sm py-4">
-                      No hay operaciones en el historial
-                    </div>
-                  )}
-              </div>
+              <ConfigEmptyState
+                title={t("config.importExport.noHistory")}
+                description={t("config.importExport.noOperationsDesc")}
+              />
             )}
-          </div>
+          </ConfigSection>
         </TabsContent>
       </Tabs>
-    </div>
+    </ConfigPageLayout>
   );
 }

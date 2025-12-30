@@ -85,7 +85,7 @@ export function AppShell({ children }: AppShellProps) {
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={handleSidebarCollapse}
       />
-      <div className="flex flex-col flex-1 overflow-hidden">
+      <div className="flex flex-col flex-1 overflow-hidden min-h-0">
         <Header
           onSidebarToggle={handleSidebarToggle}
           isSidebarOpen={isSidebarOpen}
@@ -97,6 +97,10 @@ export function AppShell({ children }: AppShellProps) {
     </div>
   );
 }
+
+
+
+
 
 
 

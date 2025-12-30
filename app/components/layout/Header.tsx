@@ -1,8 +1,12 @@
 import { Link } from "react-router";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { SearchIcon, NotificationIcon } from "@hugeicons/core-free-icons";
+import { SearchIcon } from "@hugeicons/core-free-icons";
+import { MoonIcon, SunIcon } from "lucide-react";
 import { UserMenu } from "./UserMenu";
 import { SidebarToggle } from "./SidebarToggle";
+import { NotificationBell } from "~/components/notifications/NotificationBell";
+import { Button } from "~/components/ui/button";
+import { useTheme } from "~/providers/ThemeProvider";
 import { cn } from "~/lib/utils";
 
 /**
@@ -21,9 +25,22 @@ interface HeaderProps {
 }
 
 export function Header({ onSidebarToggle, isSidebarOpen, isSidebarCollapsed }: HeaderProps) {
+  const { theme, setTheme, resolvedTheme } = useTheme();
+
+  const toggleTheme = () => {
+    if (theme === "light") {
+      setTheme("dark");
+    } else if (theme === "dark") {
+      setTheme("light");
+    } else {
+      // system - toggle to opposite of current resolved theme
+      setTheme(resolvedTheme === "dark" ? "light" : "dark");
+    }
+  };
+
   return (
     <header
-      className="h-16 bg-white px-6 flex items-center justify-between shadow-md"
+      className="h-16 flex-shrink-0 bg-background px-6 flex items-center justify-between shadow-[0_1px_3px_rgba(0,0,0,0.05)]"
       role="banner"
     >
       {/* Sección izquierda: Logo y SidebarToggle (móvil) */}
@@ -37,7 +54,7 @@ export function Header({ onSidebarToggle, isSidebarOpen, isSidebarCollapsed }: H
         <Link
           to="/"
           className={cn(
-            "hidden lg:flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-[#023E87] focus:ring-offset-2 rounded overflow-hidden",
+            "hidden lg:flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded overflow-hidden",
             "transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]",
             isSidebarCollapsed
               ? "opacity-100 max-w-[200px] visible"
@@ -54,10 +71,10 @@ export function Header({ onSidebarToggle, isSidebarOpen, isSidebarCollapsed }: H
         {/* Logo móvil */}
         <Link
           to="/"
-          className="lg:hidden flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-[#023E87] focus:ring-offset-2 rounded"
+          className="lg:hidden flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded"
           aria-label="Ir al inicio"
         >
-          <span className="text-xl font-bold text-[#023E87]">AiutoX ERP</span>
+          <span className="text-xl font-bold text-primary">AiutoX ERP</span>
         </Link>
       </div>
 
@@ -75,32 +92,34 @@ export function Header({ onSidebarToggle, isSidebarOpen, isSidebarCollapsed }: H
           <input
             type="text"
             placeholder="Buscar..."
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#023E87] focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2 border border-input/50 bg-muted/30 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent focus:bg-background transition-colors"
             disabled
             aria-label="Buscar"
           />
         </div>
       </div>
 
-      {/* Sección derecha: Notifications y UserMenu */}
+      {/* Sección derecha: Theme Toggle, Notifications y UserMenu */}
       <div className="flex items-center gap-4">
-        {/* Notifications placeholder */}
-        <button
-          className="hidden md:flex relative p-2 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[#023E87] focus:ring-offset-2 transition-colors"
-          aria-label="Notificaciones"
-          disabled
+        {/* Theme Toggle */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleTheme}
+          aria-label={resolvedTheme === "dark" ? "Cambiar a tema claro" : "Cambiar a tema oscuro"}
+          className="hidden md:flex"
         >
-          <HugeiconsIcon
-            icon={NotificationIcon}
-            size={20}
-            color="#121212"
-            strokeWidth={1.5}
-          />
-          {/* Badge placeholder - se implementará cuando haya notificaciones */}
-          {/* <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
-            3
-          </Badge> */}
-        </button>
+          {resolvedTheme === "dark" ? (
+            <SunIcon className="h-5 w-5" />
+          ) : (
+            <MoonIcon className="h-5 w-5" />
+          )}
+        </Button>
+
+        {/* Notifications */}
+        <div className="hidden md:block">
+          <NotificationBell />
+        </div>
 
         <UserMenu />
       </div>
