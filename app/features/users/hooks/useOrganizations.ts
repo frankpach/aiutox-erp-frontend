@@ -55,10 +55,27 @@ export function useOrganizations(params?: OrganizationsListParams) {
           total_pages: response.meta.total_pages,
         });
       }
-    } catch (err) {
-      setError(
-        err instanceof Error ? err : new Error("Failed to load organizations")
-      );
+    } catch (err: any) {
+      // Handle 404 gracefully - endpoint might not exist yet
+      // This is expected and should not block the UI
+      const status = err?.response?.status || err?.status;
+      if (status === 404) {
+        // Endpoint doesn't exist, treat as empty list (not an error)
+        setOrganizations([]);
+        setError(null); // Don't set error for 404
+        setPagination({
+          total: 0,
+          page: 1,
+          page_size: params?.page_size || 100,
+          total_pages: 0,
+        });
+      } else {
+        // Other errors are still reported
+        setError(
+          err instanceof Error ? err : new Error("Failed to load organizations")
+        );
+        setOrganizations([]); // Set empty array on error
+      }
     } finally {
       setLoading(false);
     }
@@ -219,6 +236,8 @@ export function useDeleteOrganization() {
     error,
   };
 }
+
+
 
 
 

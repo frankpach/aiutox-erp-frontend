@@ -420,16 +420,16 @@ describe("apiClient - Refresh Token", () => {
       // The mock was already reset in beforeEach, so just configure it to reject
       // Use mockImplementation to ensure the rejection happens
       mockRefreshClientPost.fn.mockImplementation(() => Promise.reject(new Error("Token expired")));
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/bd91a56b-aa7d-44fb-ac11-0977789d60c5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'client.test.ts:397',message:'mockRefreshClientPost configured to reject BEFORE interceptor call',data:{willReject:true,mockType:typeof mockRefreshClientPost.fn.mockImplementation},timestamp:Date.now(),sessionId:'debug-session',runId:'run24',hypothesisId:'M'})}).catch(()=>{});
-      // #endregion
 
       // Configure mock to return clearAuth function
-      const clearAuthMock = vi.fn();
-      mockAuthStoreState.clearAuth = clearAuthMock;
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/bd91a56b-aa7d-44fb-ac11-0977789d60c5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'client.test.ts:402',message:'clearAuthMock configured BEFORE interceptor call',data:{hasClearAuth:typeof mockAuthStoreState.clearAuth==='function'},timestamp:Date.now(),sessionId:'debug-session',runId:'run24',hypothesisId:'L'})}).catch(()=>{});
-      // #endregion
+      // Reset the mock first to ensure clean state
+      mockAuthStoreState.clearAuth.mockReset();
+      // Ensure clearAuth is a proper Vitest mock function
+      const clearAuthMock = vi.mocked(mockAuthStoreState.clearAuth);
+
+      // Verify that getState returns the mock object with clearAuth
+      const authStoreState = mockGetState();
+      expect(authStoreState.clearAuth).toBe(clearAuthMock);
 
       // Ensure interceptor was captured
       expect(capturedInterceptors.responseError).toBeTruthy();
@@ -483,6 +483,16 @@ describe("apiClient - Refresh Token", () => {
   });
 
   describe("Cookie Support", () => {
+    beforeEach(() => {
+      // Clear cookies before each test in this describe block
+      // Clear all keys explicitly to ensure clean state
+      const keys = Object.keys(cookieStore);
+      keys.forEach(key => delete cookieStore[key]);
+      cookieStore = {};
+      // Verify cookieStore is empty
+      expect(Object.keys(cookieStore).length).toBe(0);
+    });
+
     it("should read refresh token from cookie first when both cookie and localStorage exist", async () => {
       const cookieRefreshToken = "cookie_refresh_token_123";
       const localStorageRefreshToken = "localStorage_refresh_token_456";
@@ -532,8 +542,17 @@ describe("apiClient - Refresh Token", () => {
       const localStorageRefreshToken = "localStorage_refresh_token_456";
       const newAccessToken = "new_access_token_789";
 
-      // Only set localStorage, no cookie
+      // Only set localStorage, no cookie - explicitly clear cookieStore
+      // Clear all cookies to ensure no cookie from previous test
+      // Delete all keys explicitly before clearing
+      const keys = Object.keys(cookieStore);
+      keys.forEach(key => delete cookieStore[key]);
       cookieStore = {};
+      // Also clear any cookie that might be set via document.cookie setter
+      delete cookieStore["refresh_token"];
+      // Verify cookieStore is empty by checking document.cookie
+      expect(document.cookie).toBe("");
+      expect(Object.keys(cookieStore).length).toBe(0);
       localStorageMock.setItem("refresh_token", localStorageRefreshToken);
 
       // Mock refresh client to return success
@@ -697,13 +716,14 @@ describe("apiClient - Refresh Token", () => {
     it("should handle invalid token gracefully", () => {
       vi.useRealTimers(); // Use real timers for this test
 
-      const invalidToken = "invalid.token";
+      // Use a token that has JWT format but invalid base64 payload
+      const invalidToken = "invalid.token.format";
       const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
       // Should not throw
       expect(() => scheduleProactiveRefresh(invalidToken)).not.toThrow();
 
-      // Should log error
+      // Should log error when trying to decode invalid base64
       expect(consoleErrorSpy).toHaveBeenCalled();
 
       consoleErrorSpy.mockRestore();

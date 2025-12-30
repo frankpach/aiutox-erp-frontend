@@ -11,6 +11,7 @@ import {
   Upload01Icon, // Reemplaza FileUploadIcon
   FileViewIcon, // Reemplaza AuditIcon
   GlobeIcon,
+  FolderIcon, // Para el módulo Files
 } from "@hugeicons/core-free-icons";
 
 /**
@@ -41,6 +42,13 @@ export const navigationItems: NavItem[] = [
     icon: HomeIcon,
     to: "/",
     // Sin permiso requerido - visible para todos los usuarios autenticados
+  },
+  {
+    id: "files",
+    label: "Archivos",
+    icon: FolderIcon,
+    to: "/files",
+    permission: "files.view",
   },
 
   // Sección de Configuración (items directos, sin módulos intermedios)

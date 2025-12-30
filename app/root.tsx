@@ -8,6 +8,7 @@ import {
   useLocation,
 } from "react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useMemo } from "react";
 
 import type { Route } from "./+types/root";
 import "./app.css";
@@ -107,34 +108,42 @@ export default function App() {
   const location = useLocation();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
-  // Determinar si la ruta actual es pública
-  const isPublicRoute = PUBLIC_ROUTES.some((route) =>
-    location.pathname === route || location.pathname.startsWith(`${route}/`)
+  // Memoizar la detección de ruta pública para evitar recalcular en cada render
+  const isPublicRoute = useMemo(
+    () =>
+      PUBLIC_ROUTES.some(
+        (route) =>
+          location.pathname === route || location.pathname.startsWith(`${route}/`)
+      ),
+    [location.pathname]
   );
 
-  // Wrap everything with QueryClientProvider and ThemeProvider
-  const content = (
-    <>
-      {isPublicRoute ? (
-        <>
-          <Outlet />
-          <PWAUpdatePrompt />
-        </>
-      ) : !isAuthenticated ? (
-        <>
-          <Outlet />
-          <PWAUpdatePrompt />
-        </>
-      ) : (
-        <>
-          <AppShell>
+  // Memoizar el contenido para evitar re-renderizados innecesarios
+  const content = useMemo(
+    () => (
+      <>
+        {isPublicRoute ? (
+          <>
             <Outlet />
-          </AppShell>
-          <ToastProvider />
-          <PWAUpdatePrompt />
-        </>
-      )}
-    </>
+            <PWAUpdatePrompt />
+          </>
+        ) : !isAuthenticated ? (
+          <>
+            <Outlet />
+            <PWAUpdatePrompt />
+          </>
+        ) : (
+          <>
+            <AppShell>
+              <Outlet />
+            </AppShell>
+            <ToastProvider />
+            <PWAUpdatePrompt />
+          </>
+        )}
+      </>
+    ),
+    [isPublicRoute, isAuthenticated]
   );
 
   return (

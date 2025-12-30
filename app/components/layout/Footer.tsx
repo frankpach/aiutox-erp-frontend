@@ -1,10 +1,12 @@
+import { memo } from "react";
+
 /**
  * Footer - Pie de página de la aplicación
  *
  * Muestra copyright y versión de la aplicación.
  */
 
-export function Footer() {
+export const Footer = memo(function Footer() {
   const currentYear = new Date().getFullYear();
   const version = "0.0.126";
 
@@ -18,7 +20,7 @@ export function Footer() {
       </div>
     </footer>
   );
-}
+});
 
 
 

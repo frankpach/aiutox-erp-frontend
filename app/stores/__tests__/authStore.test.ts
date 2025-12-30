@@ -66,19 +66,23 @@ describe("authStore - Refresh Token", () => {
       expect(state.user).toEqual(user);
       expect(state.isAuthenticated).toBe(true);
       expect(localStorage.getItem("auth_token")).toBe(accessToken);
-      expect(localStorage.getItem("refresh_token")).toBe(refreshToken);
+      // Refresh token is now stored in httpOnly cookie, not localStorage
+      // It's kept in state for backward compatibility but not stored in localStorage
+      expect(localStorage.getItem("refresh_token")).toBeNull();
     });
   });
 
   describe("setRefreshToken", () => {
-    it("should update refresh token in store and localStorage", () => {
+    it("should update refresh token in store", () => {
       const newRefreshToken = "new_refresh_token_789";
 
       useAuthStore.getState().setRefreshToken(newRefreshToken);
 
       const state = useAuthStore.getState();
       expect(state.refreshToken).toBe(newRefreshToken);
-      expect(localStorage.getItem("refresh_token")).toBe(newRefreshToken);
+      // Refresh token is now stored in httpOnly cookie, not localStorage
+      // It's kept in state for backward compatibility but not stored in localStorage
+      expect(localStorage.getItem("refresh_token")).toBeNull();
     });
   });
 
@@ -100,9 +104,11 @@ describe("authStore - Refresh Token", () => {
       // Set refresh token first
       useAuthStore.getState().setRefreshToken(refreshToken);
 
-      // Verify refresh token is set
+      // Verify refresh token is set in state
       expect(useAuthStore.getState().refreshToken).toBe(refreshToken);
-      expect(localStorage.getItem("refresh_token")).toBe(refreshToken);
+      // Refresh token is now stored in httpOnly cookie, not localStorage
+      // It's kept in state for backward compatibility but not stored in localStorage
+      expect(localStorage.getItem("refresh_token")).toBeNull();
 
       // Mock successful refresh response
       vi.mocked(apiClient.post).mockResolvedValue({

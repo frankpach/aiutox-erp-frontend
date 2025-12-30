@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, memo } from "react";
 import { useAuthStore } from "~/stores/authStore";
 import { useModulesStore } from "~/stores/modulesStore";
 import { NavigationTree } from "./NavigationTree";
@@ -21,7 +21,7 @@ interface SidebarProps {
   onToggleCollapse?: () => void;
 }
 
-export function Sidebar({
+export const Sidebar = memo(function Sidebar({
   isOpen = true,
   onClose,
   isCollapsed = false,
@@ -145,7 +145,7 @@ export function Sidebar({
       </aside>
     </>
   );
-}
+});
 
 
 

@@ -1,3 +1,4 @@
+import { memo } from "react";
 import type { ReactNode } from "react";
 
 /**
@@ -10,7 +11,7 @@ interface MainContentProps {
   children: ReactNode;
 }
 
-export function MainContent({ children }: MainContentProps) {
+export const MainContent = memo(function MainContent({ children }: MainContentProps) {
   return (
     <main className="flex-1 overflow-y-auto overflow-x-hidden bg-background min-h-0" role="main">
       <div className="container mx-auto px-6 py-8">
@@ -18,7 +19,7 @@ export function MainContent({ children }: MainContentProps) {
       </div>
     </main>
   );
-}
+});
 
 
 

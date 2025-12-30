@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useEffect, memo } from "react";
 import type { ReactNode } from "react";
 import { MainContent } from "./MainContent";
 import { Footer } from "./Footer";
 import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
 import { initializeModules } from "~/stores/modulesStore";
+import { useSidebarStore } from "~/stores/sidebarStore";
 
 /**
  * AppShell - Componente principal del layout
@@ -22,9 +23,15 @@ interface AppShellProps {
   children: ReactNode;
 }
 
-export function AppShell({ children }: AppShellProps) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+export const AppShell = memo(function AppShell({ children }: AppShellProps) {
+  const {
+    isSidebarOpen,
+    isSidebarCollapsed,
+    setIsSidebarOpen,
+    setIsSidebarCollapsed,
+    toggleSidebar,
+    toggleCollapse,
+  } = useSidebarStore();
 
   // Initialize modules and encryption secret on mount
   useEffect(() => {
@@ -63,18 +70,10 @@ export function AppShell({ children }: AppShellProps) {
     handleResize(); // Ejecutar al montar
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  const handleSidebarToggle = () => {
-    setIsSidebarOpen((prev) => !prev);
-  };
+  }, [setIsSidebarOpen, setIsSidebarCollapsed]);
 
   const handleSidebarClose = () => {
     setIsSidebarOpen(false);
-  };
-
-  const handleSidebarCollapse = () => {
-    setIsSidebarCollapsed((prev) => !prev);
   };
 
   return (
@@ -83,11 +82,11 @@ export function AppShell({ children }: AppShellProps) {
         isOpen={isSidebarOpen}
         onClose={handleSidebarClose}
         isCollapsed={isSidebarCollapsed}
-        onToggleCollapse={handleSidebarCollapse}
+        onToggleCollapse={toggleCollapse}
       />
       <div className="flex flex-col flex-1 overflow-hidden min-h-0">
         <Header
-          onSidebarToggle={handleSidebarToggle}
+          onSidebarToggle={toggleSidebar}
           isSidebarOpen={isSidebarOpen}
           isSidebarCollapsed={isSidebarCollapsed}
         />
@@ -96,7 +95,7 @@ export function AppShell({ children }: AppShellProps) {
       </div>
     </div>
   );
-}
+});
 
 
 

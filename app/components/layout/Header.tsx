@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Link } from "react-router";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { SearchIcon } from "@hugeicons/core-free-icons";
@@ -24,7 +25,7 @@ interface HeaderProps {
   isSidebarCollapsed?: boolean;
 }
 
-export function Header({ onSidebarToggle, isSidebarOpen, isSidebarCollapsed }: HeaderProps) {
+export const Header = memo(function Header({ onSidebarToggle, isSidebarOpen, isSidebarCollapsed }: HeaderProps) {
   const { theme, setTheme, resolvedTheme } = useTheme();
 
   const toggleTheme = () => {
@@ -125,7 +126,7 @@ export function Header({ onSidebarToggle, isSidebarOpen, isSidebarCollapsed }: H
       </div>
     </header>
   );
-}
+});
 
 
 

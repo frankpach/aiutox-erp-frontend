@@ -37,11 +37,11 @@ let querySelectorSpy: ReturnType<typeof vi.spyOn>;
 beforeEach(() => {
   vi.clearAllMocks();
 
-  // IMPORTANT: Don't use mockReset() here - it removes the mock implementation
-  // Use mockClear() instead to clear call history but keep the mock function
-  vi.mocked(apiClient.get).mockClear();
-  vi.mocked(apiClient.post).mockClear();
-  vi.mocked(apiClient.put).mockClear();
+  // IMPORTANT: Use mockReset() to completely reset the mock implementation
+  // This ensures each test starts with a clean mock
+  vi.mocked(apiClient.get).mockReset();
+  vi.mocked(apiClient.post).mockReset();
+  vi.mocked(apiClient.put).mockReset();
 
   // Set a default mock implementation that returns empty config
   // This ensures the mock is always callable, but each test can override it
@@ -180,9 +180,9 @@ describe("useThemeConfig", () => {
     it("should handle fetch error", async () => {
       const mockError = new Error("Failed to fetch theme");
       // Clear call history but keep the mock function
-      vi.mocked(apiClient.get).mockClear();
+      vi.mocked(apiClient.get).mockReset();
       // The hook has retry: 2, so it will retry 2 times (total 3 attempts)
-      // Configure mock to reject on all attempts
+      // Configure mock to reject on all attempts BEFORE rendering
       // IMPORTANT: mockRejectedValue replaces the previous implementation
       vi.mocked(apiClient.get).mockRejectedValue(mockError);
 
@@ -192,11 +192,12 @@ describe("useThemeConfig", () => {
 
       // React Query will retry 2 times before failing
       // Wait for isLoading to become false (React Query will stop loading even on error)
+      // Increased timeout to account for 3 attempts (initial + 2 retries) + processing time
       await waitFor(
         () => {
           expect(result.current.isLoading).toBe(false);
         },
-        { timeout: 10000 } // Increased timeout to account for 3 attempts (initial + 2 retries)
+        { timeout: 15000 } // Increased timeout to allow for retries
       );
 
       // After error, themeData will be undefined, so theme will be {}
@@ -211,7 +212,7 @@ describe("useThemeConfig", () => {
     it("should return empty config when no theme data", async () => {
       // Clear call history and set new mock implementation
       // IMPORTANT: mockResolvedValue replaces the previous implementation
-      vi.mocked(apiClient.get).mockClear();
+      vi.mocked(apiClient.get).mockReset();
       vi.mocked(apiClient.get).mockResolvedValue({
         data: {
           data: {
@@ -221,8 +222,11 @@ describe("useThemeConfig", () => {
         },
       } as any);
 
+      // createWrapper() already clears cache automatically
+      const wrapper = createWrapper();
+
       const { result } = renderHook(() => useThemeConfig(), {
-        wrapper: createWrapper(),
+        wrapper,
       });
 
       // Wait for the query to complete
@@ -251,8 +255,8 @@ describe("useThemeConfig", () => {
       };
 
       // Clear call history but keep the mock functions
-      vi.mocked(apiClient.get).mockClear();
-      setPropertySpy.mockClear();
+      vi.mocked(apiClient.get).mockReset();
+      setPropertySpy.mockReset();
 
       // Use mockResolvedValue directly - simpler and more reliable
       // IMPORTANT: Set mock BEFORE rendering the hook
@@ -263,8 +267,9 @@ describe("useThemeConfig", () => {
         },
       } as any);
 
+      const wrapper = createWrapper();
       const { result } = renderHook(() => useThemeConfig(), {
-        wrapper: createWrapper(),
+        wrapper,
       });
 
       // Wait for the query to complete
@@ -277,17 +282,21 @@ describe("useThemeConfig", () => {
       );
 
       // Wait for useEffect to run and apply CSS - need to wait for React to flush effects
-      // The useEffect runs after themeData changes, so we need to wait a bit
+      // The useEffect runs after themeData changes, so we need to wait specifically for --color-secondary
       await waitFor(
         () => {
-          // Check that setProperty was called with at least one of the expected values
-          expect(setPropertySpy).toHaveBeenCalled();
+          // Check that setProperty was called with --color-secondary
+          const calls = setPropertySpy.mock.calls;
+          const hasSecondary = calls.some((call) => call[0] === "--color-secondary" && call[1] === "#DC004E");
+          expect(hasSecondary).toBe(true);
         },
         { timeout: 5000 } // Increased timeout for useEffect to run
       );
 
       // Give React time to apply all CSS variables
-      await new Promise((resolve) => setTimeout(resolve, 150));
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 150));
+      });
 
       // Verify CSS variables were set - check all calls
       const calls = setPropertySpy.mock.calls;
@@ -309,8 +318,8 @@ describe("useThemeConfig", () => {
       };
 
       // Clear call history but keep the mock functions
-      vi.mocked(apiClient.get).mockClear();
-      querySelectorSpy.mockClear();
+      vi.mocked(apiClient.get).mockReset();
+      querySelectorSpy.mockReset();
       querySelectorSpy.mockReturnValue(mockFaviconLink as any);
 
       // Use mockResolvedValue directly - simpler and more reliable
@@ -345,7 +354,9 @@ describe("useThemeConfig", () => {
       );
 
       // Give React time to update the href property
-      await new Promise((resolve) => setTimeout(resolve, 150));
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 150));
+      });
 
       // The hook should have updated the href - check if it was set
       // Note: The hook directly sets link.href, so we need to verify the mock was called correctly

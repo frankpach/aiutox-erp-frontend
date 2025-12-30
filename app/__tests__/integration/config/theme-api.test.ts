@@ -5,16 +5,62 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import apiClient from "~/lib/api/client";
 import axios from "axios";
 
-// Mock axios
-vi.mock("axios");
-const mockedAxios = vi.mocked(axios);
+// Mock axios BEFORE importing apiClient
+// Use vi.hoisted to ensure mocks are set up before module imports
+const mockAxiosCreate = vi.hoisted(() => vi.fn());
+
+vi.mock("axios", async () => {
+  const actual = await vi.importActual<typeof axios>("axios");
+  const mockAxiosInstance = {
+    interceptors: {
+      request: { use: vi.fn() },
+      response: { use: vi.fn() },
+    },
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn(),
+    patch: vi.fn(),
+    request: vi.fn(),
+  };
+
+  return {
+    ...actual,
+    default: {
+      ...actual.default,
+      create: mockAxiosCreate.mockReturnValue(mockAxiosInstance),
+    },
+  };
+});
 
 describe("Theme Configuration API Integration", () => {
-  beforeEach(() => {
+  let apiClient: typeof import("~/lib/api/client").default;
+  let mockAxiosInstance: any;
+
+  beforeEach(async () => {
     vi.clearAllMocks();
+
+    // Create a fresh mock instance for each test
+    mockAxiosInstance = {
+      interceptors: {
+        request: { use: vi.fn() },
+        response: { use: vi.fn() },
+      },
+      get: vi.fn(),
+      post: vi.fn(),
+      put: vi.fn(),
+      delete: vi.fn(),
+      patch: vi.fn(),
+      request: vi.fn(),
+    };
+
+    // Configure mock to return our instance
+    mockAxiosCreate.mockReturnValue(mockAxiosInstance);
+
+    // Import apiClient after mocking axios
+    apiClient = (await import("~/lib/api/client")).default;
   });
 
   afterEach(() => {
@@ -41,15 +87,7 @@ describe("Theme Configuration API Integration", () => {
         statusText: "OK",
       };
 
-      mockedAxios.create.mockReturnValue({
-        get: vi.fn().mockResolvedValue(mockResponse),
-        post: vi.fn(),
-        put: vi.fn(),
-        interceptors: {
-          request: { use: vi.fn() },
-          response: { use: vi.fn() },
-        },
-      } as any);
+      mockAxiosInstance.get.mockResolvedValue(mockResponse);
 
       const response = await apiClient.get("/config/app_theme");
 
@@ -71,15 +109,7 @@ describe("Theme Configuration API Integration", () => {
         },
       };
 
-      mockedAxios.create.mockReturnValue({
-        get: vi.fn().mockRejectedValue(mockError),
-        post: vi.fn(),
-        put: vi.fn(),
-        interceptors: {
-          request: { use: vi.fn() },
-          response: { use: vi.fn() },
-        },
-      } as any);
+      mockAxiosInstance.get.mockRejectedValue(mockError);
 
       await expect(apiClient.get("/config/app_theme")).rejects.toMatchObject({
         response: {
@@ -91,15 +121,7 @@ describe("Theme Configuration API Integration", () => {
     it("should handle network error", async () => {
       const mockError = new Error("Network Error");
 
-      mockedAxios.create.mockReturnValue({
-        get: vi.fn().mockRejectedValue(mockError),
-        post: vi.fn(),
-        put: vi.fn(),
-        interceptors: {
-          request: { use: vi.fn() },
-          response: { use: vi.fn() },
-        },
-      } as any);
+      mockAxiosInstance.get.mockRejectedValue(mockError);
 
       await expect(apiClient.get("/config/app_theme")).rejects.toThrow(
         "Network Error"
@@ -128,15 +150,7 @@ describe("Theme Configuration API Integration", () => {
         statusText: "OK",
       };
 
-      mockedAxios.create.mockReturnValue({
-        get: vi.fn().mockResolvedValue(mockResponse),
-        post: vi.fn(),
-        put: vi.fn(),
-        interceptors: {
-          request: { use: vi.fn() },
-          response: { use: vi.fn() },
-        },
-      } as any);
+      mockAxiosInstance.get.mockResolvedValue(mockResponse);
 
       const response = await apiClient.get("/config/app_theme");
 
@@ -168,15 +182,7 @@ describe("Theme Configuration API Integration", () => {
         statusText: "Created",
       };
 
-      mockedAxios.create.mockReturnValue({
-        get: vi.fn(),
-        post: vi.fn().mockResolvedValue(mockResponse),
-        put: vi.fn(),
-        interceptors: {
-          request: { use: vi.fn() },
-          response: { use: vi.fn() },
-        },
-      } as any);
+      mockAxiosInstance.post.mockResolvedValue(mockResponse);
 
       const response = await apiClient.post("/config/app_theme", themeData);
 
@@ -207,15 +213,7 @@ describe("Theme Configuration API Integration", () => {
         },
       };
 
-      mockedAxios.create.mockReturnValue({
-        get: vi.fn(),
-        post: vi.fn().mockRejectedValue(mockError),
-        put: vi.fn(),
-        interceptors: {
-          request: { use: vi.fn() },
-          response: { use: vi.fn() },
-        },
-      } as any);
+      mockAxiosInstance.post.mockRejectedValue(mockError);
 
       await expect(
         apiClient.post("/config/app_theme", invalidThemeData)
@@ -251,15 +249,7 @@ describe("Theme Configuration API Integration", () => {
         },
       };
 
-      mockedAxios.create.mockReturnValue({
-        get: vi.fn(),
-        post: vi.fn().mockRejectedValue(mockError),
-        put: vi.fn(),
-        interceptors: {
-          request: { use: vi.fn() },
-          response: { use: vi.fn() },
-        },
-      } as any);
+      mockAxiosInstance.post.mockRejectedValue(mockError);
 
       await expect(
         apiClient.post("/config/app_theme", themeData)
@@ -290,15 +280,7 @@ describe("Theme Configuration API Integration", () => {
         statusText: "OK",
       };
 
-      mockedAxios.create.mockReturnValue({
-        get: vi.fn(),
-        post: vi.fn(),
-        put: vi.fn().mockResolvedValue(mockResponse),
-        interceptors: {
-          request: { use: vi.fn() },
-          response: { use: vi.fn() },
-        },
-      } as any);
+      mockAxiosInstance.put.mockResolvedValue(mockResponse);
 
       const response = await apiClient.put("/config/app_theme/primary_color", {
         value: "#FF5733",
@@ -321,15 +303,7 @@ describe("Theme Configuration API Integration", () => {
         },
       };
 
-      mockedAxios.create.mockReturnValue({
-        get: vi.fn(),
-        post: vi.fn(),
-        put: vi.fn().mockRejectedValue(mockError),
-        interceptors: {
-          request: { use: vi.fn() },
-          response: { use: vi.fn() },
-        },
-      } as any);
+      mockAxiosInstance.put.mockRejectedValue(mockError);
 
       await expect(
         apiClient.put("/config/app_theme/primary_color", { value: "red" })
@@ -358,15 +332,7 @@ describe("Theme Configuration API Integration", () => {
         statusText: "OK",
       };
 
-      mockedAxios.create.mockReturnValue({
-        get: vi.fn(),
-        post: vi.fn(),
-        put: vi.fn().mockResolvedValue(mockResponse),
-        interceptors: {
-          request: { use: vi.fn() },
-          response: { use: vi.fn() },
-        },
-      } as any);
+      mockAxiosInstance.put.mockResolvedValue(mockResponse);
 
       const response = await apiClient.put("/config/app_theme/logo_primary", {
         value: "/assets/logos/custom-logo.png",
@@ -389,20 +355,12 @@ describe("Theme Configuration API Integration", () => {
         status: 200,
       };
 
-      mockedAxios.create.mockReturnValue({
-        get: vi.fn().mockResolvedValue(mockResponse),
-        post: vi.fn(),
-        put: vi.fn(),
-        interceptors: {
-          request: { use: vi.fn() },
-          response: { use: vi.fn() },
-        },
-      } as any);
+      mockAxiosInstance.get.mockResolvedValue(mockResponse);
 
       await apiClient.get("/config/app_theme");
 
       // Verify axios.create was called with correct baseURL
-      expect(mockedAxios.create).toHaveBeenCalledWith(
+      expect(mockAxiosCreate).toHaveBeenCalledWith(
         expect.objectContaining({
           baseURL: expect.stringContaining("/api/v1"),
         })
@@ -420,19 +378,11 @@ describe("Theme Configuration API Integration", () => {
         status: 200,
       };
 
-      mockedAxios.create.mockReturnValue({
-        get: vi.fn().mockResolvedValue(mockResponse),
-        post: vi.fn(),
-        put: vi.fn(),
-        interceptors: {
-          request: { use: vi.fn() },
-          response: { use: vi.fn() },
-        },
-      } as any);
+      mockAxiosInstance.get.mockResolvedValue(mockResponse);
 
       await apiClient.get("/config/app_theme");
 
-      expect(mockedAxios.create).toHaveBeenCalledWith(
+      expect(mockAxiosCreate).toHaveBeenCalledWith(
         expect.objectContaining({
           headers: expect.objectContaining({
             "Content-Type": "application/json",
@@ -442,6 +392,7 @@ describe("Theme Configuration API Integration", () => {
     });
   });
 });
+
 
 
 

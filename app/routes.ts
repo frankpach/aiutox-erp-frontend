@@ -14,6 +14,7 @@ export default [
   route("/users/:id/edit", "routes/users.$id.edit.tsx"),
   route("/users/:id/roles", "routes/users.$id.roles.tsx"),
   route("/users/:id/permissions", "routes/users.$id.permissions.tsx"),
+  route("/files", "routes/files.tsx"),
   // Config routes
   route("/config/theme", "routes/config.theme.tsx"),
   route("/config/modules", "routes/config.modules.tsx"),

@@ -13,10 +13,13 @@ vi.mock("~/hooks/usePermissions", () => ({
   usePermissions: vi.fn(),
 }));
 
-// Mock NavItem component
-vi.mock("../NavItem", () => ({
-  NavItem: ({ item }: { item: typeof navigationItems[0] }) => (
-    <div data-testid={`nav-item-${item.id}`}>{item.label}</div>
+// Mock NavigationTree component (Sidebar uses NavigationTree, not NavItem directly)
+vi.mock("../NavigationTree", () => ({
+  NavigationTree: ({ isCollapsed }: { isCollapsed: boolean }) => (
+    <div data-testid="navigation-tree">
+      <div data-testid="nav-item-home">Dashboard</div>
+      <div data-testid="nav-item-users">Usuarios</div>
+    </div>
   ),
 }));
 
@@ -92,6 +95,9 @@ describe("Sidebar", () => {
     expect(backdrop).toBeTruthy();
   });
 });
+
+
+
 
 
 
