@@ -70,13 +70,13 @@ export default function NotificationsConfigPage() {
 
   const smtpSchema = useMemo(() => z.object({
     enabled: z.boolean(),
-    host: z.string().min(1, t("config.notifications.smtpServer") + " es requerido"),
+    host: z.string().min(1, t("config.notifications.smtpServerRequired")),
     port: z.number().min(1).max(65535),
-    user: z.string().min(1, t("config.notifications.smtpUser") + " es requerido"),
+    user: z.string().min(1, t("config.notifications.smtpUserRequired")),
     password: z.string().nullable().optional(),
     use_tls: z.boolean(),
-    from_email: z.string().email(t("config.notifications.fromEmail") + " debe ser un email válido"),
-    from_name: z.string().min(1, t("config.notifications.fromName") + " es requerido"),
+    from_email: z.string().email(t("config.notifications.fromEmailInvalid")),
+    from_name: z.string().min(1, t("config.notifications.fromNameRequired")),
   }), [t]);
 
   const smtpForm = useConfigForm<SMTPConfig>({
@@ -185,7 +185,7 @@ export default function NotificationsConfigPage() {
 
   const webhookSchema = useMemo(() => z.object({
     enabled: z.boolean(),
-    url: z.string().url(t("config.notifications.webhookUrl") + " debe ser una URL válida"),
+    url: z.string().url(t("config.notifications.webhookUrlInvalid")),
     secret: z.string().nullable().optional(),
     timeout: z.number().min(1).max(300),
   }), [t]);

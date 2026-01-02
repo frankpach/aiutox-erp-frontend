@@ -3,8 +3,8 @@
  * Displays a list of files with pagination and actions
  */
 
-import { useState, useCallback } from "react";
-import { Download, Trash2, Eye, Edit, MoreVertical, Search } from "lucide-react";
+import { useState, useCallback, useEffect, useMemo } from "react";
+import { Download, Trash2, Eye, Edit, MoreVertical, Search, Grid3x3, List } from "lucide-react";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import {
@@ -25,8 +25,95 @@ import { ConfirmDialog } from "~/components/common/ConfirmDialog";
 import { showToast } from "~/components/common/Toast";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 import { useFiles, useFileDelete, useFileDownload } from "../hooks/useFiles";
+import { FileGrid } from "./FileGrid";
+import { FileFilters } from "./FileFilters";
+import { useUsers } from "~/features/users/hooks/useUsers";
+import { useFilePermissions } from "../hooks/useFilePermissions";
+import { useHasPermission } from "~/hooks/usePermissions";
 import type { File } from "../types/file.types";
 import { formatFileSize } from "../utils/fileUtils";
+
+type ViewMode = "list" | "grid";
+
+const VIEW_MODE_STORAGE_KEY = "files_view_mode";
+
+/**
+ * FileListRow component - Individual row in the file list table
+ */
+function FileListRow({
+  file,
+  onFileSelect,
+  onDownload,
+  onDelete,
+  downloading,
+  deleting,
+}: {
+  file: File;
+  onFileSelect?: (file: File) => void;
+  onDownload: (fileId: string, filename: string) => void;
+  onDelete: (fileId: string) => void;
+  downloading: boolean;
+  deleting: boolean;
+}) {
+  const { t } = useTranslation();
+  const filePermissions = useFilePermissions(file.id, file);
+  const hasFilesView = useHasPermission("files.view");
+  const hasFilesManage = useHasPermission("files.manage");
+
+  const canView = filePermissions.canView || hasFilesView;
+  const canDownload = filePermissions.canDownload || hasFilesView;
+  const canDelete = filePermissions.canDelete || hasFilesManage;
+
+  return (
+    <TableRow>
+      <TableCell className="font-medium">{file.name}</TableCell>
+      <TableCell>{file.mime_type}</TableCell>
+      <TableCell>{formatFileSize(file.size)}</TableCell>
+      <TableCell>
+        {file.uploaded_by_user?.full_name || file.uploaded_by || "-"}
+      </TableCell>
+      <TableCell>
+        {new Date(file.created_at).toLocaleDateString()}
+      </TableCell>
+      <TableCell>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {canView && (
+              <DropdownMenuItem onClick={() => onFileSelect?.(file)}>
+                <Eye className="mr-2 h-4 w-4" />
+                {t("files.view")}
+              </DropdownMenuItem>
+            )}
+            {canDownload && (
+              <DropdownMenuItem
+                onClick={() => onDownload(file.id, file.original_name)}
+                disabled={downloading}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                {t("files.download")}
+              </DropdownMenuItem>
+            )}
+            {canDelete && (
+              <DropdownMenuItem
+                onClick={() => onDelete(file.id)}
+                className="text-destructive"
+                disabled={deleting}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                {t("files.delete")}
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </TableCell>
+    </TableRow>
+  );
+}
 
 export interface FileListProps {
   entityType?: string | null;
@@ -45,21 +132,59 @@ export function FileList({
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
   const [search, setSearch] = useState("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    // Load from localStorage, default to "list"
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(VIEW_MODE_STORAGE_KEY);
+      return (saved === "grid" || saved === "list" ? saved : "list") as ViewMode;
+    }
+    return "list";
+  });
   const [deleteConfirm, setDeleteConfirm] = useState<{
     open: boolean;
     fileId: string | null;
   }>({ open: false, fileId: null });
   const { t } = useTranslation();
 
+  // Persist view mode to localStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(VIEW_MODE_STORAGE_KEY, viewMode);
+    }
+  }, [viewMode]);
+
   const { files, loading, error, pagination, refresh } = useFiles({
     page,
     page_size: pageSize,
     entity_type: entityType || undefined,
     entity_id: entityId || undefined,
+    tags: selectedTags.length > 0 ? selectedTags.join(",") : undefined,
   });
+
+  const { users, error: usersError } = useUsers({ page_size: 100 });
 
   const { mutate: deleteFile, isPending: deleting } = useFileDelete();
   const { mutate: downloadFile, isPending: downloading } = useFileDownload();
+
+  // Use files directly - no need for separate state that causes infinite loops
+  // The files array from useFiles is already stable from React Query
+  const filteredFiles = files;
+
+  // Transform users for filters - handle errors gracefully
+  const availableUsers = useMemo(() => {
+    if (usersError) {
+      // If there's an error fetching users, return empty array
+      // This prevents the filters from crashing
+      console.warn("Failed to load users for filters:", usersError);
+      return [];
+    }
+    return (users || []).map((u) => ({
+      id: u.id,
+      name: u.full_name || `${u.first_name || ""} ${u.last_name || ""}`.trim() || u.email,
+      email: u.email,
+    }));
+  }, [users, usersError]);
 
   const handleDelete = useCallback(
     (fileId: string) => {
@@ -137,30 +262,68 @@ export function FileList({
   }
 
   // Filter files by search term (client-side filtering for now)
-  const filteredFiles = search
-    ? files.filter(
+  const searchFilteredFiles = search
+    ? filteredFiles.filter(
         (file) =>
           file.name.toLowerCase().includes(search.toLowerCase()) ||
           file.mime_type.toLowerCase().includes(search.toLowerCase()) ||
           (file.description &&
             file.description.toLowerCase().includes(search.toLowerCase()))
       )
-    : files;
+    : filteredFiles;
 
   return (
     <>
-      <div className="flex items-center gap-2 mb-4">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder={t("files.searchPlaceholder")}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
+      <div className="space-y-4 mb-4">
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder={t("files.searchPlaceholder")}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <div className="flex items-center gap-1 border rounded-md">
+            <Button
+              variant={viewMode === "list" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("list")}
+              className="rounded-r-none"
+            >
+              <List className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === "grid" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("grid")}
+              className="rounded-l-none"
+            >
+              <Grid3x3 className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
+        <FileFilters
+          files={files}
+          onFilterChange={setFilteredFiles}
+          availableUsers={availableUsers}
+          selectedTags={selectedTags}
+          onTagsChange={setSelectedTags}
+        />
       </div>
-      <div className="rounded-md border">
+
+      {viewMode === "grid" ? (
+        <FileGrid
+          files={searchFilteredFiles}
+          onFileSelect={onFileSelect}
+          onDownload={handleDownload}
+          onDelete={handleDelete}
+          downloading={downloading}
+          deleting={deleting}
+        />
+      ) : (
+        <div className="rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
@@ -173,56 +336,31 @@ export function FileList({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredFiles.map((file) => (
-              <TableRow key={file.id}>
-                <TableCell className="font-medium">{file.name}</TableCell>
-                <TableCell>{file.mime_type}</TableCell>
-                <TableCell>{formatFileSize(file.size)}</TableCell>
-                <TableCell>
-                  {file.uploaded_by_user?.full_name || file.uploaded_by || "-"}
-                </TableCell>
-                <TableCell>
-                  {new Date(file.created_at).toLocaleDateString()}
-                </TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={() => onFileSelect?.(file)}
-                      >
-                        <Eye className="mr-2 h-4 w-4" />
-                        {t("files.view")}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => handleDownload(file.id, file.original_name)}
-                        disabled={downloading}
-                      >
-                        <Download className="mr-2 h-4 w-4" />
-                        {t("files.download")}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => handleDelete(file.id)}
-                        className="text-destructive"
-                        disabled={deleting}
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        {t("files.delete")}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+            {searchFilteredFiles.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  {t("files.noFilesFound") || "No se encontraron archivos"}
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              searchFilteredFiles.map((file) => (
+                <FileListRow
+                  key={file.id}
+                  file={file}
+                  onFileSelect={onFileSelect}
+                  onDownload={handleDownload}
+                  onDelete={handleDelete}
+                  downloading={downloading}
+                  deleting={deleting}
+                />
+              ))
+            )}
           </TableBody>
         </Table>
       </div>
+      )}
 
-      {pagination && pagination.total_pages > 1 && (
+      {pagination && pagination.total_pages > 1 && searchFilteredFiles.length > 0 && (
         <div className="flex items-center justify-between px-2 py-4">
           <div className="text-sm text-muted-foreground">
             {t("files.showing")} {((page - 1) * pageSize) + 1} {t("files.to")}{" "}

@@ -1,23 +1,20 @@
 /**
  * FileUpload Component
  * Handles file upload with drag & drop support and permissions
+ * Improved UX: Configuration first, then drag & drop
  */
 
 import { useCallback, useState, useRef } from "react";
-import { Upload, CheckCircle } from "lucide-react";
+import { Upload, CheckCircle, X } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
 import { Progress } from "~/components/ui/progress";
 import { Badge } from "~/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { showToast } from "~/components/common/Toast";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 import { useFileUpload } from "../hooks/useFiles";
-import { FilePermissionsSelector } from "./FilePermissionsSelector";
-import { useUsers } from "~/features/users/hooks/useUsers";
-import { useOrganizations } from "~/features/users/hooks/useOrganizations";
-import { listRoles } from "~/features/users/api/roles.api";
-import { useQuery } from "@tanstack/react-query";
+import { addFileTags } from "../api/files.api";
+import { FileUploadConfig } from "./FileUploadConfig";
 import { cn } from "~/lib/utils";
 import type { FileUploadParams, FilePermissionRequest } from "../types/file.types";
 
@@ -34,13 +31,13 @@ export interface FileUploadProps {
 }
 
 /**
- * FileUpload component with drag & drop
+ * FileUpload component with improved UX: Configuration first, then drag & drop
  */
 export function FileUpload({
   entityType,
   entityId,
-  folderId,
-  description,
+  folderId: initialFolderId,
+  description: initialDescription,
   onUploadSuccess,
   multiple = false,
   accept,
@@ -49,43 +46,22 @@ export function FileUpload({
 }: FileUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
-  const [permissions, setPermissions] = useState<FilePermissionRequest[]>([]);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [config, setConfig] = useState<{
+    folderId: string | null;
+    description: string | null;
+    permissions: FilePermissionRequest[];
+    tags: string[];
+  }>({
+    folderId: initialFolderId || null,
+    description: initialDescription || null,
+    permissions: [],
+    tags: [],
+  });
+  const [showDragDrop, setShowDragDrop] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { t } = useTranslation();
   const { mutate: uploadFile, isPending: uploading } = useFileUpload();
-
-  // Load users, roles, and organizations for permissions selector
-  const { users } = useUsers({ page_size: 100 });
-  // useOrganizations now handles 404 gracefully, so we don't need to check error
-  const { organizations } = useOrganizations({ page_size: 100 });
-  const { data: rolesData } = useQuery({
-    queryKey: ["roles"],
-    queryFn: async () => {
-      const response = await listRoles();
-      return response.data || [];
-    },
-  });
-
-  // Transform data for permissions selector
-  const availableUsers = (users || []).map((u) => ({
-    id: u.id,
-    name: u.full_name || `${u.first_name || ""} ${u.last_name || ""}`.trim() || u.email,
-    email: u.email,
-  }));
-
-  const availableRoles = (rolesData || []).map((r) => ({
-    id: r.role,
-    name: r.role,
-  }));
-
-  // Only use organizations if the endpoint is available (handle 404 gracefully)
-  // The hook now handles 404 silently, so we just check if organizations exist
-  const availableOrganizations = organizations
-    ? organizations.map((o) => ({
-        id: o.id,
-        name: o.name,
-      }))
-    : [];
 
   const handleDragEnter = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -118,7 +94,7 @@ export function FileUpload({
         return;
       }
 
-      handleFiles(files);
+      handleFilesSelection(files);
     },
     [multiple, t]
   );
@@ -133,17 +109,22 @@ export function FileUpload({
         return;
       }
 
-      handleFiles(files);
+      handleFilesSelection(files);
     },
     [multiple, t]
   );
 
-  const handleFiles = useCallback(
+  const handleFilesSelection = useCallback(
     (files: File[]) => {
+      const validFiles: File[] = [];
+
       files.forEach((file) => {
         // Validate file size
         if (maxSize && file.size > maxSize) {
-          showToast(t("files.fileTooLarge"), "error");
+          showToast(
+            t("files.fileTooLarge") + `: ${file.name}`,
+            "error"
+          );
           return;
         }
 
@@ -163,52 +144,94 @@ export function FileUpload({
             );
 
           if (!isAccepted) {
-            showToast(t("files.invalidFileType"), "error");
+            showToast(
+              t("files.invalidFileType") + `: ${file.name}`,
+              "error"
+            );
             return;
           }
         }
 
-        // Upload file
-        const uploadParams: FileUploadParams = {
-          file,
-          entity_type: entityType || undefined,
-          entity_id: entityId || undefined,
-          folder_id: folderId || undefined,
-          description: description || undefined,
-          permissions: permissions.length > 0 ? permissions : undefined,
-          onProgress: (progress) => {
-            setUploadProgress((prev) => ({
-              ...prev,
-              [file.name]: progress,
-            }));
-          },
-        };
-
-        uploadFile(uploadParams, {
-          onSuccess: () => {
-            showToast(t("files.uploadSuccess"), "success");
-            setUploadProgress((prev) => {
-              const newProgress = { ...prev };
-              delete newProgress[file.name];
-              return newProgress;
-            });
-            // Clear permissions after successful upload
-            setPermissions([]);
-            onUploadSuccess?.();
-          },
-          onError: () => {
-            showToast(t("files.uploadError"), "error");
-            setUploadProgress((prev) => {
-              const newProgress = { ...prev };
-              delete newProgress[file.name];
-              return newProgress;
-            });
-          },
-        });
+        validFiles.push(file);
       });
+
+      if (validFiles.length > 0) {
+        setSelectedFiles((prev) => {
+          if (multiple) {
+            return [...prev, ...validFiles];
+          }
+          return validFiles;
+        });
+        setShowDragDrop(true);
+      }
     },
-    [entityType, entityId, folderId, description, permissions, maxSize, accept, uploadFile, onUploadSuccess, t]
+    [maxSize, accept, multiple, t]
   );
+
+  const handleRemoveFile = useCallback((index: number) => {
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
+  const handleStartUpload = useCallback(() => {
+    if (selectedFiles.length === 0) {
+      showToast(t("files.noFilesSelected") || "No hay archivos seleccionados", "error");
+      return;
+    }
+
+    selectedFiles.forEach((file) => {
+      const uploadParams: FileUploadParams = {
+        file,
+        entity_type: entityType || undefined,
+        entity_id: entityId || undefined,
+        folder_id: config.folderId || undefined,
+        description: config.description || undefined,
+        permissions: config.permissions.length > 0 ? config.permissions : undefined,
+        onProgress: (progress) => {
+          setUploadProgress((prev) => ({
+            ...prev,
+            [file.name]: progress,
+          }));
+        },
+      };
+
+      uploadFile(uploadParams, {
+        onSuccess: async (response) => {
+          // Add tags if any were selected
+          if (config.tags.length > 0 && response.data?.id) {
+            try {
+              await addFileTags(response.data.id, config.tags);
+            } catch (error) {
+              console.error("Failed to add tags to file:", error);
+            }
+          }
+          showToast(t("files.uploadSuccess"), "success");
+          setUploadProgress((prev) => {
+            const newProgress = { ...prev };
+            delete newProgress[file.name];
+            return newProgress;
+          });
+          // Clear files and config after successful upload
+          setSelectedFiles([]);
+          setConfig({
+            folderId: null,
+            description: null,
+            permissions: [],
+            tags: [],
+          });
+          setShowDragDrop(false);
+          onUploadSuccess?.();
+        },
+        onError: () => {
+          showToast(t("files.uploadError"), "error");
+          setUploadProgress((prev) => {
+            const newProgress = { ...prev };
+            delete newProgress[file.name];
+            return newProgress;
+          });
+        },
+      });
+    });
+  }, [selectedFiles, config, entityType, entityId, uploadFile, onUploadSuccess, t]);
 
   const handleClick = useCallback(() => {
     fileInputRef.current?.click();
@@ -216,52 +239,117 @@ export function FileUpload({
 
   return (
     <div className="space-y-4">
-      <Card
-        className={cn(
-          "border-2 border-dashed transition-colors",
-          isDragging
-            ? "border-primary bg-primary/5"
-            : "border-muted-foreground/25 hover:border-primary/50"
-        )}
-        onDragEnter={handleDragEnter}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-      >
-        <CardContent className="flex flex-col items-center justify-center p-8">
-          <Upload className="h-12 w-12 text-muted-foreground mb-4" />
-          <p className="text-sm text-muted-foreground mb-2">
-            {isDragging
-              ? t("files.dragDropActive")
-              : t("files.dragDrop")}
-          </p>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleClick}
-            disabled={uploading}
-          >
-            {t("files.selectFiles")}
-          </Button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            className="hidden"
-            multiple={multiple}
-            accept={accept}
-            onChange={handleFileSelect}
-          />
-          {permissions.length > 0 && (
-            <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
-              <CheckCircle className="h-4 w-4 text-green-500" />
-              <span>
-                {permissions.length} {t("files.permissionsConfigured")}
-              </span>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Configuration Step */}
+      {showPermissions && (
+        <FileUploadConfig
+          entityType={entityType}
+          entityId={entityId}
+          folderId={config.folderId}
+          description={config.description}
+          permissions={config.permissions}
+          tags={config.tags}
+          onConfigChange={setConfig}
+        />
+      )}
 
+      {/* Drag & Drop Area */}
+      {showDragDrop && (
+        <Card
+          className={cn(
+            "border-2 border-dashed transition-colors",
+            isDragging
+              ? "border-primary bg-primary/5"
+              : "border-muted-foreground/25 hover:border-primary/50"
+          )}
+          onDragEnter={handleDragEnter}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          <CardContent className="flex flex-col items-center justify-center p-8">
+            <Upload className="h-12 w-12 text-muted-foreground mb-4" />
+            <p className="text-sm text-muted-foreground mb-2">
+              {isDragging
+                ? t("files.dragDropActive")
+                : t("files.dragDrop")}
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleClick}
+              disabled={uploading}
+            >
+              {t("files.selectFiles")}
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              multiple={multiple}
+              accept={accept}
+              onChange={handleFileSelect}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Selected Files List */}
+      {selectedFiles.length > 0 && (
+        <Card>
+          <CardContent className="p-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-medium">
+                  {t("files.selectedFiles") || "Archivos Seleccionados"} ({selectedFiles.length})
+                </h3>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedFiles([]);
+                    setShowDragDrop(false);
+                  }}
+                >
+                  {t("common.clear") || "Limpiar"}
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {selectedFiles.map((file, index) => (
+                  <div
+                    key={`${file.name}-${index}`}
+                    className="flex items-center justify-between p-2 border rounded-md"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{file.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {(file.size / 1024).toFixed(2)} KB
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleRemoveFile(index)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              <Button
+                className="w-full"
+                onClick={handleStartUpload}
+                disabled={uploading || selectedFiles.length === 0}
+              >
+                {uploading
+                  ? t("files.uploading") || "Subiendo..."
+                  : t("files.uploadFiles") || `Subir ${selectedFiles.length} archivo${selectedFiles.length > 1 ? "s" : ""}`}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Upload Progress */}
       {Object.keys(uploadProgress).length > 0 && (
         <div className="space-y-2">
           {Object.entries(uploadProgress).map(([fileName, progress]) => (
@@ -276,24 +364,45 @@ export function FileUpload({
         </div>
       )}
 
-      {showPermissions && (
-        <div className="mt-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-medium">
-              {t("files.permissions") || "Permisos"} ({t("files.optional") || "Opcional"})
-            </h3>
-            {permissions.length > 0 && (
-              <Badge variant="secondary">{permissions.length}</Badge>
-            )}
-          </div>
-          <FilePermissionsSelector
-            permissions={permissions}
-            onChange={setPermissions}
-            availableUsers={availableUsers}
-            availableRoles={availableRoles}
-            availableOrganizations={availableOrganizations}
-          />
-        </div>
+      {/* Show drag & drop if no files selected and config is ready */}
+      {!showDragDrop && selectedFiles.length === 0 && (
+        <Card
+          className={cn(
+            "border-2 border-dashed transition-colors cursor-pointer",
+            isDragging
+              ? "border-primary bg-primary/5"
+              : "border-muted-foreground/25 hover:border-primary/50"
+          )}
+          onClick={handleClick}
+          onDragEnter={handleDragEnter}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          <CardContent className="flex flex-col items-center justify-center p-8">
+            <Upload className="h-12 w-12 text-muted-foreground mb-4" />
+            <p className="text-sm text-muted-foreground mb-2">
+              {isDragging
+                ? t("files.dragDropActive")
+                : t("files.dragDrop")}
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={uploading}
+            >
+              {t("files.selectFiles")}
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              multiple={multiple}
+              accept={accept}
+              onChange={handleFileSelect}
+            />
+          </CardContent>
+        </Card>
       )}
     </div>
   );

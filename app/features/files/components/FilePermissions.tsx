@@ -9,7 +9,6 @@ import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";
-import { Input } from "~/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -21,6 +20,10 @@ import { useTranslation } from "~/lib/i18n/useTranslation";
 import { useFilePermissionsUpdate } from "../hooks/useFiles";
 import { showToast } from "~/components/common/Toast";
 import type { FilePermissionRequest } from "../types/file.types";
+import { useUsers } from "~/features/users/hooks/useUsers";
+import { useOrganizations } from "~/features/users/hooks/useOrganizations";
+import { useQuery } from "@tanstack/react-query";
+import { listRoles } from "~/features/users/api/roles.api";
 
 export interface FilePermissionsProps {
   fileId: string;
@@ -50,9 +53,79 @@ export function FilePermissions({
   const { mutate: updatePermissions, isPending: updating } =
     useFilePermissionsUpdate();
 
+  // Load users, roles, and organizations for target selection
+  const { users } = useUsers({ page_size: 100 });
+  const { organizations } = useOrganizations({ page_size: 100 });
+  const { data: rolesData } = useQuery({
+    queryKey: ["roles"],
+    queryFn: async () => {
+      const response = await listRoles();
+      return response.data || [];
+    },
+  });
+
+  // Transform data for target selection
+  const availableUsers = (users || []).map((u) => ({
+    id: u.id,
+    name: u.full_name || `${u.first_name || ""} ${u.last_name || ""}`.trim() || u.email,
+    email: u.email,
+  }));
+
+  const availableRoles = (rolesData || []).map((r) => ({
+    id: r.role,
+    name: r.role,
+  }));
+
+  const availableOrganizations = organizations
+    ? organizations.map((o) => ({
+        id: o.id,
+        name: o.name,
+      }))
+    : [];
+
+  // Get available targets based on selected target type
+  const getAvailableTargets = () => {
+    switch (newPermission.target_type) {
+      case "user":
+        return availableUsers.map((u) => ({ id: u.id, name: `${u.name} (${u.email})` }));
+      case "role":
+        return availableRoles.map((r) => ({ id: r.id, name: r.name }));
+      case "organization":
+        return availableOrganizations.map((o) => ({ id: o.id, name: o.name }));
+      default:
+        return [];
+    }
+  };
+
+  // Get target name for display
+  const getTargetName = (targetType: string, targetId: string): string => {
+    switch (targetType) {
+      case "user":
+        const user = availableUsers.find((u) => u.id === targetId);
+        return user ? `${user.name} (${user.email})` : targetId;
+      case "role":
+        const role = availableRoles.find((r) => r.id === targetId);
+        return role ? role.name : targetId;
+      case "organization":
+        const org = availableOrganizations.find((o) => o.id === targetId);
+        return org ? org.name : targetId;
+      default:
+        return targetId;
+    }
+  };
+
   const handleAddPermission = () => {
     if (!newPermission.target_id) {
-      showToast("ID de objetivo requerido", "error");
+      showToast(t("files.targetIdRequired") || "ID de objetivo requerido", "error");
+      return;
+    }
+
+    // Check if permission already exists for this target
+    const exists = permissions.some(
+      (p) => p.target_type === newPermission.target_type && p.target_id === newPermission.target_id
+    );
+    if (exists) {
+      showToast(t("files.permissionAlreadyExists") || "Este permiso ya existe", "error");
       return;
     }
 
@@ -136,13 +209,30 @@ export function FilePermissions({
           </div>
           <div className="flex-1">
             <Label>{t("files.targetId")}</Label>
-            <Input
+            <Select
               value={newPermission.target_id}
-              onChange={(e) =>
-                setNewPermission({ ...newPermission, target_id: e.target.value })
+              onValueChange={(value) =>
+                setNewPermission({ ...newPermission, target_id: value })
               }
-              placeholder="UUID"
-            />
+              disabled={getAvailableTargets().length === 0}
+            >
+              <SelectTrigger>
+                <SelectValue
+                  placeholder={
+                    getAvailableTargets().length === 0
+                      ? t("files.noTargetsAvailable") || "No hay objetivos disponibles"
+                      : t("files.selectTarget") || "Seleccionar objetivo"
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent className="max-h-[300px] overflow-y-auto">
+                {getAvailableTargets().map((target) => (
+                  <SelectItem key={target.id} value={target.id}>
+                    {target.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <Button onClick={handleAddPermission} variant="outline">
             Agregar
@@ -160,7 +250,7 @@ export function FilePermissions({
                 <div className="flex items-center gap-2 flex-1">
                   {getTargetTypeIcon(perm.target_type)}
                   <span className="font-medium">
-                    {perm.target_type}: {perm.target_id}
+                    {getTargetName(perm.target_type, perm.target_id)}
                   </span>
                 </div>
                 <div className="flex items-center gap-4">
@@ -241,5 +331,6 @@ export function FilePermissions({
     </Card>
   );
 }
+
 
 

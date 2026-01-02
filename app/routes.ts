@@ -24,5 +24,6 @@ export default [
   route("/config/integrations", "routes/config.integrations.tsx"),
   route("/config/import-export", "routes/config.import-export.tsx"),
   route("/config/audit", "routes/config.audit.tsx"),
+  route("/config/files", "routes/config.files.tsx"),
   route("*", "routes/not-found.tsx"), // Catch-all para 404
 ] satisfies RouteConfig;

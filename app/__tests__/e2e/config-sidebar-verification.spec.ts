@@ -40,7 +40,9 @@ console.log(`🔧 FRONTEND_URL configurado: ${FRONTEND_URL}`);
 
 // Helper para logs con timestamp
 function logStep(step: string) {
-  const timestamp = new Date().toISOString().split("T")[1].split(".")[0];
+  const isoString = new Date().toISOString();
+  const timePart = isoString.split("T")[1];
+  const timestamp = timePart ? timePart.split(".")[0] : new Date().toTimeString().split(" ")[0];
   console.log(`[${timestamp}] 🔍 ${step}`);
 }
 

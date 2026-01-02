@@ -192,8 +192,8 @@ export default function AuditConfigPage() {
 
   return (
     <ConfigPageLayout
-      title="Auditoría"
-      description="Historial de cambios y acciones en el sistema"
+      title={t("config.audit.title")}
+      description={t("config.audit.description")}
     >
       <div className="space-y-6">
         {/* Filtros */}

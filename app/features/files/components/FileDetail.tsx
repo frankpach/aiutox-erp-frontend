@@ -9,10 +9,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 import { useFile } from "../hooks/useFiles";
 import { FileVersions } from "./FileVersions";
+import { FileVersionUpload } from "./FileVersionUpload";
 import { FilePermissions } from "./FilePermissions";
 import { FilePreview } from "./FilePreview";
 import { formatFileSize } from "../utils/fileUtils";
 import { FileMetadataEditor } from "./FileMetadataEditor";
+import { FileTags } from "./FileTags";
 
 export interface FileDetailProps {
   fileId: string;
@@ -91,6 +93,9 @@ export function FileDetail({ fileId, onClose }: FileDetailProps) {
                 <p className="font-medium">{file.description}</p>
               </div>
             )}
+            <div className="col-span-2">
+              <FileTags fileId={file.id} fileTags={file.tags || null} />
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -110,7 +115,14 @@ export function FileDetail({ fileId, onClose }: FileDetailProps) {
             onClose={onClose}
           />
         </TabsContent>
-        <TabsContent value="versions">
+        <TabsContent value="versions" className="space-y-4">
+          <FileVersionUpload
+            fileId={file.id}
+            onVersionCreated={() => {
+              // Refresh file and versions
+              window.location.reload();
+            }}
+          />
           <FileVersions fileId={file.id} />
         </TabsContent>
         <TabsContent value="permissions">

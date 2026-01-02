@@ -53,7 +53,36 @@ const CURRENCY_CODES = ["MXN", "USD", "EUR", "GBP", "CAD", "ARS", "BRL", "CLP", 
 
 const LANGUAGE_CODES = ["es", "en", "fr", "de", "it", "pt", "ja", "zh"] as const;
 
+// Mapeo de códigos de moneda a keys de traducción
+const CURRENCY_KEY_MAP: Record<typeof CURRENCY_CODES[number], string> = {
+  MXN: "config.general.currencyMXN",
+  USD: "config.general.currencyUSD",
+  EUR: "config.general.currencyEUR",
+  GBP: "config.general.currencyGBP",
+  CAD: "config.general.currencyCAD",
+  ARS: "config.general.currencyARS",
+  BRL: "config.general.currencyBRL",
+  CLP: "config.general.currencyCLP",
+  COP: "config.general.currencyCOP",
+  JPY: "config.general.currencyJPY",
+  CNY: "config.general.currencyCNY",
+} as const;
+
+// Mapeo de códigos de idioma a keys de traducción
+const LANGUAGE_KEY_MAP: Record<typeof LANGUAGE_CODES[number], string> = {
+  es: "config.general.languageES",
+  en: "config.general.languageEN",
+  fr: "config.general.languageFR",
+  de: "config.general.languageDE",
+  it: "config.general.languageIT",
+  pt: "config.general.languagePT",
+  ja: "config.general.languageJA",
+  zh: "config.general.languageZH",
+} as const;
+
 export function meta() {
+  // Note: meta() runs at build time, so we can't use useTranslation() here
+  // These are SEO meta tags and will be overridden by the page title/description
   return [
     { title: "Configuración General - AiutoX ERP" },
     { name: "description", content: "Configura las preferencias generales del sistema" },
@@ -83,14 +112,14 @@ export default function GeneralConfigPage() {
 
   // Crear schema dinámico con traducciones
   const generalConfigSchema = useMemo(() => z.object({
-    timezone: z.string().min(1, t("config.general.timezone") + " es requerido"),
-    date_format: z.string().min(1, t("config.general.dateFormat") + " es requerido"),
+    timezone: z.string().min(1, t("config.general.timezoneRequired")),
+    date_format: z.string().min(1, t("config.general.dateFormatRequired")),
     time_format: z.enum(["12h", "24h"]),
-    currency: z.string().min(1, t("config.general.currency") + " es requerido"),
-    language: z.string().min(1, t("config.general.language") + " es requerido"),
+    currency: z.string().min(1, t("config.general.currencyRequired")),
+    language: z.string().min(1, t("config.general.languageRequired")),
   }), [t]);
 
-  const form = useConfigForm<GeneralConfig>({
+  const form = useConfigForm<GeneralConfig & Record<string, unknown>>({
     initialValues: data || defaultValues,
     schema: generalConfigSchema,
   });
@@ -157,8 +186,8 @@ export default function GeneralConfigPage() {
 
   return (
     <ConfigPageLayout
-      title={t("config.general.title") || "Preferencias Generales"}
-      description={t("config.general.description") || "Configura las preferencias generales del sistema"}
+      title={t("config.general.title")}
+      description={t("config.general.description")}
       hasChanges={form.hasChanges}
       isSaving={isSaving}
       onReset={handleReset}
@@ -252,14 +281,11 @@ export default function GeneralConfigPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {CURRENCY_CODES.map((code) => {
-                    const currencyKey = `config.general.currency${code}`;
-                    return (
-                      <SelectItem key={code} value={code}>
-                        {code} - {t(currencyKey)}
-                      </SelectItem>
-                    );
-                  })}
+                  {CURRENCY_CODES.map((code) => (
+                    <SelectItem key={code} value={code}>
+                      {code} - {t(CURRENCY_KEY_MAP[code] as any)}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             }
@@ -279,23 +305,11 @@ export default function GeneralConfigPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {LANGUAGE_CODES.map((code) => {
-                    const langNames: Record<string, string> = {
-                      es: "Español",
-                      en: "English",
-                      fr: "Français",
-                      de: "Deutsch",
-                      it: "Italiano",
-                      pt: "Português",
-                      ja: "日本語",
-                      zh: "中文",
-                    };
-                    return (
-                      <SelectItem key={code} value={code}>
-                        {langNames[code] || code}
-                      </SelectItem>
-                    );
-                  })}
+                  {LANGUAGE_CODES.map((code) => (
+                    <SelectItem key={code} value={code}>
+                      {t(LANGUAGE_KEY_MAP[code] as any)}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             }

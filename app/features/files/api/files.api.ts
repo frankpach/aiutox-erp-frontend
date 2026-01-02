@@ -54,6 +54,10 @@ export async function uploadFile(
   if (params?.permissions && params.permissions.length > 0) {
     formData.append("permissions", JSON.stringify(params.permissions));
   }
+  if (params?.tag_ids && params.tag_ids.length > 0) {
+    // Note: Backend expects tag_ids as query params, but we'll add them after upload
+    // For now, we'll add tags after upload using the addFileTags function
+  }
 
   const response = await apiClient.post<StandardResponse<File>>(
     "/files/upload",
@@ -105,6 +109,8 @@ export async function listFiles(
       page_size: params?.page_size || 20,
       entity_type: params?.entity_type,
       entity_id: params?.entity_id,
+      folder_id: params?.folder_id,
+      tags: params?.tags,
     },
   });
   return response.data;
@@ -121,6 +127,19 @@ export async function downloadFile(
 ): Promise<Blob> {
   const response = await apiClient.get(`/files/${fileId}/download`, {
     responseType: "blob",
+  });
+  return response.data;
+}
+
+/**
+ * Get file content (raw text content for text-based previews)
+ * GET /api/v1/files/{file_id}/content
+ *
+ * Requires: files.view permission
+ */
+export async function getFileContent(fileId: string): Promise<string> {
+  const response = await apiClient.get(`/files/${fileId}/content`, {
+    responseType: "text",
   });
   return response.data;
 }
@@ -252,6 +271,44 @@ export async function downloadFileVersion(
 }
 
 /**
+ * Restore file version
+ * POST /api/v1/files/{file_id}/versions/{version_id}/restore
+ *
+ * Requires: files.manage permission
+ */
+export async function restoreFileVersion(
+  fileId: string,
+  versionId: string,
+  changeDescription?: string | null
+): Promise<StandardResponse<FileVersion>> {
+  const response = await apiClient.post<StandardResponse<FileVersion>>(
+    `/files/${fileId}/versions/${versionId}/restore`,
+    null,
+    {
+      params: {
+        change_description: changeDescription,
+      },
+    }
+  );
+  return response.data;
+}
+
+/**
+ * Get file permissions
+ * GET /api/v1/files/{file_id}/permissions
+ *
+ * Requires: files.view permission
+ */
+export async function getFilePermissions(
+  fileId: string
+): Promise<StandardListResponse<FilePermission>> {
+  const response = await apiClient.get<StandardListResponse<FilePermission>>(
+    `/files/${fileId}/permissions`
+  );
+  return response.data;
+}
+
+/**
  * Update file permissions
  * PUT /api/v1/files/{file_id}/permissions
  *
@@ -266,5 +323,70 @@ export async function updateFilePermissions(
     permissions
   );
   return response.data;
+}
+
+/**
+ * Tag type (from tags module)
+ */
+export interface Tag {
+  id: string;
+  tenant_id: string;
+  name: string;
+  color: string | null;
+  description: string | null;
+  category_id: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Get file tags
+ * GET /api/v1/files/{file_id}/tags
+ *
+ * Requires: files.view permission
+ */
+export async function getFileTags(
+  fileId: string
+): Promise<StandardListResponse<Tag>> {
+  const response = await apiClient.get<StandardListResponse<Tag>>(
+    `/files/${fileId}/tags`
+  );
+  return response.data;
+}
+
+/**
+ * Add tags to file
+ * POST /api/v1/files/{file_id}/tags
+ *
+ * Requires: files.manage permission
+ */
+export async function addFileTags(
+  fileId: string,
+  tagIds: string[]
+): Promise<StandardListResponse<Tag>> {
+  const response = await apiClient.post<StandardListResponse<Tag>>(
+    `/files/${fileId}/tags`,
+    null,
+    {
+      params: {
+        tag_ids: tagIds,
+      },
+    }
+  );
+  return response.data;
+}
+
+/**
+ * Remove tag from file
+ * DELETE /api/v1/files/{file_id}/tags/{tag_id}
+ *
+ * Requires: files.manage permission
+ */
+export async function removeFileTag(
+  fileId: string,
+  tagId: string
+): Promise<void> {
+  await apiClient.delete(`/files/${fileId}/tags/${tagId}`);
 }
 

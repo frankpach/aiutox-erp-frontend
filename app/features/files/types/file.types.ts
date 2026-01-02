@@ -51,6 +51,13 @@ export interface File {
     email: string;
     full_name: string;
   } | null;
+  tags: Array<{
+    id: string;
+    name: string;
+    color: string | null;
+    description: string | null;
+  }> | null;
+  deleted_at: string | null; // ISO datetime string
   created_at: string; // ISO datetime string
   updated_at: string; // ISO datetime string
 }
@@ -130,6 +137,8 @@ export interface FilesListParams {
   page_size?: number;
   entity_type?: string | null;
   entity_id?: string | null;
+  folder_id?: string | null;
+  tags?: string | null; // Comma-separated tag IDs
 }
 
 /**

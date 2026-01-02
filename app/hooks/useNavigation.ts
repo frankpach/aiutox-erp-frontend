@@ -147,11 +147,17 @@ export function useActiveNavigationItem(): NavigationItem | null {
     }
 
     // Find prefix match (for nested routes)
+    // But ensure it's a proper path segment (not just a prefix match)
     const prefixMatch = navigationItems.find((item) => {
       if (item.to === "/") {
         return false; // Don't match root for nested routes
       }
-      return location.pathname.startsWith(item.to);
+      if (location.pathname.startsWith(item.to)) {
+        // Ensure it's a proper path segment by checking the next character
+        const nextChar = location.pathname[item.to.length];
+        return nextChar === undefined || nextChar === "/" || nextChar === "?";
+      }
+      return false;
     });
 
     return prefixMatch || null;
@@ -172,8 +178,12 @@ export function useIsNavigationItemActive(item: NavigationItem): boolean {
     }
 
     // Check if current path starts with item path (for nested routes)
+    // But ensure it's a proper path segment (not just a prefix match)
+    // e.g., "/files" should match "/files/123" but NOT "/config/files"
     if (item.to !== "/" && location.pathname.startsWith(item.to)) {
-      return true;
+      // Ensure it's a proper path segment by checking the next character
+      const nextChar = location.pathname[item.to.length];
+      return nextChar === undefined || nextChar === "/" || nextChar === "?";
     }
 
     return false;

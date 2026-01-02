@@ -132,6 +132,13 @@ export const navigationItems: NavItem[] = [
         to: "/config/audit",
         permission: "auth.view_audit",
       },
+      {
+        id: "config-files",
+        label: "Almacenamiento y Archivos",
+        icon: FileViewIcon,
+        to: "/config/files",
+        permission: "system.configure",
+      },
     ],
   },
 ];

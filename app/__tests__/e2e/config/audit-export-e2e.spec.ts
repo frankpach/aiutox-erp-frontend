@@ -12,6 +12,7 @@
  * Requires: Backend and Frontend running, auth.view_audit permission
  */
 
+/// <reference path="../playwright.d.ts" />
 import { test, expect } from "../fixtures/auth.setup";
 import type { Page } from "@playwright/test";
 import * as fs from "fs";
@@ -73,7 +74,7 @@ class AuditConfigPage {
     const text = await countText.textContent();
     if (text) {
       const match = text.match(/de (\d+) registros/);
-      return match ? parseInt(match[1], 10) : 0;
+      return match && match[1] ? parseInt(match[1], 10) : 0;
     }
     return 0;
   }
@@ -86,9 +87,9 @@ class AuditConfigPage {
   async setDateFilter(filterName: "date_from" | "date_to", date: string) {
     const input = this.page.locator(`input[id*="${filterName}"], input[type="date"]`);
     const inputs = await input.all();
-    if (filterName === "date_from" && inputs.length > 0) {
+    if (filterName === "date_from" && inputs.length > 0 && inputs[0]) {
       await inputs[0].fill(date);
-    } else if (filterName === "date_to" && inputs.length > 1) {
+    } else if (filterName === "date_to" && inputs.length > 1 && inputs[1]) {
       await inputs[1].fill(date);
     }
     await this.page.waitForTimeout(300);
@@ -115,7 +116,7 @@ test.describe("Audit Log Export", () => {
       // If redirected, check if it's a permission issue
       const errorText = await page.locator("body").textContent();
       // Just verify we got a response (not a 404)
-      expect(errorText).toBeTruthy();
+      expect(errorText ?? "").toBeTruthy();
     }
   });
 
@@ -139,7 +140,8 @@ test.describe("Audit Log Export", () => {
     await expect(exportButton.first()).toBeVisible();
   });
 
-  test("should export audit logs to CSV", async ({ authenticatedPage: page, context }) => {
+  test("should export audit logs to CSV", async ({ authenticatedPage: page }) => {
+    const context = page.context();
     const auditPage = new AuditConfigPage(page);
 
     await auditPage.goto();
@@ -175,10 +177,15 @@ test.describe("Audit Log Export", () => {
     const download = await downloadPromise;
 
     // Verify download
-    expect(download.suggestedFilename()).toMatch(/audit-logs-.*\.csv/);
+    const filename = download.suggestedFilename();
+    expect(filename).toBeTruthy();
+    if (!filename) {
+      throw new Error("Download filename is undefined");
+    }
+    expect(filename).toMatch(/audit-logs-.*\.csv/);
 
     // Save file temporarily
-    const filePath = path.join(__dirname, "../../../test-results", download.suggestedFilename());
+    const filePath = path.join(__dirname, "../../../test-results", filename);
     await download.saveAs(filePath);
 
     // Verify file exists and has content
@@ -194,7 +201,8 @@ test.describe("Audit Log Export", () => {
     }
   });
 
-  test("should export audit logs to JSON", async ({ authenticatedPage: page, context }) => {
+  test("should export audit logs to JSON", async ({ authenticatedPage: page }) => {
+    const context = page.context();
     const auditPage = new AuditConfigPage(page);
 
     await auditPage.goto();
@@ -230,10 +238,15 @@ test.describe("Audit Log Export", () => {
     const download = await downloadPromise;
 
     // Verify download
-    expect(download.suggestedFilename()).toMatch(/audit-logs-.*\.json/);
+    const filename = download.suggestedFilename();
+    expect(filename).toBeTruthy();
+    if (!filename) {
+      throw new Error("Download filename is undefined");
+    }
+    expect(filename).toMatch(/audit-logs-.*\.json/);
 
     // Save file temporarily
-    const filePath = path.join(__dirname, "../../../test-results", download.suggestedFilename());
+    const filePath = path.join(__dirname, "../../../test-results", filename);
     await download.saveAs(filePath);
 
     // Verify file exists and is valid JSON
@@ -250,7 +263,8 @@ test.describe("Audit Log Export", () => {
     }
   });
 
-  test("should export audit logs to Excel (CSV format)", async ({ authenticatedPage: page, context }) => {
+  test("should export audit logs to Excel (CSV format)", async ({ authenticatedPage: page }) => {
+    const context = page.context();
     const auditPage = new AuditConfigPage(page);
 
     await auditPage.goto();
@@ -286,10 +300,15 @@ test.describe("Audit Log Export", () => {
     const download = await downloadPromise;
 
     // Verify download (Excel uses CSV format)
-    expect(download.suggestedFilename()).toMatch(/audit-logs-.*\.csv/);
+    const filename = download.suggestedFilename();
+    expect(filename).toBeTruthy();
+    if (!filename) {
+      throw new Error("Download filename is undefined");
+    }
+    expect(filename).toMatch(/audit-logs-.*\.csv/);
 
     // Save file temporarily
-    const filePath = path.join(__dirname, "../../../test-results", download.suggestedFilename());
+    const filePath = path.join(__dirname, "../../../test-results", filename);
     await download.saveAs(filePath);
 
     // Verify file exists and has content
@@ -303,7 +322,8 @@ test.describe("Audit Log Export", () => {
     }
   });
 
-  test("should export filtered audit logs", async ({ authenticatedPage: page, context }) => {
+  test("should export filtered audit logs", async ({ authenticatedPage: page }) => {
+    const context = page.context();
     const auditPage = new AuditConfigPage(page);
 
     await auditPage.goto();
@@ -330,10 +350,15 @@ test.describe("Audit Log Export", () => {
     const download = await downloadPromise;
 
     // Verify download
-    expect(download.suggestedFilename()).toMatch(/audit-logs-.*\.csv/);
+    const filename = download.suggestedFilename();
+    expect(filename).toBeTruthy();
+    if (!filename) {
+      throw new Error("Download filename is undefined");
+    }
+    expect(filename).toMatch(/audit-logs-.*\.csv/);
 
     // Save file temporarily
-    const filePath = path.join(__dirname, "../../../test-results", download.suggestedFilename());
+    const filePath = path.join(__dirname, "../../../test-results", filename);
     await download.saveAs(filePath);
 
     // Verify file exists

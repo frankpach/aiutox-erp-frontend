@@ -47,6 +47,17 @@ export function useUsers(params?: UsersListParams) {
     queryKey: userKeys.list(params),
     queryFn: () => listUsers(params),
     staleTime: 1000 * 60 * 2, // 2 minutes
+    retry: (failureCount, error: any) => {
+      // Don't retry on 403 (permission denied) or 500 (server error)
+      // Only retry on network errors or 5xx errors that are not 500
+      const status = error?.response?.status || error?.status;
+      if (status === 403 || status === 500) {
+        return false;
+      }
+      return failureCount < 2;
+    },
+    // Don't throw errors, just return them
+    throwOnError: false,
   });
 
   return {

@@ -50,9 +50,9 @@ export default defineConfig({
       shuffle: false, // Mantener orden para debugging
       concurrent: true, // Ejecutar tests dentro de un archivo en paralelo cuando sea seguro
     },
-    // Test timeouts
-    testTimeout: 10000,
-    hookTimeout: 10000,
+    // Test timeouts - reduced to avoid long waits
+    testTimeout: 5000,
+    hookTimeout: 5000,
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],

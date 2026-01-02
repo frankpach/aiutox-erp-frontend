@@ -1,16 +1,27 @@
 /**
  * FilePreview Component
- * Displays file preview for images and PDFs
+ * Displays file preview for various file types
  */
 
 import { useState, useEffect } from "react";
-import { Eye, Download, X } from "lucide-react";
+import { Download, X } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 import { useFilePreview, useFileDownload } from "../hooks/useFiles";
-import { canPreviewFile, isImageFile, isPdfFile } from "../utils/fileUtils";
+import {
+  canPreviewFile,
+  isImageFile,
+  isPdfFile,
+  getPreviewType,
+} from "../utils/fileUtils";
 import { showToast } from "~/components/common/Toast";
+import { TextPreview } from "./previewers/TextPreview";
+import { MarkdownPreview } from "./previewers/MarkdownPreview";
+import { MermaidPreview } from "./previewers/MermaidPreview";
+import { CsvPreview } from "./previewers/CsvPreview";
+import { JsonPreview } from "./previewers/JsonPreview";
+import { CodePreview } from "./previewers/CodePreview";
 
 export interface FilePreviewProps {
   fileId: string;
@@ -30,8 +41,9 @@ export function FilePreview({
 }: FilePreviewProps) {
   const { t } = useTranslation();
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const previewType = getPreviewType(mimeType, fileName);
   const { data: previewBlob, isLoading: loadingPreview } = useFilePreview(
-    canPreviewFile(mimeType) ? fileId : null,
+    (isImageFile(mimeType) || isPdfFile(mimeType)) ? fileId : null,
     { width: 800, height: 600 }
   );
   const { mutate: downloadFile, isPending: downloading } = useFileDownload();
@@ -62,7 +74,7 @@ export function FilePreview({
     });
   };
 
-  if (!canPreviewFile(mimeType)) {
+  if (!canPreviewFile(mimeType, fileName)) {
     return (
       <Card>
         <CardContent className="p-6 text-center">
@@ -74,6 +86,118 @@ export function FilePreview({
     );
   }
 
+  // Render text-based previews
+  if (previewType === "markdown") {
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold">{fileName}</h3>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleDownload}>
+              <Download className="h-4 w-4 mr-2" />
+              {t("files.download")}
+            </Button>
+            {onClose && (
+              <Button variant="ghost" size="sm" onClick={onClose}>
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+        <MarkdownPreview fileId={fileId} fileName={fileName} />
+      </div>
+    );
+  }
+
+  if (previewType === "text") {
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold">{fileName}</h3>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleDownload}>
+              <Download className="h-4 w-4 mr-2" />
+              {t("files.download")}
+            </Button>
+            {onClose && (
+              <Button variant="ghost" size="sm" onClick={onClose}>
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+        <TextPreview fileId={fileId} fileName={fileName} />
+      </div>
+    );
+  }
+
+  if (previewType === "csv") {
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold">{fileName}</h3>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleDownload}>
+              <Download className="h-4 w-4 mr-2" />
+              {t("files.download")}
+            </Button>
+            {onClose && (
+              <Button variant="ghost" size="sm" onClick={onClose}>
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+        <CsvPreview fileId={fileId} fileName={fileName} />
+      </div>
+    );
+  }
+
+  if (previewType === "json") {
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold">{fileName}</h3>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleDownload}>
+              <Download className="h-4 w-4 mr-2" />
+              {t("files.download")}
+            </Button>
+            {onClose && (
+              <Button variant="ghost" size="sm" onClick={onClose}>
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+        <JsonPreview fileId={fileId} fileName={fileName} />
+      </div>
+    );
+  }
+
+  if (previewType === "code") {
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold">{fileName}</h3>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleDownload}>
+              <Download className="h-4 w-4 mr-2" />
+              {t("files.download")}
+            </Button>
+            {onClose && (
+              <Button variant="ghost" size="sm" onClick={onClose}>
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+        <CodePreview fileId={fileId} fileName={fileName} />
+      </div>
+    );
+  }
+
+  // Image and PDF previews (existing functionality)
   if (loadingPreview) {
     return (
       <Card>

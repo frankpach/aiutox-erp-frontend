@@ -7,7 +7,8 @@
   ],
   "compilerOptions": {
     "lib": ["DOM", "DOM.Iterable", "ES2022"],
-    "types": ["node", "vite/client"],
+    "types": ["node", "vite/client", "@playwright/test"],
+    "typeRoots": ["./node_modules/@types", "./app/__tests__/e2e"],
     "target": "ES2022",
     "module": "ES2022",
     "moduleResolution": "bundler",

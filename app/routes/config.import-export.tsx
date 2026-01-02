@@ -48,10 +48,10 @@ export default function ImportExportConfigPage() {
   const [jobs] = useState<ImportExportJob[]>([]); // TODO: Fetch from API
 
   const modules = [
-    { id: "users", name: "Usuarios" },
-    { id: "products", name: "Productos" },
-    { id: "orders", name: "Órdenes" },
-    { id: "customers", name: "Clientes" },
+    { id: "users", name: t("config.importExport.moduleUsers") },
+    { id: "products", name: t("config.importExport.moduleProducts") },
+    { id: "orders", name: t("config.importExport.moduleOrders") },
+    { id: "customers", name: t("config.importExport.moduleCustomers") },
   ];
 
   const jobColumns: DataTableColumn<ImportExportJob>[] = [
@@ -179,7 +179,7 @@ export default function ImportExportConfigPage() {
                 input={
                   <Select value={selectedModule} onValueChange={setSelectedModule}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar módulo..." />
+                      <SelectValue placeholder={t("config.importExport.selectModulePlaceholder")} />
                     </SelectTrigger>
                     <SelectContent>
                       {modules.map((module) => (
@@ -239,7 +239,7 @@ export default function ImportExportConfigPage() {
                 input={
                   <Select value={selectedModule} onValueChange={setSelectedModule}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar módulo..." />
+                      <SelectValue placeholder={t("config.importExport.selectModulePlaceholder")} />
                     </SelectTrigger>
                     <SelectContent>
                       {modules.map((module) => (

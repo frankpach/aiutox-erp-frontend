@@ -10,6 +10,16 @@ export default defineConfig({
     port: 3000, // Changed port to avoid permission issues
     strictPort: false, // Allow fallback to next available port
   },
+  define: {
+    // Polyfill process for browser compatibility (needed for some packages)
+    "process.env": "{}",
+    "process.platform": JSON.stringify("browser"),
+    "process.version": JSON.stringify(""),
+    global: "globalThis",
+  },
+  optimizeDeps: {
+    exclude: ["remark-mermaid"], // Exclude from pre-bundling to avoid Node.js dependencies
+  },
   plugins: [
     tailwindcss(),
     reactRouter(),
@@ -22,6 +32,9 @@ export default defineConfig({
       strategies: "injectManifest",
       srcDir: "public",
       filename: "sw-custom.js",
+
+      // Especificar el nombre del archivo manifest para evitar errores 404 en /__manifest
+      manifestFilename: "manifest.webmanifest",
 
       workbox: {
         // Incluir solo assets estáticos (NO HTML dinámico)

@@ -31,6 +31,8 @@ import { AlertTriangle } from "lucide-react";
 type FilterType = "all" | "core" | "business";
 
 export function meta() {
+  // Note: meta() runs at build time, so we can't use useTranslation() here
+  // These are SEO meta tags and will be overridden by the page title/description
   return [
     { title: "Módulos del Sistema - AiutoX ERP" },
     { name: "description", content: "Gestiona los módulos habilitados en tu sistema" },
@@ -55,7 +57,7 @@ export default function ModulesConfigPage() {
     },
     onError: (err) => {
       showToast(
-        err instanceof Error ? err.message : "Error al habilitar el módulo",
+        err instanceof Error ? err.message : t("config.modules.errorEnabling"),
         "error"
       );
     },
@@ -69,7 +71,7 @@ export default function ModulesConfigPage() {
     },
     onError: (err) => {
       showToast(
-        err instanceof Error ? err.message : "Error al deshabilitar el módulo",
+        err instanceof Error ? err.message : t("config.modules.errorDisabling"),
         "error"
       );
     },
@@ -188,8 +190,8 @@ export default function ModulesConfigPage() {
 
   return (
     <ConfigPageLayout
-      title={t("config.modules.title") || "Módulos del Sistema"}
-      description={t("config.modules.description") || "Gestiona los módulos habilitados en tu sistema"}
+      title={t("config.modules.title")}
+      description={t("config.modules.description")}
     >
       <div className="space-y-6">
         {/* Filtros con Tabs */}

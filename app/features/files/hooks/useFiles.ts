@@ -13,10 +13,12 @@ import {
   updateFile,
   deleteFile,
   downloadFile,
+  getFileContent,
   getFilePreview,
   listFileVersions,
   createFileVersion,
   downloadFileVersion,
+  restoreFileVersion,
   updateFilePermissions,
 } from "../api/files.api";
 import type {
@@ -199,6 +201,23 @@ export function useFilePreview(fileId: string | null, params?: {
 }
 
 /**
+ * Hook to get file content (for text-based previews)
+ */
+export function useFileContent(fileId: string | null) {
+  return useQuery({
+    queryKey: ["files", "content", fileId],
+    queryFn: async () => {
+      if (!fileId) {
+        throw new Error("File ID is required");
+      }
+      return getFileContent(fileId);
+    },
+    enabled: !!fileId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+}
+
+/**
  * Hook to list file versions
  */
 export function useFileVersions(fileId: string | null) {
@@ -276,6 +295,37 @@ export function useFileVersionDownload() {
       versionId: string;
     }) => {
       return downloadFileVersion(fileId, versionId);
+    },
+  });
+}
+
+/**
+ * Hook to restore file version
+ */
+export function useFileVersionRestore() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      fileId,
+      versionId,
+      changeDescription,
+    }: {
+      fileId: string;
+      versionId: string;
+      changeDescription?: string | null;
+    }) => {
+      return restoreFileVersion(fileId, versionId, changeDescription);
+    },
+    onSuccess: (_, variables) => {
+      // Invalidate versions list
+      queryClient.invalidateQueries({
+        queryKey: fileKeys.versions(variables.fileId),
+      });
+      // Invalidate file detail
+      queryClient.invalidateQueries({
+        queryKey: fileKeys.detail(variables.fileId),
+      });
     },
   });
 }

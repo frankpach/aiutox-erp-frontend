@@ -57,13 +57,14 @@ export function meta() {
   ];
 }
 
-const AVAILABLE_INTEGRATIONS = [
-  { id: "stripe", name: "Stripe", description: "Procesamiento de pagos con Stripe" },
-  { id: "twilio", name: "Twilio", description: "Entrega de SMS y notificaciones" },
-  { id: "google-calendar", name: "Google Calendar", description: "Sincronización con Google Calendar" },
-  { id: "slack", name: "Slack", description: "Notificaciones a canales de Slack" },
-  { id: "zapier", name: "Zapier", description: "Automatización con Zapier" },
-  { id: "webhook", name: "Webhook Personalizado", description: "Webhook personalizado para eventos" },
+// Note: AVAILABLE_INTEGRATIONS moved inside component to use translations
+const getAvailableIntegrations = (t: (key: string) => string) => [
+  { id: "stripe", name: t("config.integrations.stripeName"), description: t("config.integrations.stripeDesc") },
+  { id: "twilio", name: t("config.integrations.twilioName"), description: t("config.integrations.twilioDesc") },
+  { id: "google-calendar", name: t("config.integrations.googleCalendarName"), description: t("config.integrations.googleCalendarDesc") },
+  { id: "slack", name: t("config.integrations.slackName"), description: t("config.integrations.slackDesc") },
+  { id: "zapier", name: t("config.integrations.zapierName"), description: t("config.integrations.zapierDesc") },
+  { id: "webhook", name: t("config.integrations.webhookName"), description: t("config.integrations.webhookDesc") },
 ] as const;
 
 export default function IntegrationsConfigPage() {
@@ -82,7 +83,8 @@ export default function IntegrationsConfigPage() {
 
   const integrations = data?.data || [];
   const configured = integrations.filter((i) => i.status !== "pending");
-  const available = AVAILABLE_INTEGRATIONS.filter(
+  const availableIntegrations = getAvailableIntegrations(t);
+  const available = availableIntegrations.filter(
     (ai) => !integrations.some((i) => i.type === ai.id)
   );
 
@@ -168,7 +170,7 @@ export default function IntegrationsConfigPage() {
     }
   };
 
-  const handleConfigure = (integration: typeof AVAILABLE_INTEGRATIONS[number]) => {
+  const handleConfigure = (integration: typeof availableIntegrations[number]) => {
     setSelectedIntegration({
       id: "",
       tenant_id: "",
@@ -400,7 +402,7 @@ export default function IntegrationsConfigPage() {
             </DialogTitle>
             <DialogDescription>
               {selectedIntegration
-                ? AVAILABLE_INTEGRATIONS.find((i) => i.id === selectedIntegration.type)?.description ||
+                ? availableIntegrations.find((i) => i.id === selectedIntegration.type)?.description ||
                   selectedIntegration.name
                 : ""}
             </DialogDescription>
@@ -447,7 +449,7 @@ export default function IntegrationsConfigPage() {
             <AlertDialogTitle>{t("config.integrations.deleteConfirmTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
               {integrationToDelete
-                ? t("config.integrations.deleteConfirmMessage").replace(/{name}/g, integrationToDelete.name)
+                ? `${t("config.integrations.deleteConfirmMessage")} ${integrationToDelete.name}`
                 : t("config.integrations.deleteConfirm")}
             </AlertDialogDescription>
           </AlertDialogHeader>

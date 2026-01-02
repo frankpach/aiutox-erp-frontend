@@ -327,6 +327,11 @@ class ModuleRegistry {
         }
 
         // Create a module node for this item (but it will render as a direct link, not expandable)
+        // Debug: Log files item to verify it's correct
+        if (navItem.id === "files") {
+          console.log("[ModuleRegistry] Processing files navItem:", { id: navItem.id, to: navItem.to, label: navItem.label });
+        }
+
         const moduleNode: ModuleNode = {
           id: navItem.id,
           name: navItem.label,
@@ -335,7 +340,7 @@ class ModuleRegistry {
             {
               id: navItem.id,
               label: navItem.label,
-              to: navItem.to!,
+              to: navItem.to || "#", // Fallback to "#" if to is undefined
               icon: navItem.icon,
               permission: navItem.permission,
               order: 0,

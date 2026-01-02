@@ -40,13 +40,28 @@ function NavigationItemComponent({
       return true;
     }
     // Check if current path starts with item path (for nested routes)
+    // But ensure it's a proper path segment (not just a prefix match)
+    // e.g., "/files" should match "/files/123" but NOT "/config/files"
     if (item.to !== "/" && location.pathname.startsWith(item.to)) {
-      return true;
+      // Ensure it's a proper path segment by checking the next character
+      const nextChar = location.pathname[item.to.length];
+      return nextChar === undefined || nextChar === "/" || nextChar === "?";
     }
     return false;
   }, [location.pathname, item.to]);
 
   const paddingLeft = level * 16; // 16px por nivel
+
+  // Ensure item.to is a valid string
+  if (!item.to || typeof item.to !== "string") {
+    console.error("[NavigationTree] Invalid item.to:", item);
+    return null;
+  }
+
+  // Debug: Log files item to verify it's correct
+  if (item.id === "files") {
+    console.log("[NavigationTree] Files item:", { id: item.id, to: item.to, label: item.label });
+  }
 
   return (
     <Link
@@ -64,6 +79,21 @@ function NavigationItemComponent({
       aria-current={isActive ? "page" : undefined}
       aria-label={isCollapsed ? item.label : undefined}
       title={isCollapsed ? item.label : undefined}
+      onClick={(e) => {
+        // Debug: Log click event for files item
+        if (item.id === "files") {
+          console.log("[NavigationTree] Files link clicked:", {
+            to: item.to,
+            currentPath: location.pathname,
+            target: e.currentTarget.href,
+            preventDefault: e.defaultPrevented
+          });
+          // Ensure navigation happens
+          if (item.to && item.to !== location.pathname) {
+            console.log("[NavigationTree] Navigating to:", item.to);
+          }
+        }
+      }}
     >
       {item.icon && (
         <HugeiconsIcon

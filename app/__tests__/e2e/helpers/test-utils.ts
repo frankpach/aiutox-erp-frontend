@@ -42,12 +42,52 @@ export const IGNORABLE_CONSOLE_ERRORS = [
 ];
 
 /**
+ * Critical React/UI errors that should never occur
+ * These are specific errors that indicate broken UI components
+ */
+export const CRITICAL_REACT_ERRORS = [
+  "Select.Item",
+  "SelectItem",
+  "must have a value prop",
+  "empty string",
+];
+
+/**
  * Filter console errors, keeping only critical ones
  */
 export function filterCriticalErrors(errors: string[]): string[] {
   return errors.filter((err) =>
     !IGNORABLE_CONSOLE_ERRORS.some((ignore) => err.includes(ignore))
   );
+}
+
+/**
+ * Check if errors contain critical React/UI errors
+ */
+export function hasCriticalReactErrors(errors: string[]): boolean {
+  const criticalErrors = filterCriticalErrors(errors);
+  return criticalErrors.some((err) =>
+    CRITICAL_REACT_ERRORS.some((critical) => err.includes(critical))
+  );
+}
+
+/**
+ * Get critical React/UI errors from error list
+ * Only returns errors related to SelectItem and similar UI component issues
+ */
+export function getCriticalReactErrors(errors: string[]): string[] {
+  const criticalErrors = filterCriticalErrors(errors);
+  return criticalErrors.filter((err) => {
+    const lowerErr = err.toLowerCase();
+    return (
+      (lowerErr.includes("select.item") ||
+       lowerErr.includes("selectitem") ||
+       (lowerErr.includes("must have a value prop") && lowerErr.includes("select")) ||
+       (lowerErr.includes("empty string") && lowerErr.includes("select"))) &&
+      !lowerErr.includes("sse") &&
+      !lowerErr.includes("service worker")
+    );
+  });
 }
 
 /**

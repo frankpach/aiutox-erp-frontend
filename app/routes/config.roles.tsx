@@ -6,11 +6,10 @@
  */
 
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 import { showToast } from "~/components/common/Toast";
 import { listRoles } from "~/features/users/api/roles.api";
-import type { RoleWithPermissions } from "~/features/users/api/roles.api";
 import { useUsers } from "~/features/users/hooks/useUsers";
 import { ConfigPageLayout } from "~/components/config/ConfigPageLayout";
 import { ConfigLoadingState } from "~/components/config/ConfigLoadingState";
@@ -30,7 +29,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "~/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 import { Label } from "~/components/ui/label";
 import { Separator } from "~/components/ui/separator";
 import { ScrollArea } from "~/components/ui/scroll-area";
@@ -49,6 +47,8 @@ interface User {
 }
 
 export function meta() {
+  // Note: meta() runs at build time, so we can't use useTranslation() here
+  // These are SEO meta tags and will be overridden by the page title/description
   return [
     { title: "Roles y Permisos - AiutoX ERP" },
     { name: "description", content: "Gestiona los roles y permisos del sistema" },
@@ -57,7 +57,6 @@ export function meta() {
 
 export default function RolesConfigPage() {
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
   const [selectedRole, setSelectedRole] = useState<GlobalRole | null>(null);
   const [searchUser, setSearchUser] = useState("");
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
@@ -67,7 +66,7 @@ export default function RolesConfigPage() {
     queryFn: listRoles,
   });
 
-  const { users, isLoading: usersLoading } = useUsers({
+  const { users: usersData, loading: usersLoading } = useUsers({
     search: searchUser || undefined,
     page: 1,
     page_size: 20,
@@ -77,11 +76,14 @@ export default function RolesConfigPage() {
   const groupPermissionsByModule = (permissions: string[]) => {
     const grouped: Record<string, string[]> = {};
     permissions.forEach((perm) => {
-      const [module] = perm.split(".");
-      if (!grouped[module]) {
+      const parts = perm.split(".");
+      const module = parts[0];
+      if (module && !grouped[module]) {
         grouped[module] = [];
       }
-      grouped[module].push(perm);
+      if (module) {
+        grouped[module].push(perm);
+      }
     });
     return grouped;
   };
@@ -105,7 +107,7 @@ export default function RolesConfigPage() {
         description={t("config.roles.description")}
         error={error instanceof Error ? error : String(error)}
       >
-        <ConfigErrorState message="Error al cargar los roles" />
+        <ConfigErrorState message={t("config.roles.errorLoading")} />
       </ConfigPageLayout>
     );
   }
@@ -114,9 +116,9 @@ export default function RolesConfigPage() {
   const selectedRoleData = roles.find((r) => r.role === selectedRole);
 
   // Usuarios con el rol seleccionado (simulado - debería venir del backend)
-  const usersWithRole: User[] = users?.users?.filter((u) =>
+  const usersWithRole: User[] = (usersData || []).filter((u) =>
     u.roles?.includes(selectedRole || "")
-  ) || [];
+  );
 
   // Columnas para la tabla de usuarios
   const userColumns: DataTableColumn<User>[] = [
@@ -150,8 +152,8 @@ export default function RolesConfigPage() {
 
   return (
     <ConfigPageLayout
-      title="Roles y Permisos"
-      description="Gestiona los roles y permisos del sistema"
+      title={t("config.roles.title")}
+      description={t("config.roles.description")}
     >
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Lista de roles */}
@@ -161,8 +163,8 @@ export default function RolesConfigPage() {
             <div className="space-y-2">
               {roles.length === 0 ? (
                 <ConfigEmptyState
-                  title="No hay roles"
-                  description="No se encontraron roles en el sistema."
+                  title={t("config.roles.noRoles")}
+                  description={t("config.roles.noRolesDesc")}
                 />
               ) : (
                 roles.map((role) => (
@@ -179,11 +181,11 @@ export default function RolesConfigPage() {
                           <div className="flex items-center gap-2 mb-1">
                             <h4 className="font-semibold capitalize">{role.role}</h4>
                             {SYSTEM_ROLES.includes(role.role as GlobalRole) && (
-                              <Badge variant="secondary">Sistema</Badge>
+                              <Badge variant="secondary">{t("config.roles.roleSystem")}</Badge>
                             )}
                           </div>
                           <p className="text-sm text-muted-foreground">
-                            {role.permissions.length} permisos
+                            {role.permissions.length} {t("config.roles.permissionsCount")}
                           </p>
                         </div>
                         <HugeiconsIcon
@@ -267,7 +269,7 @@ export default function RolesConfigPage() {
                       </div>
                       <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
                         <DialogTrigger asChild>
-                          <Button>Asignar Rol</Button>
+                          <Button>{t("config.roles.assignRoleButton")}</Button>
                         </DialogTrigger>
                         <DialogContent>
                           <DialogHeader>
@@ -287,12 +289,12 @@ export default function RolesConfigPage() {
                             </div>
                             {usersLoading ? (
                               <div className="text-center py-8 text-muted-foreground">
-                                Buscando usuarios...
+                                {t("config.roles.loadingUsers")}
                               </div>
-                            ) : users?.users && users.users.length > 0 ? (
+                            ) : usersData && usersData.length > 0 ? (
                               <ScrollArea className="h-[300px]">
                                 <div className="space-y-2">
-                                  {users.users.map((user) => (
+                                  {usersData.map((user) => (
                                     <div
                                       key={user.id}
                                       className="flex items-center justify-between p-3 border rounded hover:bg-muted/50 transition-colors"
@@ -305,11 +307,11 @@ export default function RolesConfigPage() {
                                         size="sm"
                                         onClick={() => {
                                           // TODO: Implementar asignar rol
-                                          showToast(`Rol asignado a ${user.name}`, "success");
+                                          showToast(`${t("config.roles.roleAssignedTo")} ${user.name}`, "success");
                                           setAssignDialogOpen(false);
                                         }}
                                       >
-                                        Asignar
+                                        {t("config.roles.assignRoleButton")}
                                       </Button>
                                     </div>
                                   ))}
@@ -317,9 +319,8 @@ export default function RolesConfigPage() {
                               </ScrollArea>
                             ) : (
                               <ConfigEmptyState
-                                title="No se encontraron usuarios"
-                                description="Intenta con otro término de búsqueda."
-                                inCard={false}
+                                title={t("config.roles.noUsersFound")}
+                                description={t("config.roles.noUsersFoundDesc")}
                               />
                             )}
                           </div>
@@ -332,7 +333,6 @@ export default function RolesConfigPage() {
                       <DataTable
                         columns={userColumns}
                         data={usersWithRole}
-                        inCard={false}
                       />
                     ) : (
                       <ConfigEmptyState
