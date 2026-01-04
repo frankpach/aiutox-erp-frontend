@@ -49,7 +49,10 @@ describe("useFilePermissions", () => {
   });
 
   it("should return no permissions when fileId is null", () => {
-    vi.mocked(useAuthStore).mockReturnValue({ user: { id: "user-1" } } as any);
+    vi.mocked(useAuthStore).mockImplementation((_selector) => ({
+      id: "user-1",
+      email: "test@example.com"
+    }));
     vi.mocked(useHasPermission).mockReturnValue(false);
 
     const Wrapper = createWrapper();
@@ -73,7 +76,10 @@ describe("useFilePermissions", () => {
       name: "test.pdf",
     };
 
-    vi.mocked(useAuthStore).mockReturnValue({ user: { id: userId } } as any);
+    vi.mocked(useAuthStore).mockImplementation((_selector) => ({
+      id: userId,
+      email: "test@example.com"
+    }));
     vi.mocked(useHasPermission).mockReturnValue(false);
     vi.mocked(filesApi.getFile).mockResolvedValue({ data: mockFile } as any);
     vi.mocked(filesApi.getFilePermissions).mockResolvedValue({ data: [] } as any);
