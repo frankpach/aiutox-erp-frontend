@@ -112,7 +112,7 @@ test.describe("Config Sidebar Navigation", () => {
     ];
 
     let foundLinksCount = 0;
-    let missingLinks: string[] = [];
+    const missingLinks: string[] = [];
 
     for (const { text, href } of expectedLinks) {
       logStep(`  Buscando enlace: "${text}" (${href})...`);

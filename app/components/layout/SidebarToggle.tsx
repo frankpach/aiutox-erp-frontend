@@ -1,5 +1,5 @@
 import { HugeiconsIcon } from "@hugeicons/react";
-import { MenuIcon, CancelIcon } from "@hugeicons/core-free-icons";
+import { PlugIcon, DownloadIcon } from "@hugeicons/core-free-icons";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 
@@ -30,7 +30,7 @@ export function SidebarToggle({
       aria-expanded={isOpen}
     >
       <HugeiconsIcon
-        icon={isOpen ? CancelIcon : MenuIcon}
+        icon={isOpen ? DownloadIcon : PlugIcon}
         size={24}
         color="#121212"
         strokeWidth={1.5}
@@ -38,6 +38,9 @@ export function SidebarToggle({
     </Button>
   );
 }
+
+
+
 
 
 

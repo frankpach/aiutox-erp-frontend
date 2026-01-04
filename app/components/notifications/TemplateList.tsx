@@ -41,7 +41,7 @@ export function TemplateList({ onEdit, onCreate }: TemplateListProps) {
   const deleteMutation = useMutation({
     mutationFn: (templateId: string) => deleteTemplate(templateId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notifications", "templates"] });
+      void queryClient.invalidateQueries({ queryKey: ["notifications", "templates"] });
       setDeleteDialogOpen(false);
       setTemplateToDelete(null);
     },
@@ -51,7 +51,7 @@ export function TemplateList({ onEdit, onCreate }: TemplateListProps) {
     mutationFn: ({ templateId, isActive }: { templateId: string; isActive: boolean }) =>
       updateTemplate(templateId, { is_active: isActive }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notifications", "templates"] });
+      void queryClient.invalidateQueries({ queryKey: ["notifications", "templates"] });
     },
   });
 
@@ -187,6 +187,9 @@ export function TemplateList({ onEdit, onCreate }: TemplateListProps) {
     </>
   );
 }
+
+
+
 
 
 

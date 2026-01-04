@@ -100,7 +100,7 @@ test.describe('PWA - Basics', () => {
     // Check if PWA criteria are met
     const isPWAReady = await page.evaluate(() => {
       return new Promise((resolve) => {
-        let criteria = {
+        const criteria = {
           hasManifest: !!document.querySelector('link[rel="manifest"]'),
           hasServiceWorker: 'serviceWorker' in navigator,
           hasIcons: !!document.querySelector('link[rel="apple-touch-icon"]'),
@@ -121,6 +121,9 @@ test.describe('PWA - Basics', () => {
     console.log('✅ PWA installability criteria met');
   });
 });
+
+
+
 
 
 

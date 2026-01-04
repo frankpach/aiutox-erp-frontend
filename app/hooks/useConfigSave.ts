@@ -69,13 +69,13 @@ export function useConfigSave<T>({
     },
     onSuccess: (data) => {
       // Invalidar y refetch para asegurar sincronización
-      queryClient.invalidateQueries({ queryKey });
+      void queryClient.invalidateQueries({ queryKey });
       showToast(successMessage, "success");
       onSuccess?.(data);
     },
     onSettled: () => {
       // Asegurar que los datos estén sincronizados
-      queryClient.invalidateQueries({ queryKey });
+      void queryClient.invalidateQueries({ queryKey });
     },
   });
 
@@ -89,6 +89,9 @@ export function useConfigSave<T>({
     error: mutation.error as Error | null,
   };
 }
+
+
+
 
 
 

@@ -57,6 +57,8 @@ export default function AuditConfigPage() {
   const [filters, setFilters] = useState({
     action: "",
     resource_type: "",
+    resource_id: "",
+    user_id: "",
     date_from: "",
     date_to: "",
     page_size: 20,
@@ -70,6 +72,8 @@ export default function AuditConfigPage() {
       const params = new URLSearchParams();
       if (filters.action) params.append("action", filters.action);
       if (filters.resource_type) params.append("resource_type", filters.resource_type);
+      if (filters.resource_id) params.append("resource_id", filters.resource_id);
+      if (filters.user_id) params.append("user_id", filters.user_id);
       if (filters.date_from) params.append("date_from", filters.date_from);
       if (filters.date_to) params.append("date_to", filters.date_to);
       params.append("page", page.toString());
@@ -86,6 +90,8 @@ export default function AuditConfigPage() {
     setFilters({
       action: "",
       resource_type: "",
+      resource_id: "",
+      user_id: "",
       date_from: "",
       date_to: "",
       page_size: 20,
@@ -93,9 +99,44 @@ export default function AuditConfigPage() {
     setPage(1);
   };
 
-  const handleExport = () => {
-    showToast(t("config.audit.exportLogs"), "info");
-    // TODO: Implementar exportación
+  const handleExport = async () => {
+    try {
+      // Build export URL with current filters
+      const params = new URLSearchParams();
+      if (filters.action) params.append("action", filters.action);
+      if (filters.resource_type) params.append("resource_type", filters.resource_type);
+      if (filters.resource_id) params.append("resource_id", filters.resource_id);
+      if (filters.user_id) params.append("user_id", filters.user_id);
+      if (filters.date_from) params.append("date_from", filters.date_from);
+      if (filters.date_to) params.append("date_to", filters.date_to);
+      params.append("page_size", filters.page_size.toString());
+
+      // Call export endpoint
+      const response = await apiClient.get(
+        `/auth/audit-logs/export?${params.toString()}`,
+        {
+          responseType: "blob",
+        }
+      );
+
+      // Create download link
+      const blob = new Blob([response.data], { 
+        type: "text/csv;charset=utf-8" 
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `audit-logs-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      showToast(t("config.audit.exportSuccess"), "success");
+    } catch (error) {
+      console.error("Export failed:", error);
+      showToast(t("config.audit.exportError"), "error");
+    }
   };
 
   const getActionBadge = (action: string) => {
@@ -215,6 +256,20 @@ export default function AuditConfigPage() {
               value={filters.resource_type}
               onChange={(value) => setFilters({ ...filters, resource_type: value })}
               placeholder={t("config.audit.filterResourcePlaceholder")}
+            />
+            <ConfigFormField
+              label={t("config.audit.filterResourceId")}
+              id="filter_resource_id"
+              value={filters.resource_id}
+              onChange={(value) => setFilters({ ...filters, resource_id: value })}
+              placeholder={t("config.audit.filterResourceIdPlaceholder")}
+            />
+            <ConfigFormField
+              label={t("config.audit.filterUserId")}
+              id="filter_user_id"
+              value={filters.user_id}
+              onChange={(value) => setFilters({ ...filters, user_id: value })}
+              placeholder={t("config.audit.filterUserIdPlaceholder")}
             />
             <ConfigFormField
               label={t("config.audit.filterDateFrom")}

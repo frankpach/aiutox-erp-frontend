@@ -93,7 +93,8 @@ test.describe("Import/Export Configuration", () => {
     await expect(importExportPage.isOnImportExportPage()).resolves.toBe(true);
 
     const title = await importExportPage.getPageTitle();
-    expect(title).toContain("Importar") || expect(title).toContain("Exportar") || expect(title).toContain("Import") || expect(title).toContain("Export");
+    const hasImportOrExport = title.includes("Importar") || title.includes("Exportar") || title.includes("Import") || title.includes("Export");
+    expect(hasImportOrExport).toBe(true);
   });
 
   test("should display import and export tabs", async ({ authenticatedPage: page }) => {

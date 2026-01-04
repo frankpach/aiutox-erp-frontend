@@ -9,8 +9,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import apiClient from "~/lib/api/client";
 import type { StandardResponse } from "~/lib/api/types/common.types";
-import { translations as esTranslations } from "./translations/es";
-import { translations as enTranslations } from "./translations/en";
+import translations from "./translations";
 
 interface GeneralSettings {
   timezone: string;
@@ -28,7 +27,7 @@ type NestedKeyOf<ObjectType extends object> = {
     : `${Key}`;
 }[keyof ObjectType & (string | number)];
 
-type TranslationPath = NestedKeyOf<typeof esTranslations>;
+type TranslationPath = NestedKeyOf<typeof translations.es>;
 
 /**
  * Get nested value from object by dot-notation path
@@ -107,7 +106,7 @@ export function useTranslation() {
 
   // Get translations based on current language
   const getTranslations = useCallback(() => {
-    return language === "en" ? enTranslations : esTranslations;
+    return language === "en" ? translations.en : translations.es;
   }, [language]);
 
   // Update language in both localStorage and trigger backend update
@@ -126,7 +125,7 @@ export function useTranslation() {
 
     // If translation not found, try Spanish as fallback
     if (!value && language !== "es") {
-      const fallbackValue = getNestedValue(esTranslations, key);
+      const fallbackValue = getNestedValue(translations.es, key);
       if (fallbackValue) {
         return fallbackValue;
       }

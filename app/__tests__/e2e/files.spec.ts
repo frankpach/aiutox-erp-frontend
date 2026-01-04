@@ -370,7 +370,7 @@ test.describe("Files Module - File Operations (Serial)", () => {
   test.describe.configure({ mode: "serial" });
 
   // Variables compartidas para archivos de prueba
-  let testFileIds: string[] = [];
+  const testFileIds: string[] = [];
   let testFileName: string | null = null;
   let filesPage: FilesPage;
 

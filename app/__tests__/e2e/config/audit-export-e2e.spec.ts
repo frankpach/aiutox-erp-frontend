@@ -12,11 +12,11 @@
  * Requires: Backend and Frontend running, auth.view_audit permission
  */
 
-/// <reference path="../playwright.d.ts" />
 import { test, expect } from "../fixtures/auth.setup";
 import type { Page } from "@playwright/test";
 import * as fs from "fs";
 import * as path from "path";
+import type {} from "../playwright.d.ts";
 
 class AuditConfigPage {
   constructor(private page: Page) {}

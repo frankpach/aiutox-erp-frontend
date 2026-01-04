@@ -13,6 +13,15 @@ import * as useFilesHook from "../../hooks/useFiles";
 vi.mock("../../hooks/useFiles", () => ({
   useFile: vi.fn(),
   useFileVersions: vi.fn(),
+  fileKeys: {
+    all: ["files"] as const,
+    lists: () => ["files", "list"] as const,
+    list: (params?: any) => ["files", "list", params] as const,
+    detail: (id: string) => ["files", "detail", id] as const,
+    versions: (id: string) => ["files", "versions", id] as const,
+    content: (id: string) => ["files", "content", id] as const,
+    preview: (id: string) => ["files", "preview", id] as const,
+  },
 }));
 
 // Mock useTranslation

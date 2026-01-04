@@ -7,7 +7,7 @@
 import type { ReactNode } from "react";
 import { Card, CardContent } from "~/components/ui/card";
 import { cn } from "~/lib/utils";
-import { InboxIcon } from "@hugeicons/core-free-icons";
+import { DownloadIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 
 export interface EmptyStateProps {
@@ -44,7 +44,7 @@ export function EmptyState({
     )}>
       {icon || (
         <HugeiconsIcon
-          icon={InboxIcon}
+          icon={DownloadIcon}
           size={48}
           className="text-muted-foreground mb-4"
         />

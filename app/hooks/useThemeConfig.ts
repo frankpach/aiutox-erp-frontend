@@ -1,17 +1,10 @@
 import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import apiClient from "~/lib/api/client";
-
-interface StandardResponse<T> {
-  data: T;
-  meta: null;
-  error: null;
-}
-
-interface ThemeConfig {
-  module: string;
-  config: Record<string, string>;
-}
+import {
+  getThemeConfig,
+  setThemeConfig,
+  updateThemeConfigProperty,
+} from "~/features/config/api/config.api";
 
 interface ThemeColors {
   // Main colors
@@ -62,8 +55,19 @@ interface ThemeColors {
 /**
  * Apply theme configuration to CSS variables
  */
-const applyThemeToCSS = (config: Record<string, string>) => {
+const coerceThemeConfig = (config: Record<string, unknown>): Record<string, string> => {
+  const result: Record<string, string> = {};
+  Object.entries(config).forEach(([key, value]) => {
+    if (typeof value === "string") {
+      result[key] = value;
+    }
+  });
+  return result;
+};
+
+const applyThemeToCSS = (config: Record<string, unknown>) => {
   const root = document.documentElement;
+  const stringConfig = coerceThemeConfig(config);
 
   // Map config keys to CSS variable names
   const cssVarMap: Record<string, string> = {
@@ -99,7 +103,7 @@ const applyThemeToCSS = (config: Record<string, string>) => {
   };
 
   // Apply each config value to corresponding CSS variable
-  Object.entries(config).forEach(([key, value]) => {
+  Object.entries(stringConfig).forEach(([key, value]) => {
     const cssVar = cssVarMap[key];
     if (cssVar && value) {
       root.style.setProperty(cssVar, value);
@@ -107,10 +111,10 @@ const applyThemeToCSS = (config: Record<string, string>) => {
   });
 
   // Update favicon if provided
-  if (config.favicon) {
+  if (stringConfig.favicon) {
     const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
     if (link) {
-      link.href = config.favicon;
+      link.href = stringConfig.favicon;
     }
   }
 };
@@ -130,10 +134,7 @@ export function useThemeConfig() {
   } = useQuery({
     queryKey: ["theme-config"],
     queryFn: async () => {
-      const response = await apiClient.get<StandardResponse<ThemeConfig>>(
-        "/config/app_theme"
-      );
-      return response.data.data;
+      return await getThemeConfig();
     },
     staleTime: 1000 * 60 * 10, // Cache for 10 minutes
     retry: 2,
@@ -149,11 +150,7 @@ export function useThemeConfig() {
   // Mutation to update theme
   const updateThemeMutation = useMutation({
     mutationFn: async (newConfig: ThemeColors) => {
-      const response = await apiClient.post<StandardResponse<ThemeConfig>>(
-        "/config/app_theme",
-        newConfig
-      );
-      return response.data.data;
+      return await setThemeConfig(newConfig as Record<string, unknown>);
     },
     onSuccess: (data) => {
       // Update cache
@@ -170,11 +167,7 @@ export function useThemeConfig() {
   // Mutation to update single theme property
   const updateThemePropertyMutation = useMutation({
     mutationFn: async ({ key, value }: { key: string; value: string }) => {
-      const response = await apiClient.put<StandardResponse<Record<string, unknown>>>(
-        `/config/app_theme/${key}`,
-        { value }
-      );
-      return response.data.data;
+      return await updateThemeConfigProperty(key, value);
     },
     onSuccess: () => {
       // Refetch entire theme to get updated config
@@ -183,7 +176,7 @@ export function useThemeConfig() {
   });
 
   return {
-    theme: themeData?.config || {},
+    theme: coerceThemeConfig(themeData?.config || {}),
     isLoading,
     error,
     updateTheme: updateThemeMutation.mutate,

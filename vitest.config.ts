@@ -34,25 +34,15 @@ export default defineConfig({
       "**/build/**",
       "**/app/__tests__/e2e/**", // Exclude Playwright E2E tests
     ],
-    // Parallel execution configuration
-    pool: "threads",
-    poolOptions: {
-      threads: {
-        singleThread: false,
-        minThreads: 1,
-        maxThreads: 2, // Reducido a 2 para evitar EMFILE en Windows
-      },
-    },
-    // File-level parallelism - ejecutar archivos de test en paralelo
-    fileParallelism: true,
-    // Test-level parallelism dentro de cada archivo
-    sequence: {
-      shuffle: false, // Mantener orden para debugging
-      concurrent: true, // Ejecutar tests dentro de un archivo en paralelo cuando sea seguro
-    },
-    // Test timeouts - reduced to avoid long waits
-    testTimeout: 5000,
-    hookTimeout: 5000,
+    // OPTIMIZED FOR WINDOWS - Single worker to avoid EMFILE
+    maxConcurrency: 1, // Single concurrent test
+    // Increased timeouts for Windows
+    testTimeout: 10000,
+    hookTimeout: 10000,
+    // Reduce memory pressure
+    isolate: true,
+    // Disable file parallelism
+    fileParallelism: false,
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],

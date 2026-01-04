@@ -5,7 +5,7 @@
 import type { ReactNode } from "react";
 import { Card, CardContent } from "~/components/ui/card";
 import { cn } from "~/lib/utils";
-import { InboxIcon } from "@hugeicons/core-free-icons";
+import { DownloadIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 
 export interface ConfigEmptyStateProps {
@@ -36,7 +36,7 @@ export function ConfigEmptyState({
       <CardContent className="flex flex-col items-center justify-center py-12 text-center">
         {icon || (
           <HugeiconsIcon
-            icon={InboxIcon}
+            icon={DownloadIcon}
             size={48}
             className="text-muted-foreground mb-4"
           />

@@ -12,7 +12,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { Link, useLocation } from "react-router";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { FolderIcon } from "@hugeicons/core-free-icons";
+import { GridIcon } from "@hugeicons/core-free-icons";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useNavigation } from "~/hooks/useNavigation";
 import type { NavigationItem, ModuleNode } from "~/lib/modules/types";
@@ -199,7 +199,7 @@ function ModuleNodeComponent({
           <ChevronRight className="h-4 w-4 transition-transform duration-150" />
         )}
         <HugeiconsIcon
-          icon={FolderIcon}
+          icon={GridIcon}
           size={18}
           color={hasActiveItem ? "hsl(var(--primary))" : "hsl(var(--foreground))"}
           strokeWidth={1.5}
@@ -372,7 +372,7 @@ export function NavigationTree({ isCollapsed = false }: NavigationTreeProps) {
         {isCollapsed ? (
           <div className="flex justify-center" title="No hay módulos disponibles">
             <HugeiconsIcon
-              icon={FolderIcon}
+              icon={GridIcon}
               size={24}
               color="hsl(var(--muted-foreground))"
               strokeWidth={1.5}

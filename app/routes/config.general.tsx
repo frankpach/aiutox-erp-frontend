@@ -8,8 +8,8 @@
 import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "~/lib/i18n/useTranslation";
-import apiClient from "~/lib/api/client";
-import type { StandardResponse } from "~/lib/api/types/common.types";
+import type { GeneralSettings } from "~/features/config/api/config.api";
+import { getGeneralSettings, updateGeneralSettings } from "~/features/config/api/config.api";
 import { ConfigPageLayout } from "~/components/config/ConfigPageLayout";
 import { ConfigFormField } from "~/components/config/ConfigFormField";
 import { ConfigSection } from "~/components/config/ConfigSection";
@@ -20,13 +20,7 @@ import { useConfigForm } from "~/hooks/useConfigForm";
 import { useConfigSave } from "~/hooks/useConfigSave";
 import { z } from "zod";
 
-interface GeneralConfig {
-  timezone: string;
-  date_format: string;
-  time_format: "12h" | "24h";
-  currency: string;
-  language: string;
-}
+type GeneralConfig = GeneralSettings;
 
 const TIMEZONES = [
   "America/Mexico_City",
@@ -95,10 +89,7 @@ export default function GeneralConfigPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["config", "general"],
     queryFn: async () => {
-      const response = await apiClient.get<StandardResponse<GeneralConfig>>(
-        "/config/general"
-      );
-      return response.data.data;
+      return await getGeneralSettings();
     },
   });
 
@@ -135,11 +126,7 @@ export default function GeneralConfigPage() {
   const { save, isSaving } = useConfigSave<GeneralConfig>({
     queryKey: ["config", "general"],
     saveFn: async (values) => {
-      const response = await apiClient.put<StandardResponse<GeneralConfig>>(
-        "/config/general",
-        values
-      );
-      return response.data.data;
+      return await updateGeneralSettings(values);
     },
     successMessage: t("config.general.saveSuccess"),
     errorMessage: t("config.general.errorSaving"),

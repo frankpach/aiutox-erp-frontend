@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { NotificationIcon } from "@hugeicons/core-free-icons";
+import { PlugIcon } from "@hugeicons/core-free-icons";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
@@ -89,7 +89,7 @@ export function NotificationBell({ className }: NotificationBellProps) {
         onClick={() => setIsOpen(!isOpen)}
       >
         <HugeiconsIcon
-          icon={NotificationIcon}
+          icon={PlugIcon}
           size={20}
           color="#121212"
           strokeWidth={1.5}
@@ -185,6 +185,9 @@ export function NotificationBell({ className }: NotificationBellProps) {
     </div>
   );
 }
+
+
+
 
 
 

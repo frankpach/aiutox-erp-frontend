@@ -42,7 +42,7 @@ export interface FileUploadConfigProps {
     description: string | null;
     permissions: FilePermissionRequest[];
     tags: string[];
-  }) => void;
+  }) => void | Promise<void>;
 }
 
 /**

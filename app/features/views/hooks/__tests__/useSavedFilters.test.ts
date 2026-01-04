@@ -107,17 +107,6 @@ describe("useSavedFilters", () => {
       error: null,
     });
 
-    vi.mocked(savedFiltersApi.getSavedFilters).mockResolvedValue({
-      data: [mockFilter],
-      meta: {
-        total: 1,
-        page: 1,
-        page_size: 20,
-        total_pages: 1,
-      },
-      error: null,
-    });
-
     const { result } = renderHook(() => useSavedFilters("users", false));
 
     const filterData = {
@@ -133,6 +122,8 @@ describe("useSavedFilters", () => {
 
     expect(created).toEqual(mockFilter);
     expect(savedFiltersApi.createSavedFilter).toHaveBeenCalledWith(filterData);
+    // Check that the filter was added to local state
+    expect(result.current.filters).toContainEqual(mockFilter);
   });
 
   it("should get default filter for a module", async () => {

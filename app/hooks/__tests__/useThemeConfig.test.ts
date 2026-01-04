@@ -3,9 +3,9 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import { renderHook, waitFor } from "@testing-library/react";
+import { renderHook, waitFor, act } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 import { useThemeConfig } from "../useThemeConfig";
 import apiClient from "~/lib/api/client";
 
@@ -16,6 +16,13 @@ vi.mock("~/lib/api/client", () => ({
     post: vi.fn(),
     put: vi.fn(),
   },
+}));
+
+// Mock config API
+vi.mock("~/features/config/api/config.api", () => ({
+  getThemeConfig: vi.fn(),
+  setThemeConfig: vi.fn(),
+  updateThemeConfigProperty: vi.fn(),
 }));
 
 // Mock document.documentElement.style.setProperty
@@ -365,21 +372,12 @@ describe("useThemeConfig", () => {
         data: initialTheme,
       } as any);
 
-      vi.mocked(apiClient.post).mockImplementation(
-        () =>
-          new Promise((resolve) => {
-            setTimeout(() => {
-              resolve({
-                data: {
-                  data: {
-                    module: "app_theme",
-                    config: { primary_color: "#FF5733" },
-                  },
-                },
-              } as any);
-            }, 100);
-          })
-      );
+      // Mock setThemeConfig function
+      const { setThemeConfig } = await import("~/features/config/api/config.api");
+      vi.mocked(setThemeConfig).mockResolvedValue({
+        module: "app_theme",
+        config: { primary_color: "#FF5733" },
+      } as any);
 
       const { result } = renderHook(() => useThemeConfig(), {
         wrapper: createWrapper(),
@@ -389,14 +387,18 @@ describe("useThemeConfig", () => {
         expect(result.current.isLoading).toBe(false);
       });
 
-      result.current.updateTheme({ primary_color: "#FF5733" });
+      // Use act to wrap the state update
+      await act(async () => {
+        result.current.updateTheme({ primary_color: "#FF5733" });
+      });
 
-      // Should be updating
-      expect(result.current.isUpdating).toBe(true);
-
+      // Wait for the mutation to complete
       await waitFor(() => {
         expect(result.current.isUpdating).toBe(false);
       });
+
+      // Verify the theme was updated successfully
+      expect(result.current.theme.primary_color).toBe("#FF5733");
     });
   });
 

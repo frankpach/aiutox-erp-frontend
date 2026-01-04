@@ -74,7 +74,9 @@ describe("useFolderPermissions", () => {
       name: "Test Folder",
     };
 
-    vi.mocked(useAuthStore).mockReturnValue({ user: { id: userId } } as any);
+    vi.mocked(useAuthStore).mockImplementation((_selector) => {
+      return { id: userId, email: "test@example.com" };
+    });
     vi.mocked(useHasPermission).mockReturnValue(false);
     vi.mocked(foldersApi.getFolder).mockResolvedValue({ data: mockFolder } as any);
     vi.mocked(foldersApi.getFolderPermissions).mockResolvedValue({ data: [] } as any);
@@ -106,7 +108,9 @@ describe("useFolderPermissions", () => {
       name: "Test Folder",
     };
 
-    vi.mocked(useAuthStore).mockReturnValue({ user: { id: userId } } as any);
+    vi.mocked(useAuthStore).mockImplementation((_selector) => {
+      return { id: userId, email: "test@example.com" };
+    });
     vi.mocked(useHasPermission).mockImplementation((perm: string) => {
       return perm === "folders.view";
     });
@@ -149,7 +153,9 @@ describe("useFolderPermissions", () => {
       },
     ];
 
-    vi.mocked(useAuthStore).mockReturnValue({ user: { id: userId } } as any);
+    vi.mocked(useAuthStore).mockImplementation((_selector) => {
+      return { id: userId, email: "test@example.com" };
+    });
     vi.mocked(useHasPermission).mockReturnValue(false);
     vi.mocked(foldersApi.getFolder).mockResolvedValue({ data: mockFolder } as any);
     vi.mocked(foldersApi.getFolderPermissions).mockResolvedValue({ data: mockPermissions } as any);
@@ -175,7 +181,9 @@ describe("useFolderPermissions", () => {
     const folderId = "folder-1";
     const userId = "user-1";
 
-    vi.mocked(useAuthStore).mockReturnValue({ user: { id: userId } } as any);
+    vi.mocked(useAuthStore).mockImplementation((_selector) => {
+      return { id: userId, email: "test@example.com" };
+    });
     vi.mocked(useHasPermission).mockReturnValue(false);
     vi.mocked(foldersApi.getFolder).mockRejectedValue(new Error("Network error"));
     vi.mocked(foldersApi.getFolderPermissions).mockRejectedValue(new Error("Network error"));
@@ -193,5 +201,8 @@ describe("useFolderPermissions", () => {
     expect(result.current.isOwner).toBe(false);
   });
 });
+
+
+
 
 

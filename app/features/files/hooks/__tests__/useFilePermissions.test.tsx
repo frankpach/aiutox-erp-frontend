@@ -104,10 +104,22 @@ describe("useFilePermissions", () => {
       name: "test.pdf",
     };
 
-    vi.mocked(useAuthStore).mockReturnValue({ user: { id: userId } } as any);
-    vi.mocked(useHasPermission).mockImplementation((perm: string) => {
-      return perm === "files.view";
+    // Clear all mocks before setting them up
+    vi.clearAllMocks();
+    
+    // Create mock that returns specific values based on permission
+    vi.mocked(useHasPermission).mockImplementation((permission: string) => {
+      if (permission === "files.view") return true;
+      if (permission === "files.manage") return false;
+      return false;
     });
+
+    // Mock useAuthStore properly - the hook uses useAuthStore((state) => state.user)
+    const mockUser = { id: userId, email: "test@example.com" };
+    vi.mocked(useAuthStore).mockImplementation((_selector) => {
+      return mockUser;
+    });
+
     vi.mocked(filesApi.getFile).mockResolvedValue({ data: mockFile } as any);
     vi.mocked(filesApi.getFilePermissions).mockResolvedValue({ data: [] } as any);
 
@@ -122,7 +134,10 @@ describe("useFilePermissions", () => {
 
     expect(result.current.canView).toBe(true);
     expect(result.current.canDownload).toBe(true);
-    expect(result.current.isOwner).toBe(false);
+    expect(result.current.canEdit).toBe(false); // Only has files.view, not files.manage
+    expect(result.current.canDelete).toBe(false); // Only has files.view, not files.manage
+    expect(result.current.canManagePermissions).toBe(false); // Only has files.view, not files.manage
+    expect(result.current.isOwner).toBe(false); // User is not the owner
   });
 
   it("should use file-specific permissions when available", async () => {
@@ -147,8 +162,17 @@ describe("useFilePermissions", () => {
       },
     ];
 
-    vi.mocked(useAuthStore).mockReturnValue({ user: { id: userId } } as any);
-    vi.mocked(useHasPermission).mockReturnValue(false);
+    // Clear all mocks before setting them up
+    vi.clearAllMocks();
+    
+    vi.mocked(useHasPermission).mockReturnValue(false); // No module permissions
+    
+    // Mock useAuthStore properly - the hook uses useAuthStore((state) => state.user)
+    const mockUser = { id: userId, email: "test@example.com" };
+    vi.mocked(useAuthStore).mockImplementation((_selector) => {
+      return mockUser;
+    });
+    
     vi.mocked(filesApi.getFile).mockResolvedValue({ data: mockFile } as any);
     vi.mocked(filesApi.getFilePermissions).mockResolvedValue({ data: mockPermissions } as any);
 
@@ -163,17 +187,27 @@ describe("useFilePermissions", () => {
 
     expect(result.current.canView).toBe(true);
     expect(result.current.canDownload).toBe(true);
-    expect(result.current.canEdit).toBe(false);
-    expect(result.current.canDelete).toBe(false);
-    expect(result.current.isOwner).toBe(false);
+    expect(result.current.canEdit).toBe(false); // Permission explicitly set to false
+    expect(result.current.canDelete).toBe(false); // Permission explicitly set to false
+    expect(result.current.canManagePermissions).toBe(false); // No module permissions
+    expect(result.current.isOwner).toBe(false); // User is not the owner
   });
 
   it("should handle errors gracefully", async () => {
     const fileId = "file-1";
     const userId = "user-1";
 
-    vi.mocked(useAuthStore).mockReturnValue({ user: { id: userId } } as any);
-    vi.mocked(useHasPermission).mockReturnValue(false);
+    // Clear all mocks before setting them up
+    vi.clearAllMocks();
+    
+    vi.mocked(useHasPermission).mockReturnValue(false); // No module permissions
+    
+    // Mock useAuthStore properly - the hook uses useAuthStore((state) => state.user)
+    const mockUser = { id: userId, email: "test@example.com" };
+    vi.mocked(useAuthStore).mockImplementation((_selector) => {
+      return mockUser;
+    });
+    
     vi.mocked(filesApi.getFile).mockRejectedValue(new Error("Network error"));
     vi.mocked(filesApi.getFilePermissions).mockRejectedValue(new Error("Network error"));
 
@@ -182,13 +216,21 @@ describe("useFilePermissions", () => {
       wrapper: Wrapper,
     });
 
+    // When there are errors, all permissions should be false
     await waitFor(() => {
       expect(result.current.canView).toBe(false);
     });
 
     expect(result.current.canView).toBe(false);
+    expect(result.current.canDownload).toBe(false);
+    expect(result.current.canEdit).toBe(false);
+    expect(result.current.canDelete).toBe(false);
+    expect(result.current.canManagePermissions).toBe(false);
     expect(result.current.isOwner).toBe(false);
   });
 });
+
+
+
 
 

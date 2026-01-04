@@ -78,7 +78,8 @@ test.describe("Integrations Configuration", () => {
     await expect(integrationsPage.isOnIntegrationsPage()).resolves.toBe(true);
 
     const title = await integrationsPage.getPageTitle();
-    expect(title).toContain("Integraciones") || expect(title).toContain("Integrations");
+    const hasIntegrations = title.includes("Integraciones") || title.includes("Integrations");
+    expect(hasIntegrations).toBe(true);
   });
 
   test("should display available integrations", async ({ authenticatedPage: page }) => {

@@ -167,9 +167,13 @@ export function FileList({
   const { mutate: deleteFile, isPending: deleting } = useFileDelete();
   const { mutate: downloadFile, isPending: downloading } = useFileDownload();
 
-  // Use files directly - no need for separate state that causes infinite loops
-  // The files array from useFiles is already stable from React Query
-  const filteredFiles = files;
+  // State for filtered files from FileFilters component
+  const [filteredFiles, setFilteredFiles] = useState<File[]>([]);
+
+  // Initialize filteredFiles when files change
+  useEffect(() => {
+    setFilteredFiles(files);
+  }, [files]);
 
   // Transform users for filters - handle errors gracefully
   const availableUsers = useMemo(() => {

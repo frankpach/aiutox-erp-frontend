@@ -72,7 +72,7 @@ class GeneralConfigPage {
 
   async getSelectValue(selectTestId: string): Promise<string> {
     const selectTrigger = this.page.locator(`[data-testid="${selectTestId}"]`);
-    return selectTrigger.textContent() || "";
+    return await selectTrigger.textContent() || "";
   }
 }
 

@@ -177,7 +177,7 @@ export function FolderSelector({
                     size="sm"
                     onClick={() => {
                       // Retry loading
-                      refresh();
+                      void refresh();
                     }}
                   >
                     {t("common.retry") || "Reintentar"}
@@ -258,7 +258,7 @@ export function FolderSelector({
               >
                 {t("common.cancel") || "Cancelar"}
               </Button>
-              <Button onClick={handleCreateFolder} disabled={creating}>
+              <Button onClick={() => void handleCreateFolder()} disabled={creating}>
                 {creating
                   ? t("common.creating") || "Creando..."
                   : t("common.create") || "Crear"}

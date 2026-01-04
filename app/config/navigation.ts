@@ -1,17 +1,16 @@
 import {
   HomeIcon,
   UserIcon,
-  Settings02Icon,
-  PaintBoardIcon,
-  SecurityIcon, // Reemplaza ShieldKeyholeLockIcon
+  PlugIcon,
   GridIcon,
-  NotificationIcon, // Reemplaza BellIcon
-  LinkSquare02Icon,
-  Download01Icon, // Reemplaza FileDownloadIcon
-  Upload01Icon, // Reemplaza FileUploadIcon
-  FileViewIcon, // Reemplaza AuditIcon
-  GlobeIcon,
-  FolderIcon, // Para el módulo Files
+  ArrowLeftIcon,
+  DownloadIcon,
+  UploadIcon,
+  SearchIcon,
+  CheckmarkSquareIcon,
+  ShieldIcon,
+  FileEditIcon,
+  ZapIcon,
 } from "@hugeicons/core-free-icons";
 
 /**
@@ -46,16 +45,65 @@ export const navigationItems: NavItem[] = [
   {
     id: "files",
     label: "Archivos",
-    icon: FolderIcon,
+    icon: FileEditIcon,
     to: "/files",
     permission: "files.view",
+  },
+  {
+    id: "tasks",
+    label: "Tareas",
+    icon: CheckmarkSquareIcon,
+    to: "/tasks",
+    permission: "tasks.view",
+  },
+  {
+    id: "approvals",
+    label: "Aprobaciones",
+    icon: ShieldIcon,
+    to: "/approvals",
+    permission: "approvals.view",
+  },
+  {
+    id: "automation",
+    label: "Automatización",
+    icon: ZapIcon,
+    to: "/automation",
+    permission: "automation.view",
+  },
+  {
+    id: "pubsub",
+    label: "PubSub",
+    icon: PlugIcon,
+    to: "/pubsub",
+    permission: "pubsub.view",
+  },
+  {
+    id: "products",
+    label: "Productos",
+    icon: UploadIcon,
+    to: "/products",
+    permission: "products.view",
+  },
+  {
+    id: "search",
+    label: "Búsqueda",
+    icon: SearchIcon,
+    to: "/search",
+    permission: "search.view",
+  },
+  {
+    id: "activities",
+    label: "Actividades",
+    icon: ArrowLeftIcon,
+    to: "/activities",
+    permission: "activities.view",
   },
 
   // Sección de Configuración (items directos, sin módulos intermedios)
   {
     id: "configuration",
     label: "Configuración",
-    icon: Settings02Icon,
+    icon: GridIcon,
     // Mostrar si tiene al menos uno de estos permisos
     requiresAnyPermission: [
       "users.view",
@@ -79,63 +127,63 @@ export const navigationItems: NavItem[] = [
       {
         id: "config-theme",
         label: "Tema y Apariencia",
-        icon: PaintBoardIcon,
+        icon: DownloadIcon,
         to: "/config/theme",
         permission: "config.view_theme",
       },
       {
         id: "config-general",
         label: "Preferencias Generales",
-        icon: GlobeIcon,
+        icon: CheckmarkSquareIcon,
         to: "/config/general",
         permission: "config.view",
       },
       {
         id: "config-modules",
         label: "Módulos del Sistema",
-        icon: GridIcon,
+        icon: ZapIcon,
         to: "/config/modules",
         permission: "config.view",
       },
       {
         id: "config-roles",
         label: "Roles y Permisos",
-        icon: SecurityIcon,
+        icon: ShieldIcon,
         to: "/config/roles",
         permission: "auth.manage_roles",
       },
       {
         id: "config-notifications",
         label: "Notificaciones",
-        icon: NotificationIcon,
+        icon: UploadIcon,
         to: "/config/notifications",
         permission: "notifications.manage",
       },
       {
         id: "config-integrations",
         label: "Integraciones",
-        icon: LinkSquare02Icon,
+        icon: PlugIcon,
         to: "/config/integrations",
         permission: "integrations.view",
       },
       {
         id: "config-import-export",
         label: "Importar / Exportar",
-        icon: Upload01Icon,
+        icon: UploadIcon,
         to: "/config/import-export",
         permission: "import_export.view",
       },
       {
         id: "config-audit",
         label: "Auditoría",
-        icon: FileViewIcon,
+        icon: FileEditIcon,
         to: "/config/audit",
         permission: "auth.view_audit",
       },
       {
         id: "config-files",
         label: "Almacenamiento y Archivos",
-        icon: FileViewIcon,
+        icon: ArrowLeftIcon,
         to: "/config/files",
         permission: "system.configure",
       },
