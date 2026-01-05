@@ -49,10 +49,7 @@ describe("useFolderPermissions", () => {
   });
 
   it("should return no permissions when folderId is null", () => {
-    vi.mocked(useAuthStore).mockImplementation((_selector) => ({
-      id: "user-1",
-      email: "test@example.com"
-    }));
+    vi.mocked(useAuthStore).mockReturnValue({ user: { id: "user-1" } } as any);
     vi.mocked(useHasPermission).mockReturnValue(false);
 
     const Wrapper = createWrapper();
