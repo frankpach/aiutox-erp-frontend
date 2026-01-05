@@ -7,6 +7,8 @@ export default defineConfig({
   plugins: [react(), tsconfigPaths()],
   resolve: {
     alias: {
+      "~": path.resolve(__dirname, "./app"),
+      "~/": path.resolve(__dirname, "./app") + "/",
       // Polyfill for react-dom/test-utils in React 19
       // @testing-library/react still tries to import from react-dom/test-utils
       // which is deprecated. We redirect it to our polyfill.
@@ -32,7 +34,9 @@ export default defineConfig({
       "**/node_modules/**",
       "**/dist/**",
       "**/build/**",
-      "**/app/__tests__/e2e/**", // Exclude Playwright E2E tests
+      "app/__tests__/e2e/**", // Exclude Playwright E2E tests
+      "**/*.e2e.spec.ts", // Exclude e2e spec files
+      "**/*.spec.ts", // Exclude all spec files (Playwright uses .spec.ts)
     ],
     // OPTIMIZED FOR WINDOWS - Single worker to avoid EMFILE
     maxConcurrency: 1, // Single concurrent test

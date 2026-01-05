@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
 /**
@@ -12,18 +12,51 @@ interface MainContentProps {
 }
 
 export const MainContent = memo(function MainContent({ children }: MainContentProps) {
+  const mainRef = useRef<HTMLElement | null>(null);
+  const contentRef = useRef<HTMLDivElement | null>(null);
+  const [hasOverflow, setHasOverflow] = useState(false);
+
+  useEffect(() => {
+    const element = mainRef.current;
+    if (!element) return undefined;
+
+    const checkOverflow = () => {
+      const nextHasOverflow = element.scrollHeight - element.clientHeight > 8;
+      setHasOverflow(nextHasOverflow);
+    };
+
+    checkOverflow();
+    const raf = requestAnimationFrame(checkOverflow);
+
+    const resizeObserver = typeof ResizeObserver !== "undefined"
+      ? new ResizeObserver(checkOverflow)
+      : null;
+
+    resizeObserver?.observe(element);
+    if (contentRef.current) {
+      resizeObserver?.observe(contentRef.current);
+    }
+    window.addEventListener("resize", checkOverflow);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", checkOverflow);
+    };
+  }, [children]);
+
   return (
-    <main className="flex-1 overflow-y-auto overflow-x-hidden bg-background min-h-0" role="main">
-      <div className="container mx-auto px-6 py-8">
+    <main
+      ref={mainRef}
+      className={`flex-1 ${hasOverflow ? "overflow-y-auto" : "overflow-y-hidden"} overflow-x-hidden bg-background min-h-0`}
+      role="main"
+    >
+      <div ref={contentRef} className="container mx-auto px-6 py-6">
         {children}
       </div>
     </main>
   );
 });
-
-
-
-
 
 
 

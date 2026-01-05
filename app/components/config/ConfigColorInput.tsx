@@ -112,7 +112,7 @@ export function ConfigColorInput({
       {description && (
         <p className="text-sm text-muted-foreground">{description}</p>
       )}
-      <div className="flex items-center gap-3">
+      <div className="grid grid-cols-[64px_1fr] items-center gap-3">
         {/* Color picker nativo */}
         <input
           type="color"
@@ -124,28 +124,20 @@ export function ConfigColorInput({
           data-testid={dataTestId ? `${dataTestId}-picker` : undefined}
         />
         {/* Input de texto para valor hexadecimal */}
-        <div className="flex-1">
-          <Input
-            id={id}
-            type="text"
-            value={inputValue}
-            onChange={(e) => handleChange(e.target.value)}
-            onBlur={handleBlur}
-            placeholder="#000000"
-            disabled={disabled}
-            required={required}
-            data-testid={dataTestId}
-            className={cn(
-              "font-mono",
-              showError ? "border-destructive" : ""
-            )}
-          />
-        </div>
-        {/* Preview del color */}
-        <div
-          className="h-10 w-16 rounded border border-input"
-          style={{ backgroundColor: isValid && inputValue ? inputValue : "#000000" }}
-          aria-label="Color preview"
+        <Input
+          id={id}
+          type="text"
+          value={inputValue}
+          onChange={(e) => handleChange(e.target.value)}
+          onBlur={handleBlur}
+          placeholder="#000000"
+          disabled={disabled}
+          required={required}
+          data-testid={dataTestId}
+          className={cn(
+            "font-mono",
+            showError ? "border-destructive" : ""
+          )}
         />
       </div>
       {showError && (
@@ -156,7 +148,6 @@ export function ConfigColorInput({
     </div>
   );
 }
-
 
 
 

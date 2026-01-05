@@ -6,6 +6,7 @@ import { TenantSwitcher } from "./TenantSwitcher";
 import { cn } from "~/lib/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "~/components/ui/button";
+import { useTranslation } from "~/lib/i18n/useTranslation";
 
 /**
  * Sidebar - Barra lateral de navegación
@@ -29,6 +30,7 @@ export const Sidebar = memo(function Sidebar({
 }: SidebarProps) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const { isInitialized, loadModules } = useModulesStore();
+  const { t } = useTranslation();
 
   // Cargar módulos cuando el usuario esté autenticado
   useEffect(() => {
@@ -81,7 +83,7 @@ export const Sidebar = memo(function Sidebar({
           isCollapsed && "lg:w-20"
         )}
         role="navigation"
-        aria-label="Navegación principal"
+        aria-label={t("layout.sidebar.navigationAria")}
       >
         {/* Logo/Header */}
         <div className="h-16 px-4 flex items-center justify-center bg-[hsl(var(--sidebar))] overflow-hidden transition-all duration-200">
@@ -120,7 +122,13 @@ export const Sidebar = memo(function Sidebar({
               "px-4 py-8 text-center text-sm text-muted-foreground",
               isCollapsed && "px-2"
             )}>
-              {isCollapsed ? "🔒" : "Inicia sesión para ver la navegación"}
+              {isCollapsed ? (
+                <span role="img" aria-label={t("layout.sidebar.locked")}>
+                  🔒
+                </span>
+              ) : (
+                t("layout.sidebar.loginToSeeNavigation")
+              )}
             </div>
           )}
         </nav>
@@ -132,8 +140,8 @@ export const Sidebar = memo(function Sidebar({
             size="icon"
             onClick={onToggleCollapse}
             className="h-9 w-9 hover:bg-accent"
-            aria-label={isCollapsed ? "Expandir menú" : "Colapsar menú"}
-            title={isCollapsed ? "Expandir menú" : "Colapsar menú"}
+            aria-label={isCollapsed ? t("layout.sidebar.expandMenu") : t("layout.sidebar.collapseMenu")}
+            title={isCollapsed ? t("layout.sidebar.expandMenu") : t("layout.sidebar.collapseMenu")}
           >
             {isCollapsed ? (
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -146,7 +154,6 @@ export const Sidebar = memo(function Sidebar({
     </>
   );
 });
-
 
 
 

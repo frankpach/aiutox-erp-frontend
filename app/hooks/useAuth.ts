@@ -40,7 +40,6 @@ export function useAuth() {
         // Store token in localStorage BEFORE calling /me endpoint
         // This ensures the axios interceptor can attach it to the request
         localStorage.setItem("auth_token", tokenData.access_token);
-        localStorage.setItem("refresh_token", tokenData.refresh_token);
 
         // Get user info from /me endpoint
         const meResponse = await apiClient.get<StandardResponse<UserMeResponse>>(
@@ -100,4 +99,3 @@ export function useAuth() {
     user,
   };
 }
-

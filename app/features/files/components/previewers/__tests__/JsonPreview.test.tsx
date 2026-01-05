@@ -15,7 +15,7 @@ vi.mock("../../../hooks/useFiles", () => ({
 }));
 
 vi.mock("react-syntax-highlighter", () => ({
-  Light: ({ children }: { children: string }) => <pre>{children}</pre>,
+  Prism: ({ children }: { children: string }) => <pre>{children}</pre>,
 }));
 
 vi.mock("~/lib/i18n/useTranslation", () => ({

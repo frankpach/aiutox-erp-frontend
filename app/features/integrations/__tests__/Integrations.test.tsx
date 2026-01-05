@@ -32,6 +32,18 @@ import {
 } from "~/features/integrations/hooks/useIntegrations";
 import type { Integration, IntegrationStats, IntegrationWebhook, IntegrationLog, IntegrationEvent, IntegrationHealth, IntegrationCredentials, IntegrationConfig } from "~/features/integrations/types/integrations.types";
 
+// Mock api client
+const mockApiClient = {
+  get: vi.fn(),
+  post: vi.fn(),
+  put: vi.fn(),
+  delete: vi.fn(),
+};
+
+vi.mock("~/lib/api/client", () => ({
+  default: mockApiClient,
+}));
+
 // Mock data
 const mockIntegration: Integration = {
   id: "integration-123",
@@ -213,7 +225,7 @@ describe("Integrations Module", () => {
     vi.clearAllMocks();
 
     // Default mock for apiClient.get
-    const { default: apiClient } = require("~/lib/api/client");
+    const apiClient = mockApiClient;
     (apiClient.get as any).mockResolvedValue({
       data: {
         data: [mockIntegration],
@@ -265,7 +277,7 @@ describe("Integrations Module", () => {
     });
 
     it("useIntegration should fetch single integration", async () => {
-      const { default: apiClient } = require("~/lib/api/client");
+      const apiClient = mockApiClient;
       (apiClient.get as any).mockResolvedValue({
         data: {
           data: mockIntegration,
@@ -330,7 +342,7 @@ describe("Integrations Module", () => {
     });
 
     it("useCreateIntegration should create integration", async () => {
-      const { default: apiClient } = require("~/lib/api/client");
+      const apiClient = mockApiClient;
       (apiClient.post as any).mockResolvedValue({
         data: {
           data: mockIntegration,
@@ -377,7 +389,7 @@ describe("Integrations Module", () => {
     });
 
     it("useActivateIntegration should activate integration", async () => {
-      const { default: apiClient } = require("~/lib/api/client");
+      const apiClient = mockApiClient;
       (apiClient.post as any).mockResolvedValue({
         data: {
           data: { ...mockIntegration, status: "active" as const },
@@ -423,7 +435,7 @@ describe("Integrations Module", () => {
     });
 
     it("useTestIntegration should test integration", async () => {
-      const { default: apiClient } = require("~/lib/api/client");
+      const apiClient = mockApiClient;
       (apiClient.post as any).mockResolvedValue({
         data: {
           data: { success: true, message: "Test successful" },
@@ -466,7 +478,7 @@ describe("Integrations Module", () => {
     });
 
     it("useIntegrationWebhooks should fetch webhooks", async () => {
-      const { default: apiClient } = require("~/lib/api/client");
+      const apiClient = mockApiClient;
       (apiClient.get as any).mockResolvedValue({
         data: {
           data: [mockIntegrationWebhook],
@@ -499,7 +511,7 @@ describe("Integrations Module", () => {
     });
 
     it("useIntegrationLogs should fetch logs", async () => {
-      const { default: apiClient } = require("~/lib/api/client");
+      const apiClient = mockApiClient;
       (apiClient.get as any).mockResolvedValue({
         data: {
           data: [mockIntegrationLog],
@@ -532,7 +544,7 @@ describe("Integrations Module", () => {
     });
 
     it("useIntegrationEvents should fetch events", async () => {
-      const { default: apiClient } = require("~/lib/api/client");
+      const apiClient = mockApiClient;
       (apiClient.get as any).mockResolvedValue({
         data: {
           data: [mockIntegrationEvent],
@@ -565,7 +577,7 @@ describe("Integrations Module", () => {
     });
 
     it("useIntegrationHealth should fetch health status", async () => {
-      const { default: apiClient } = require("~/lib/api/client");
+      const apiClient = mockApiClient;
       (apiClient.get as any).mockResolvedValue({
         data: {
           data: mockIntegrationHealth,
@@ -592,7 +604,7 @@ describe("Integrations Module", () => {
     });
 
     it("useIntegrationCredentials should fetch credentials", async () => {
-      const { default: apiClient } = require("~/lib/api/client");
+      const apiClient = mockApiClient;
       (apiClient.get as any).mockResolvedValue({
         data: {
           data: [mockIntegrationCredentials],
@@ -625,7 +637,7 @@ describe("Integrations Module", () => {
     });
 
     it("useIntegrationConfig should fetch configuration", async () => {
-      const { default: apiClient } = require("~/lib/api/client");
+      const apiClient = mockApiClient;
       (apiClient.get as any).mockResolvedValue({
         data: {
           data: [mockIntegrationConfig],

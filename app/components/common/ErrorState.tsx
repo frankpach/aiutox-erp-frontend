@@ -9,6 +9,7 @@ import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import { AlertCircle } from "lucide-react";
+import { useTranslation } from "~/lib/i18n/useTranslation";
 
 export interface ErrorStateProps {
   /** Título del error */
@@ -29,24 +30,27 @@ export interface ErrorStateProps {
  * Estado de error genérico
  */
 export function ErrorState({
-  title = "Error al cargar",
+  title,
   message,
   action,
   onRetry,
   className,
   inCard = true,
 }: ErrorStateProps) {
+  const { t } = useTranslation();
+  const resolvedTitle = title ?? t("common.errorLoadingTitle");
+
   const content = (
     <div className={cn("flex items-start gap-3", className)}>
       <AlertCircle className="h-5 w-5 text-destructive mt-0.5 flex-shrink-0" />
       <div className="flex-1 space-y-2">
-        <h3 className="font-semibold text-destructive">{title}</h3>
+        <h3 className="font-semibold text-destructive">{resolvedTitle}</h3>
         <p className="text-sm text-muted-foreground">{message}</p>
         {(action || onRetry) && (
           <div className="pt-2">
             {action || (
               <Button variant="outline" size="sm" onClick={onRetry}>
-                Reintentar
+                {t("common.retry")}
               </Button>
             )}
           </div>
@@ -65,4 +69,3 @@ export function ErrorState({
 
   return content;
 }
-

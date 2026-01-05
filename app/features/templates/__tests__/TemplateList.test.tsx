@@ -63,12 +63,12 @@ describe("Templates Module", () => {
       );
 
       expect(screen.getByText("Welcome Email")).toBeInTheDocument();
-      expect(screen.getByText("Email")).toBeInTheDocument();
+      expect(screen.getByText("Correo")).toBeInTheDocument();
       expect(screen.getByText("v1")).toBeInTheDocument();
-      expect(screen.getByText("View")).toBeInTheDocument();
-      expect(screen.getByText("Render")).toBeInTheDocument();
-      expect(screen.getByText("Edit")).toBeInTheDocument();
-      expect(screen.getByText("Delete")).toBeInTheDocument();
+      expect(screen.getByText("Ver")).toBeInTheDocument();
+      expect(screen.getByText("Renderizar")).toBeInTheDocument();
+      expect(screen.getByText("Editar")).toBeInTheDocument();
+      expect(screen.getByText("Eliminar")).toBeInTheDocument();
     });
 
     it("calls onEdit when edit button is clicked", async () => {
@@ -80,7 +80,7 @@ describe("Templates Module", () => {
         </QueryClientProvider>
       );
 
-      const editButtons = screen.getAllByText("Edit");
+      const editButtons = screen.getAllByText("Editar");
       fireEvent.click(editButtons[0]);
 
       await waitFor(() => {
@@ -97,7 +97,7 @@ describe("Templates Module", () => {
         </QueryClientProvider>
       );
 
-      const deleteButtons = screen.getAllByText("Delete");
+      const deleteButtons = screen.getAllByText("Eliminar");
       fireEvent.click(deleteButtons[0]);
 
       await waitFor(() => {
@@ -114,7 +114,7 @@ describe("Templates Module", () => {
         </QueryClientProvider>
       );
 
-      const previewButtons = screen.getAllByText("View");
+      const previewButtons = screen.getAllByText("Ver");
       fireEvent.click(previewButtons[0]);
 
       await waitFor(() => {
@@ -131,7 +131,7 @@ describe("Templates Module", () => {
         </QueryClientProvider>
       );
 
-      const renderButtons = screen.getAllByText("Render");
+      const renderButtons = screen.getAllByText("Renderizar");
       fireEvent.click(renderButtons[0]);
 
       await waitFor(() => {
@@ -146,7 +146,7 @@ describe("Templates Module", () => {
         </QueryClientProvider>
       );
 
-      expect(screen.getByText("Loading templates...")).toBeInTheDocument();
+      expect(screen.getByText("Cargando plantillas...")).toBeInTheDocument();
     });
 
     it("shows empty state", () => {
@@ -156,8 +156,8 @@ describe("Templates Module", () => {
         </QueryClientProvider>
       );
 
-      expect(screen.getByText("No templates found")).toBeInTheDocument();
-      expect(screen.getByText("Create Template")).toBeInTheDocument();
+      expect(screen.getByText("No hay plantillas")).toBeInTheDocument();
+      expect(screen.getByText("Crear Plantilla")).toBeInTheDocument();
     });
   });
 

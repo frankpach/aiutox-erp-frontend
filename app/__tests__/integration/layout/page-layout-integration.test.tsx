@@ -59,7 +59,7 @@ describe("PageLayout Integration", () => {
 
     expect(screen.getByText("Home")).toBeInTheDocument();
     // Verificar que el breadcrumb existe
-    const breadcrumb = container.querySelector('nav[aria-label="Breadcrumb"]');
+    const breadcrumb = container.querySelector('nav[aria-label="layout.breadcrumb"]');
     expect(breadcrumb).toBeInTheDocument();
     // Verificar que "Mi Página" aparece en el breadcrumb
     expect(breadcrumb?.textContent).toContain("Mi Página");

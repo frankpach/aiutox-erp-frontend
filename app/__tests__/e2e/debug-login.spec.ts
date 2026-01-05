@@ -91,7 +91,7 @@ test.describe("Debug Login", () => {
         new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 5000))
       ]) as string | null;
       console.log("auth_token:", authToken ? `${authToken.substring(0, 30)}...` : "null");
-      console.log("refresh_token:", refreshToken ? `${refreshToken.substring(0, 30)}...` : "null");
+      console.log("refresh_token (localStorage):", refreshToken ? `${refreshToken.substring(0, 30)}...` : "null");
     } catch (error) {
       console.log("Error reading localStorage:", error);
     }
@@ -105,4 +105,3 @@ test.describe("Debug Login", () => {
     }
   });
 });
-

@@ -8,6 +8,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import * as React from "react";
 import { MermaidPreview } from "../MermaidPreview";
 import * as useFilesHook from "../../../hooks/useFiles";
+import mermaid from "mermaid";
 
 // Mock dependencies
 vi.mock("../../../hooks/useFiles", () => ({
@@ -100,6 +101,11 @@ describe("MermaidPreview", () => {
       error: null,
     } as any);
 
+    // Mock mermaid.render to return a simple SVG
+    vi.mocked(mermaid.render).mockResolvedValue({
+      svg: '<svg><text>Start</text><text>End</text></svg>',
+    } as any);
+
     const Wrapper = createWrapper();
     render(
       <Wrapper>
@@ -108,7 +114,7 @@ describe("MermaidPreview", () => {
     );
 
     await waitFor(() => {
-      // Mermaid should render the diagram
+      // Mermaid should render the diagram with the mocked SVG
       expect(screen.getByText(/Start/)).toBeInTheDocument();
     }, { timeout: 3000 });
   });

@@ -9,6 +9,7 @@ import { Card, CardContent } from "~/components/ui/card";
 import { cn } from "~/lib/utils";
 import { DownloadIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { useTranslation } from "~/lib/i18n/useTranslation";
 
 export interface EmptyStateProps {
   /** Título del estado vacío */
@@ -29,13 +30,17 @@ export interface EmptyStateProps {
  * Estado vacío genérico
  */
 export function EmptyState({
-  title = "No hay elementos",
-  description = "No se encontraron elementos para mostrar.",
+  title,
+  description,
   action,
   icon,
   className,
   inCard = true,
 }: EmptyStateProps) {
+  const { t } = useTranslation();
+  const resolvedTitle = title ?? t("common.emptyTitle");
+  const resolvedDescription = description ?? t("common.emptyDescription");
+
   const content = (
     <div className={cn(
       "flex flex-col items-center justify-center py-12 text-center",
@@ -49,10 +54,10 @@ export function EmptyState({
           className="text-muted-foreground mb-4"
         />
       )}
-      <h3 className="text-lg font-semibold mb-2">{title}</h3>
-      {description && (
+      <h3 className="text-lg font-semibold mb-2">{resolvedTitle}</h3>
+      {resolvedDescription && (
         <p className="text-sm text-muted-foreground mb-4 max-w-md">
-          {description}
+          {resolvedDescription}
         </p>
       )}
       {action && <div className="mt-2">{action}</div>}
@@ -69,4 +74,3 @@ export function EmptyState({
 
   return content;
 }
-

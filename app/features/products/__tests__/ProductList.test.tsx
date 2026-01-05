@@ -16,6 +16,18 @@ import {
 } from "~/features/products/hooks/useProducts";
 import type { Product, ProductCreate, ProductUpdate } from "~/features/products/types/product.types";
 
+// Mock api client
+const mockApiClient = {
+  get: vi.fn(),
+  post: vi.fn(),
+  put: vi.fn(),
+  delete: vi.fn(),
+};
+
+vi.mock("~/lib/api/client", () => ({
+  default: mockApiClient,
+}));
+
 // Mock data
 const mockProduct: Product = {
   id: "1",
@@ -227,7 +239,7 @@ describe("Products Module", () => {
     vi.clearAllMocks();
 
     // Default mock for apiClient.get
-    const { default: apiClient } = require("~/lib/api/client");
+    const apiClient = mockApiClient;
     (apiClient.get as any).mockResolvedValue({
       data: {
         data: mockProducts,
@@ -311,7 +323,7 @@ describe("Products Module", () => {
     });
 
     it("shows loading state initially", () => {
-      const { default: apiClient } = require("~/lib/api/client");
+      const apiClient = mockApiClient;
       (apiClient.get as any).mockImplementation(
         () => new Promise(() => {}) // Never resolves
       );
@@ -323,7 +335,7 @@ describe("Products Module", () => {
     });
 
     it("shows error state when API fails", async () => {
-      const { default: apiClient } = require("~/lib/api/client");
+      const apiClient = mockApiClient;
       (apiClient.get as any).mockRejectedValue(
         new Error("Failed to load products")
       );
@@ -380,7 +392,7 @@ describe("Products Module", () => {
     });
 
     it("shows empty state when no products", async () => {
-      const { default: apiClient } = require("~/lib/api/client");
+      const apiClient = mockApiClient;
       (apiClient.get as any).mockResolvedValue({
         data: {
           data: [],
@@ -519,7 +531,7 @@ describe("Products Module", () => {
       };
 
       // Update mock to return product with variants
-      const { default: apiClient } = require("~/lib/api/client");
+      const apiClient = mockApiClient;
       (apiClient.get as any).mockResolvedValue({
         data: {
           data: [productWithVariants],
@@ -587,7 +599,7 @@ describe("Products Module", () => {
       };
 
       // Update mock to return product with barcodes
-      const { default: apiClient } = require("~/lib/api/client");
+      const apiClient = mockApiClient;
       (apiClient.get as any).mockResolvedValue({
         data: {
           data: [productWithBarcodes],

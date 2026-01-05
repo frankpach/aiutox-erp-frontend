@@ -8,6 +8,7 @@ import type { ReactNode } from "react";
 import { Link } from "react-router";
 import { cn } from "~/lib/utils";
 import type { BreadcrumbItem } from "~/components/layout/PageLayout";
+import { useTranslation } from "~/lib/i18n/useTranslation";
 
 export interface PageHeaderProps {
   /** Título de la página */
@@ -32,11 +33,13 @@ export function PageHeader({
   actions,
   className,
 }: PageHeaderProps) {
+  const { t } = useTranslation();
+
   const renderBreadcrumb = () => {
     if (!breadcrumb || breadcrumb.length === 0) return null;
 
     return (
-      <nav aria-label="Breadcrumb" className="mb-4">
+      <nav aria-label={t("layout.breadcrumb")} className="mb-4">
         <ol className="flex items-center space-x-2 text-sm text-muted-foreground">
           {breadcrumb.map((item, index) => (
             <li key={index} className="flex items-center">
@@ -79,4 +82,3 @@ export function PageHeader({
     </div>
   );
 }
-

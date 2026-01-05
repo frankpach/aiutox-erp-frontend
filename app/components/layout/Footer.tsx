@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { useTranslation } from "~/lib/i18n/useTranslation";
 
 /**
  * Footer - Pie de página de la aplicación
@@ -9,6 +10,11 @@ import { memo } from "react";
 export const Footer = memo(function Footer() {
   const currentYear = new Date().getFullYear();
   const version = "0.0.126";
+  const { t } = useTranslation();
+
+  const footerText = t("layout.footer.text")
+    .replace("{year}", String(currentYear))
+    .replace("{version}", version);
 
   return (
     <footer
@@ -16,12 +22,11 @@ export const Footer = memo(function Footer() {
       role="contentinfo"
     >
       <div className="text-sm text-muted-foreground">
-        © {currentYear} AiutoX ERP | v{version}
+        {footerText}
       </div>
     </footer>
   );
 });
-
 
 
 

@@ -122,16 +122,12 @@ const getCookie = (name: string): string | null => {
  * Updates both localStorage (for access token) and authStore for consistency
  */
 const refreshAccessToken = async (): Promise<string | null> => {
-  // Try to get refresh token from cookie first
+  // Try to get refresh token from cookie first (non-HttpOnly cookies only)
   let refreshToken = getCookie("refresh_token");
 
   // Fallback to localStorage for backward compatibility
   if (!refreshToken) {
     refreshToken = localStorage.getItem("refresh_token");
-  }
-
-  if (!refreshToken) {
-    return null;
   }
 
   try {
@@ -146,24 +142,29 @@ const refreshAccessToken = async (): Promise<string | null> => {
     });
 
     // Send refresh token in body as fallback (cookie will be used if available)
-    const response = await refreshClient.post<RefreshTokenResponse>(
+    const response = await refreshClient.post<{ data?: RefreshTokenResponse } & RefreshTokenResponse>(
       "/auth/refresh",
       refreshToken ? { refresh_token: refreshToken } : {}
     );
 
-    const { access_token } = response.data;
+    const accessToken =
+      response.data?.data?.access_token ?? response.data?.access_token ?? null;
+
+    if (!accessToken) {
+      throw new Error("Refresh token response missing access token");
+    }
 
     // Update localStorage for access token only
-    localStorage.setItem("auth_token", access_token);
+    localStorage.setItem("auth_token", accessToken);
 
     // Update authStore for consistency
     // Note: refresh token is now in cookie, not localStorage
-    useAuthStore.setState({ token: access_token });
+    useAuthStore.setState({ token: accessToken });
 
     // Schedule proactive refresh for new token
-    scheduleProactiveRefresh(access_token);
+    scheduleProactiveRefresh(accessToken);
 
-    return access_token;
+    return accessToken;
   } catch (error) {
     // Refresh token expired or invalid
     localStorage.removeItem("auth_token");
@@ -298,4 +299,3 @@ apiClient.interceptors.response.use(
 );
 
 export default apiClient;
-

@@ -113,9 +113,11 @@ describe("authStore - Refresh Token", () => {
       // Mock successful refresh response
       vi.mocked(apiClient.post).mockResolvedValue({
         data: {
-          access_token: newAccessToken,
-          token_type: "bearer",
-        } as RefreshTokenResponse,
+          data: {
+            access_token: newAccessToken,
+            token_type: "bearer",
+          } as RefreshTokenResponse,
+        },
       });
 
       const result = await useAuthStore.getState().refreshAccessToken();
@@ -211,7 +213,6 @@ describe("authStore - Refresh Token", () => {
     });
   });
 });
-
 
 
 

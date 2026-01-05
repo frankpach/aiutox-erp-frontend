@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
+import { useTranslation } from "~/lib/i18n/useTranslation";
 
 /**
  * UserMenu - Menú dropdown del usuario
@@ -19,6 +20,7 @@ export function UserMenu() {
   const user = useAuthStore((state) => state.user);
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   // Obtener iniciales del usuario
   const getInitials = (name: string | null | undefined): string => {
@@ -35,21 +37,21 @@ export function UserMenu() {
     navigate("/login");
   };
 
-  const displayName = user?.full_name || user?.email || "Usuario";
+  const displayName = user?.full_name || user?.email || t("layout.userMenu.fallbackName");
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
-          className="flex items-center gap-2 rounded-full focus:outline-none focus:ring-2 focus:ring-[#023E87] focus:ring-offset-2"
-          aria-label="Menú de usuario"
+          className="flex items-center gap-2 rounded-full focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          aria-label={t("layout.userMenu.label")}
         >
           <Avatar>
-            <AvatarFallback className="bg-[#023E87] text-white">
+            <AvatarFallback className="bg-primary text-primary-foreground">
               {getInitials(user?.full_name)}
             </AvatarFallback>
           </Avatar>
-          <span className="hidden md:block text-sm font-medium text-[#121212]">
+          <span className="hidden md:block text-sm font-medium text-foreground">
             {displayName}
           </span>
         </button>
@@ -70,26 +72,25 @@ export function UserMenu() {
           onClick={() => navigate("/profile")}
           className="cursor-pointer"
         >
-          Ver Perfil
+          {t("layout.userMenu.profile")}
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => navigate("/settings")}
           className="cursor-pointer"
         >
-          Configuración
+          {t("layout.userMenu.settings")}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={handleLogout}
-          className="cursor-pointer text-red-600 focus:text-red-600"
+          className="cursor-pointer text-destructive focus:text-destructive"
         >
-          Cerrar Sesión
+          {t("layout.userMenu.logout")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
 }
-
 
 
 

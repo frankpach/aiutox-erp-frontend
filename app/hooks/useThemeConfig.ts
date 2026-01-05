@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getThemeConfig,
@@ -55,6 +55,79 @@ interface ThemeColors {
 /**
  * Apply theme configuration to CSS variables
  */
+const colorVariables = new Set([
+  "--color-primary",
+  "--color-secondary",
+  "--color-accent",
+  "--color-background",
+  "--color-surface",
+  "--color-error",
+  "--color-warning",
+  "--color-success",
+  "--color-info",
+  "--color-text-primary",
+  "--color-text-secondary",
+  "--color-text-disabled",
+  "--sidebar-bg",
+  "--sidebar-text",
+  "--navbar-bg",
+  "--navbar-text",
+]);
+
+const isHexColor = (value: string): boolean => /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(value);
+
+const hexToHsl = (hex: string): string => {
+  const normalized = hex.replace("#", "");
+  const fullHex =
+    normalized.length === 3
+      ? normalized.split("").map((ch) => ch + ch).join("")
+      : normalized;
+
+  const r = parseInt(fullHex.slice(0, 2), 16) / 255;
+  const g = parseInt(fullHex.slice(2, 4), 16) / 255;
+  const b = parseInt(fullHex.slice(4, 6), 16) / 255;
+
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  let h = 0;
+  let s = 0;
+  const l = (max + min) / 2;
+
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r:
+        h = (g - b) / d + (g < b ? 6 : 0);
+        break;
+      case g:
+        h = (b - r) / d + 2;
+        break;
+      case b:
+        h = (r - g) / d + 4;
+        break;
+      default:
+        break;
+    }
+    h *= 60;
+  }
+
+  const format = (value: number) => {
+    const rounded = Math.round(value * 10) / 10;
+    return Number.isInteger(rounded) ? String(rounded) : String(rounded);
+  };
+
+  return `${format(h)} ${format(s * 100)}% ${format(l * 100)}%`;
+};
+
+const normalizeColorValue = (value: string): string => {
+  if (!value) return value;
+  const trimmed = value.trim();
+  if (isHexColor(trimmed)) {
+    return hexToHsl(trimmed);
+  }
+  return trimmed;
+};
 const coerceThemeConfig = (config: Record<string, unknown>): Record<string, string> => {
   const result: Record<string, string> = {};
   Object.entries(config).forEach(([key, value]) => {
@@ -106,7 +179,10 @@ const applyThemeToCSS = (config: Record<string, unknown>) => {
   Object.entries(stringConfig).forEach(([key, value]) => {
     const cssVar = cssVarMap[key];
     if (cssVar && value) {
-      root.style.setProperty(cssVar, value);
+      const normalizedValue = colorVariables.has(cssVar)
+        ? normalizeColorValue(value)
+        : value;
+      root.style.setProperty(cssVar, normalizedValue);
     }
   });
 
@@ -175,8 +251,13 @@ export function useThemeConfig() {
     },
   });
 
+  const theme = useMemo(
+    () => coerceThemeConfig(themeData?.config || {}),
+    [themeData?.config]
+  );
+
   return {
-    theme: coerceThemeConfig(themeData?.config || {}),
+    theme,
     isLoading,
     error,
     updateTheme: updateThemeMutation.mutate,
@@ -185,8 +266,6 @@ export function useThemeConfig() {
     refetchTheme: refetch,
   };
 }
-
-
 
 
 

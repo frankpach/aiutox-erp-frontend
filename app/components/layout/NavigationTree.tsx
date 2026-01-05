@@ -67,11 +67,11 @@ function NavigationItemComponent({
     <Link
       to={item.to}
       className={cn(
-        "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md mx-2",
+        "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md mx-2 border-l-2 border-transparent",
         "transition-all duration-150 ease-[cubic-bezier(0.4,0,0.2,1)]",
         "hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
         isActive
-          ? "bg-primary/10 text-primary"
+          ? "bg-primary/10 text-primary border-primary"
           : "text-foreground hover:text-primary",
         isCollapsed && "justify-center px-2"
       )}
@@ -400,7 +400,6 @@ export function NavigationTree({ isCollapsed = false }: NavigationTreeProps) {
     </nav>
   );
 }
-
 
 
 

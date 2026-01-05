@@ -72,7 +72,7 @@ describe("Tasks Module", () => {
         </QueryClientProvider>
       );
 
-      expect(screen.getByText("Loading tasks...")).toBeInTheDocument();
+      expect(screen.getByText("Cargando tareas...")).toBeInTheDocument();
     });
 
     it("renders empty state", () => {

@@ -100,7 +100,7 @@ export async function loginWithCachedToken(page: any): Promise<void> {
           permissions: userData.permissions || [],
         },
         token: token,
-        refreshToken: "cached_refresh_token", // Placeholder, no se usa en tests
+        refreshToken: null, // No se guarda refresh token en localStorage
         isAuthenticated: true,
       },
       version: 0,
@@ -157,4 +157,3 @@ export async function loginWithCachedToken(page: any): Promise<void> {
     throw new Error("Failed to authenticate: redirected to /login");
   }
 }
-

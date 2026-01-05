@@ -46,7 +46,7 @@ const activityTypeColors: Record<ActivityType, string> = {
 
 export function ActivityTimeline({ activities, loading, onRefresh }: ActivityTimelineProps) {
   const { t } = useTranslation();
-  const dateLocale = t("common.locale") === "es" ? es : en;
+  const dateLocale = t("common.locale") === "es" ? es : enUS;
 
   const formatActivityDate = (dateString: string) => {
     return format(new Date(dateString), "PPP", { locale: dateLocale });

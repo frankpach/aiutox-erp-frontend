@@ -46,6 +46,18 @@ import type {
   NotificationEventType,
 } from "~/features/notifications/types/notifications.types";
 
+// Mock api client
+const mockApiClient = {
+  get: vi.fn(),
+  post: vi.fn(),
+  put: vi.fn(),
+  delete: vi.fn(),
+};
+
+vi.mock("~/lib/api/client", () => ({
+  default: mockApiClient,
+}));
+
 // Mock data
 const mockNotificationTemplate: NotificationTemplate = {
   id: "template-123",
@@ -263,7 +275,7 @@ describe("Notifications Module", () => {
     vi.clearAllMocks();
 
     // Default mock for apiClient.get
-    const { default: apiClient } = require("~/lib/api/client");
+    const apiClient = mockApiClient;
     (apiClient.get as any).mockResolvedValue({
       data: {
         data: [mockNotificationTemplate],
@@ -329,7 +341,7 @@ describe("Notifications Module", () => {
     });
 
     it("useNotificationTemplate should fetch single template", async () => {
-      const { default: apiClient } = require("~/lib/api/client");
+      const apiClient = mockApiClient;
       (apiClient.get as any).mockResolvedValue({
         data: {
           data: mockNotificationTemplate,
@@ -356,7 +368,7 @@ describe("Notifications Module", () => {
     });
 
     it("useNotificationQueue should fetch queue entries", async () => {
-      const { default: apiClient } = require("~/lib/api/client");
+      const apiClient = mockApiClient;
       (apiClient.get as any).mockResolvedValue({
         data: {
           data: [mockNotificationQueue],
@@ -446,7 +458,7 @@ describe("Notifications Module", () => {
     });
 
     it("useCreateNotificationTemplate should create template", async () => {
-      const { default: apiClient } = require("~/lib/api/client");
+      const apiClient = mockApiClient;
       (apiClient.post as any).mockResolvedValue({
         data: {
           data: mockNotificationTemplate,
@@ -495,7 +507,7 @@ describe("Notifications Module", () => {
     });
 
     it("useSendNotification should send notification", async () => {
-      const { default: apiClient } = require("~/lib/api/client");
+      const apiClient = mockApiClient;
       (apiClient.post as any).mockResolvedValue({
         data: {
           data: [{ message: "Notification sent successfully" }],
@@ -543,7 +555,7 @@ describe("Notifications Module", () => {
     });
 
     it("useTestSMTPConnection should test SMTP connection", async () => {
-      const { default: apiClient } = require("~/lib/api/client");
+      const apiClient = mockApiClient;
       (apiClient.post as any).mockResolvedValue({
         data: {
           data: { success: true, message: "SMTP connection successful" },
@@ -586,7 +598,7 @@ describe("Notifications Module", () => {
     });
 
     it("useTestWebhookConnection should test webhook connection", async () => {
-      const { default: apiClient } = require("~/lib/api/client");
+      const apiClient = mockApiClient;
       (apiClient.post as any).mockResolvedValue({
         data: {
           data: { success: true, message: "Webhook connection successful" },

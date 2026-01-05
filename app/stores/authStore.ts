@@ -100,10 +100,15 @@ export const useAuthStore = create<AuthState>()(
             { refresh_token: refreshToken }
           );
 
-          const { access_token } = response.data;
-          localStorage.setItem("auth_token", access_token);
-          set({ token: access_token });
-          return access_token;
+          const accessToken =
+            (response.data as { data?: RefreshTokenResponse }).data?.access_token ??
+            response.data.access_token;
+          if (!accessToken) {
+            throw new Error("Refresh token response missing access token");
+          }
+          localStorage.setItem("auth_token", accessToken);
+          set({ token: accessToken });
+          return accessToken;
         } catch {
           // Refresh token expired or invalid - clear auth
           get().clearAuth();
@@ -230,4 +235,3 @@ export const useAuthStore = create<AuthState>()(
     }
   )
 );
-

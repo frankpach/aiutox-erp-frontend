@@ -289,9 +289,11 @@ describe("apiClient - Refresh Token", () => {
       // IMPORTANT: Configure BEFORE calling the interceptor
       mockRefreshClientPost.fn.mockResolvedValue({
         data: {
-          access_token: newAccessToken,
-          token_type: "bearer",
-        } as RefreshTokenResponse,
+          data: {
+            access_token: newAccessToken,
+            token_type: "bearer",
+          } as RefreshTokenResponse,
+        },
       });
       // #region agent log
       fetch('http://127.0.0.1:7242/ingest/bd91a56b-aa7d-44fb-ac11-0977789d60c5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'client.test.ts:206',message:'mockRefreshClientPost configured BEFORE interceptor call',data:{callCount:createCallCount.count,mockConfigured:true},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'D'})}).catch(()=>{});
@@ -358,9 +360,11 @@ describe("apiClient - Refresh Token", () => {
       // Configure mock refresh client post to return successful response
       mockRefreshClientPost.fn.mockResolvedValue({
         data: {
-          access_token: newAccessToken,
-          token_type: "bearer",
-        } as RefreshTokenResponse,
+          data: {
+            access_token: newAccessToken,
+            token_type: "bearer",
+          } as RefreshTokenResponse,
+        },
       });
 
       // Mock apiClient as callable function for retries
@@ -507,9 +511,11 @@ describe("apiClient - Refresh Token", () => {
       // The cookie will be sent automatically via withCredentials
       mockRefreshClientPost.fn.mockResolvedValue({
         data: {
-          access_token: newAccessToken,
-          token_type: "bearer",
-        } as RefreshTokenResponse,
+          data: {
+            access_token: newAccessToken,
+            token_type: "bearer",
+          } as RefreshTokenResponse,
+        },
       });
 
       const originalRequest = {
@@ -558,9 +564,11 @@ describe("apiClient - Refresh Token", () => {
       // Mock refresh client to return success
       mockRefreshClientPost.fn.mockResolvedValue({
         data: {
-          access_token: newAccessToken,
-          token_type: "bearer",
-        } as RefreshTokenResponse,
+          data: {
+            access_token: newAccessToken,
+            token_type: "bearer",
+          } as RefreshTokenResponse,
+        },
       });
 
       const originalRequest = {
@@ -596,9 +604,11 @@ describe("apiClient - Refresh Token", () => {
 
       mockRefreshClientPost.fn.mockResolvedValue({
         data: {
-          access_token: newAccessToken,
-          token_type: "bearer",
-        } as RefreshTokenResponse,
+          data: {
+            access_token: newAccessToken,
+            token_type: "bearer",
+          } as RefreshTokenResponse,
+        },
       });
 
       const originalRequest = {
@@ -730,7 +740,6 @@ describe("apiClient - Refresh Token", () => {
     });
   });
 });
-
 
 
 

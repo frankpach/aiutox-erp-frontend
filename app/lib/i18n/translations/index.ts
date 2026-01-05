@@ -9,10 +9,18 @@ const translations = {
   en: {
     ...enTranslations,
     ...enSearchTranslations,
+    common: {
+      ...enTranslations.common,
+      ...enSearchTranslations.common,
+    },
   },
   es: {
     ...esTranslations,
     ...esSearchTranslations,
+    common: {
+      ...esTranslations.common,
+      ...esSearchTranslations.common,
+    },
   },
 } as const;
 

@@ -75,7 +75,9 @@ class ThemeConfigPage {
     // Wait for button text to change from "Guardando..." to "Guardar Cambios"
     await this.page.waitForFunction(
       () => {
-        const button = document.querySelector('button:has-text("Guardar Cambios")');
+        const button = Array.from(document.querySelectorAll("button")).find(
+          (btn) => btn.textContent?.includes("Guardar Cambios")
+        );
         return button && !button.textContent?.includes("Guardando");
       },
       { timeout: 15000 }
@@ -145,15 +147,32 @@ class ThemeConfigPage {
    * Verify theme is applied visually in the application
    */
   async verifyThemeAppliedInApp(colorKey: string, expectedColor: string): Promise<void> {
+    const expectedHsl = this.hexToHsl(expectedColor);
+
     // Map color keys to CSS variable names
     const cssVarMap: Record<string, string> = {
       primary_color: "--color-primary",
       secondary_color: "--color-secondary",
       accent_color: "--color-accent",
+      background_color: "--color-background",
+      surface_color: "--color-surface",
+      text_primary: "--color-text-primary",
+      text_secondary: "--color-text-secondary",
       sidebar_bg: "--sidebar-bg",
       sidebar_text: "--sidebar-text",
       navbar_bg: "--navbar-bg",
       navbar_text: "--navbar-text",
+    };
+
+    const designVarMap: Record<string, string> = {
+      primary_color: "--primary",
+      secondary_color: "--secondary",
+      accent_color: "--accent",
+      background_color: "--background",
+      surface_color: "--card",
+      text_primary: "--foreground",
+      text_secondary: "--muted-foreground",
+      sidebar_bg: "--sidebar",
     };
 
     const cssVar = cssVarMap[colorKey];
@@ -163,18 +182,20 @@ class ThemeConfigPage {
 
     // Wait for CSS variable to be applied on current page first
     await this.page.waitForFunction(
-      (args: { cssVar: string; expectedColor: string }) => {
+      (args: { cssVar: string; expectedColor: string; expectedHsl: string }) => {
         const value = getComputedStyle(document.documentElement)
           .getPropertyValue(args.cssVar)
           .trim();
         const normalizedValue = value.toUpperCase();
         const normalizedExpected = args.expectedColor.toUpperCase();
+        const normalizedExpectedHsl = args.expectedHsl.toUpperCase();
         return (
           normalizedValue === normalizedExpected ||
-          normalizedValue.includes(normalizedExpected.replace("#", ""))
+          normalizedValue.includes(normalizedExpected.replace("#", "")) ||
+          normalizedValue === normalizedExpectedHsl
         );
       },
-      { cssVar, expectedColor },
+      { cssVar, expectedColor, expectedHsl },
       { timeout: 10000 }
     ).catch(() => {
       // If check fails, continue - might be a timing issue
@@ -186,18 +207,20 @@ class ThemeConfigPage {
 
     // Wait for CSS variable to be applied on the new page
     await this.page.waitForFunction(
-      (args: { cssVar: string; expectedColor: string }) => {
+      (args: { cssVar: string; expectedColor: string; expectedHsl: string }) => {
         const value = getComputedStyle(document.documentElement)
           .getPropertyValue(args.cssVar)
           .trim();
         const normalizedValue = value.toUpperCase();
         const normalizedExpected = args.expectedColor.toUpperCase();
+        const normalizedExpectedHsl = args.expectedHsl.toUpperCase();
         return (
           normalizedValue === normalizedExpected ||
-          normalizedValue.includes(normalizedExpected.replace("#", ""))
+          normalizedValue.includes(normalizedExpected.replace("#", "")) ||
+          normalizedValue === normalizedExpectedHsl
         );
       },
-      { cssVar, expectedColor },
+      { cssVar, expectedColor, expectedHsl },
       { timeout: 10000 }
     ).catch(() => {
       // If check fails, continue - might be a timing issue
@@ -205,9 +228,12 @@ class ThemeConfigPage {
 
     // Get CSS variable value
     const actualValue = await this.getCSSVariableValue(cssVar);
+    const designVar = designVarMap[colorKey];
+    const designValue = designVar ? await this.getCSSVariableValue(designVar) : "";
 
     // Verify color is applied (may be in rgb format, so normalize)
     const normalizedExpected = expectedColor.toUpperCase();
+    const normalizedExpectedHsl = expectedHsl.toUpperCase();
     const normalizedActual = actualValue.toUpperCase();
 
     // CSS variables might return rgb() format, so check if color matches
@@ -215,9 +241,58 @@ class ThemeConfigPage {
       // If it's a hex value in CSS, it should match
       expect(
         normalizedActual === normalizedExpected ||
-        normalizedActual.includes(normalizedExpected.replace("#", ""))
+        normalizedActual.includes(normalizedExpected.replace("#", "")) ||
+        normalizedActual === normalizedExpectedHsl
       ).toBeTruthy();
     }
+
+    if (designVar && designValue) {
+      const normalizedDesign = designValue.toUpperCase();
+      expect(
+        normalizedDesign === normalizedExpected ||
+        normalizedDesign.includes(normalizedExpected.replace("#", "")) ||
+        normalizedDesign === normalizedExpectedHsl
+      ).toBeTruthy();
+    }
+  }
+
+  private hexToHsl(hex: string): string {
+    const normalized = hex.replace("#", "");
+    const fullHex =
+      normalized.length === 3
+        ? normalized.split("").map((ch) => ch + ch).join("")
+        : normalized;
+    const r = parseInt(fullHex.slice(0, 2), 16) / 255;
+    const g = parseInt(fullHex.slice(2, 4), 16) / 255;
+    const b = parseInt(fullHex.slice(4, 6), 16) / 255;
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    let h = 0;
+    let s = 0;
+    const l = (max + min) / 2;
+    if (max !== min) {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch (max) {
+        case r:
+          h = (g - b) / d + (g < b ? 6 : 0);
+          break;
+        case g:
+          h = (b - r) / d + 2;
+          break;
+        case b:
+          h = (r - g) / d + 4;
+          break;
+        default:
+          break;
+      }
+      h *= 60;
+    }
+    const format = (value: number) => {
+      const rounded = Math.round(value * 10) / 10;
+      return Number.isInteger(rounded) ? String(rounded) : String(rounded);
+    };
+    return `${format(h)} ${format(s * 100)}% ${format(l * 100)}%`;
   }
 
   /**
@@ -225,22 +300,22 @@ class ThemeConfigPage {
    */
   async restoreDefaultTheme(): Promise<void> {
     const defaultTheme = {
-      primary_color: "#1976D2",
-      secondary_color: "#DC004E",
-      accent_color: "#FFC107",
+      primary_color: "#023E87",
+      secondary_color: "#F1F5F9",
+      accent_color: "#F1F5F9",
       background_color: "#FFFFFF",
-      surface_color: "#F5F5F5",
-      error_color: "#F44336",
-      warning_color: "#FF9800",
-      success_color: "#4CAF50",
-      info_color: "#2196F3",
-      text_primary: "#212121",
-      text_secondary: "#757575",
-      text_disabled: "#BDBDBD",
-      sidebar_bg: "#2C3E50",
-      sidebar_text: "#ECF0F1",
-      navbar_bg: "#34495E",
-      navbar_text: "#FFFFFF",
+      surface_color: "#FFFFFF",
+      error_color: "#EF4444",
+      warning_color: "#F59E0B",
+      success_color: "#10B981",
+      info_color: "#3B82F6",
+      text_primary: "#0F172A",
+      text_secondary: "#64748B",
+      text_disabled: "#94A3B8",
+      sidebar_bg: "#FAFAFA",
+      sidebar_text: "#0F172A",
+      navbar_bg: "#FFFFFF",
+      navbar_text: "#0F172A",
     };
 
     await this.goto();
@@ -573,7 +648,7 @@ test.describe("Theme Configuration E2E", () => {
     await themePage.goto();
     await themePage.clickTab("Colores");
     const primaryColor = await themePage.getColorValue("Color Primario");
-    expect(primaryColor.toUpperCase()).toBe("#1976D2");
+    expect(primaryColor.toUpperCase()).toBe("#023E87");
   });
 });
 
@@ -599,10 +674,6 @@ test.describe("Theme Configuration Permissions", () => {
     await verifyUnauthorizedAccess(page);
   });
 });
-
-
-
-
 
 
 

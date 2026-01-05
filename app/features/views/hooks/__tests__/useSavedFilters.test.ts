@@ -208,6 +208,9 @@ describe("useSavedFilters", () => {
       },
     ];
 
+    // Mock current user ID BEFORE calling the hook
+    vi.spyOn(Storage.prototype, "getItem").mockReturnValue("user-1");
+
     vi.mocked(savedFiltersApi.getSavedFilters).mockResolvedValue({
       data: mockFilters,
       meta: {
@@ -224,9 +227,6 @@ describe("useSavedFilters", () => {
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
     });
-
-    // Mock current user ID
-    vi.spyOn(Storage.prototype, "getItem").mockReturnValue("user-1");
 
     const myFilters = result.current.getMyFilters("users");
     expect(myFilters).toHaveLength(1);

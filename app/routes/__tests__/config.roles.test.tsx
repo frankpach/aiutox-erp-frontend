@@ -280,11 +280,10 @@ describe("RolesConfigPage", () => {
 
       render(<RouterProvider router={router} />);
 
+      // Check for skeleton elements
       await waitFor(() => {
-        const loadingText = screen.queryByText("Cargando roles...");
-        const loadingElements = screen.queryAllByText(/loading|Loading|Cargando/i);
-        const svgIcons = document.querySelectorAll("svg");
-        expect(loadingText || loadingElements.length > 0 || svgIcons.length > 0).toBeTruthy();
+        const skeletons = document.querySelectorAll('[class*="animate-pulse"]');
+        expect(skeletons.length).toBeGreaterThan(0);
       }, { timeout: 1000 });
     });
 

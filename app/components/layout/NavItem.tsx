@@ -25,10 +25,10 @@ export function NavItem({ item, isActive, isCollapsed }: NavItemProps) {
       className={cn(
         "flex items-center gap-3 px-4 py-2.5 rounded-md text-sm font-medium",
         "transition-all duration-200 ease-in-out",
-        "hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[#023E87] focus:ring-offset-2",
+        "hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
         isCurrentActive
-          ? "bg-[#023E87]/10 text-[#023E87]"
-          : "text-[#121212] hover:text-[#023E87]",
+          ? "bg-primary/10 text-primary"
+          : "text-foreground hover:text-primary",
         isCollapsed && "justify-center"
       )}
       aria-current={isCurrentActive ? "page" : undefined}
@@ -37,14 +37,14 @@ export function NavItem({ item, isActive, isCollapsed }: NavItemProps) {
       <HugeiconsIcon
         icon={item.icon}
         size={20}
-        color={isCurrentActive ? "#023E87" : "#121212"}
+        color={isCurrentActive ? "hsl(var(--primary))" : "hsl(var(--foreground))"}
         strokeWidth={1.5}
       />
       {!isCollapsed && (
         <>
           <span className="flex-1">{item.label}</span>
           {item.badge !== undefined && item.badge > 0 && (
-            <span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-semibold text-white bg-[#023E87] rounded-full">
+            <span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-semibold text-primary-foreground bg-primary rounded-full">
               {item.badge > 99 ? "99+" : item.badge}
             </span>
           )}
@@ -53,7 +53,6 @@ export function NavItem({ item, isActive, isCollapsed }: NavItemProps) {
     </Link>
   );
 }
-
 
 
 

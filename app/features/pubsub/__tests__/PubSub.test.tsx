@@ -19,6 +19,18 @@ import {
 } from "~/features/pubsub/hooks/usePubSub";
 import type { PubSubStream, PubSubStats } from "~/features/pubsub/types/pubsub.types";
 
+// Mock api client
+const mockApiClient = {
+  get: vi.fn(),
+  post: vi.fn(),
+  put: vi.fn(),
+  delete: vi.fn(),
+};
+
+vi.mock("~/lib/api/client", () => ({
+  default: mockApiClient,
+}));
+
 // Mock data
 const mockPubSubStats: PubSubStats = {
   streams: {
@@ -214,7 +226,7 @@ describe("PubSub Module", () => {
     vi.clearAllMocks();
 
     // Default mock for apiClient.get
-    const { default: apiClient } = require("~/lib/api/client");
+    const apiClient = mockApiClient;
     (apiClient.get as any).mockResolvedValue({
       data: {
         data: mockPubSubStreams,
@@ -303,7 +315,7 @@ describe("PubSub Module", () => {
     });
 
     it("shows loading state initially", () => {
-      const { default: apiClient } = require("~/lib/api/client");
+      const apiClient = mockApiClient;
       (apiClient.get as any).mockImplementation(
         () => new Promise(() => {}) // Never resolves
       );
@@ -315,7 +327,7 @@ describe("PubSub Module", () => {
     });
 
     it("shows error state when API fails", async () => {
-      const { default: apiClient } = require("~/lib/api/client");
+      const apiClient = mockApiClient;
       (apiClient.get as any).mockRejectedValue(
         new Error("Failed to load PubSub data")
       );
@@ -393,7 +405,7 @@ describe("PubSub Module", () => {
     });
 
     it("shows empty state when no streams", async () => {
-      const { default: apiClient } = require("~/lib/api/client");
+      const apiClient = mockApiClient;
       (apiClient.get as any).mockResolvedValue({
         data: {
           data: [],

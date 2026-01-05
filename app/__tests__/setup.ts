@@ -1,76 +1,290 @@
-import { expect, afterEach, beforeAll, afterAll } from "vitest";
-import * as matchers from "@testing-library/jest-dom/matchers";
+/**
+ * Setup file for Vitest tests
+ * Configures global mocks and environment for testing
+ */
 
-// Mock ResizeObserver for Radix UI components
-global.ResizeObserver = class ResizeObserver {
-  observe() {
-    // Mock implementation
-  }
-  unobserve() {
-    // Mock implementation
-  }
-  disconnect() {
-    // Mock implementation
-  }
-};
-
-// CRITICAL: Configure React.act BEFORE importing @testing-library/react
-// @testing-library/react checks for React.act when it loads, so we must set it up first
-import * as React from "react";
-import { act } from "react";
-
-// Configure React 19 act environment
-// This tells React that we're in a testing environment and act should be used
-(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
-
-// Make React available globally FIRST
-// We're making React available globally for testing-library compatibility
-(globalThis as typeof globalThis & { React: typeof React }).React = React;
-
-// CRITICAL: Attach act to React object BEFORE @testing-library/react loads
-// @testing-library/react checks for React.act first, then falls back to react-dom/test-utils
-// React 19 doesn't expose act on React object by default, so we must add it
-// Try to attach act to React object - if it fails, we'll handle it gracefully
-try {
-  // React.act is needed by testing-library, we provide it from react package
-  if (!(React as typeof React & { act: typeof act }).act) {
-    // Adding act to React object
-    (React as typeof React & { act: typeof act }).act = act;
-  }
-} catch (e) {
-  // If we can't modify React directly, create a wrapper
-  // This shouldn't happen, but just in case
-  console.warn("Could not attach act to React object:", e);
-}
-
-// Also attach to global React object (this should always work)
-(globalThis as typeof globalThis & { React: typeof React & { act: typeof act } }).React.act = act;
-
-// NOW we can safely import @testing-library/react
-// It will find React.act when it checks
+import { vi, afterEach } from "vitest";
 import { cleanup } from "@testing-library/react";
+import "@testing-library/jest-dom";
 
-// MSW setup
-import { server } from "./msw/server";
+// Mock apiClient to prevent real API calls
+vi.mock("~/lib/api/client", () => ({
+  default: {
+    get: vi.fn().mockResolvedValue({
+      data: {
+        data: {},
+        meta: null,
+        error: null,
+      },
+    }),
+    post: vi.fn().mockResolvedValue({
+      data: {
+        data: {},
+        meta: null,
+        error: null,
+      },
+    }),
+    put: vi.fn().mockResolvedValue({
+      data: {
+        data: {},
+        meta: null,
+        error: null,
+      },
+    }),
+    delete: vi.fn().mockResolvedValue({
+      data: {
+        data: {},
+        meta: null,
+        error: null,
+      },
+    }),
+  },
+}));
 
-// Extend Vitest's expect with jest-dom matchers
-expect.extend(matchers);
+// Mock useTranslation hook
+vi.mock("~/lib/i18n/useTranslation", () => ({
+  useTranslation: () => ({
+    t: (key: string) => {
+      // Return Spanish translations for common keys
+      const translations: Record<string, string> = {
+        "calendar.views.month": "Mes",
+        "calendar.views.week": "Semana",
+        "calendar.views.day": "Día",
+        "calendar.views.agenda": "Agenda",
+        "calendar.today": "Hoy",
+        "calendar.loading": "Cargando calendario...",
+        "calendar.events.create": "Crear Evento",
+        "calendar.events.edit": "Editar Evento",
+        "calendar.events.calendar": "Calendario",
+        "calendar.events.calendar.placeholder": "Seleccionar calendario",
+        "calendar.events.title": "Título del Evento",
+        "calendar.events.title.placeholder": "Título del Evento",
+        "calendar.events.description": "Descripción",
+        "calendar.events.description.placeholder": "Descripción del evento",
+        "calendar.events.start": "Hora de Inicio",
+        "calendar.events.startTime": "Hora de Inicio",
+        "calendar.events.end": "Hora de Fin",
+        "calendar.events.endTime": "Hora de Fin",
+        "calendar.events.location": "Ubicación",
+        "calendar.events.location.placeholder": "Ubicación",
+        "calendar.events.allDay": "Todo el Día",
+        "calendar.events.reminders": "Recordatorios",
+        "calendar.events.save": "Guardar",
+        "calendar.events.cancel": "Cancelar",
+        "calendar.details.edit": "Editar",
+        "calendar.details.delete": "Eliminar",
+        "calendar.details.close": "Cerrar",
+        "calendar.details.allDay": "Todo el Día",
+        "calendar.details.recurrence": "Recurrencia",
+        "templates.title": "Plantillas",
+        "templates.create": "Crear",
+        "templates.type.email": "Correo",
+        "templates.render": "Renderizar",
+        "templates.preview": "Vista previa",
+        "templates.loading": "Cargando plantillas...",
+        "templates.noTemplates": "No hay plantillas",
+        "templates.createTemplate": "Crear Plantilla",
+        "templates.edit": "Editar",
+        "templates.delete": "Eliminar",
+        "templates.view": "Ver",
+        "templates.subject": "Asunto",
+        "templates.content": "Contenido",
+        "templates.variables": "Variables",
+        "templates.addVariable": "Agregar variable",
+        "common.refresh": "Actualizar",
+        "common.view": "Ver",
+        "common.edit": "Editar",
+        "common.delete": "Eliminar",
+        "common.search": "Buscar",
+        "common.actions": "Acciones",
+        "common.add": "Agregar",
+        "common.cancel": "Cancelar",
+        "common.save": "Guardar",
+        "common.saving": "Guardando...",
+        "common.locale": "es",
+        "common.title": "Título",
+        "common.filters": "Filtros",
+        "tasks.title": "Tareas",
+        "tasks.loading": "Cargando tareas...",
+        "tasks.noTasks": "No hay tareas",
+        "tasks.create": "Crear Tarea",
+        "tasks.edit": "Editar",
+        "tasks.delete": "Eliminar",
+        "tasks.complete": "Completar",
+        "tasks.refresh": "Actualizar",
+        "tasks.status.todo": "Por hacer",
+        "tasks.status.in_progress": "En progreso",
+        "tasks.status.done": "Completado",
+        "tasks.priority.high": "Alta",
+        "tasks.priority.medium": "Media",
+        "tasks.priority.low": "Baja",
+        "reporting.title": "Reportes",
+        "reporting.loading": "Cargando reportes...",
+        "reporting.noReports": "No se encontraron reportes",
+        "reporting.create": "Crear Reporte",
+        "reporting.active": "Activo",
+        "reporting.status.active": "Activo",
+        "reporting.status.inactive": "Inactivo",
+        "reporting.view": "Ver",
+        "reporting.execute": "Ejecutar",
+        "reporting.download": "Descargar",
+        "reporting.edit": "Editar",
+        "reporting.delete": "Eliminar",
+        "reporting.searchPlaceholder": "Buscar reportes...",
+        "reporting.search.title": "Buscar Reportes",
+        "reporting.filters.all": "Todos",
+        "reporting.filters.module": "Módulo",
+        "reporting.filters.status": "Estado",
+        "reporting.modules.sales": "Ventas",
+        "reporting.modules.products": "Productos",
+        "reporting.modules.customers": "Clientes",
+        "reporting.modules.inventory": "Inventario",
+        "reporting.list.title": "Lista de Reportes",
+        "reporting.list.empty": "No se encontraron reportes",
+        "reporting.fields.name": "Nombre",
+        "reporting.fields.module": "Módulo",
+        "reporting.fields.dataSource": "Fuente de Datos",
+        "reporting.fields.visualizations": "Visualizaciones",
+        "reporting.fields.status": "Estado",
+        "reporting.fields.updatedAt": "Actualizado",
+        "activities.createActivity": "Crear Actividad",
+        "activities.editActivity": "Editar Actividad",
+        "activities.loading": "Cargando actividades...",
+        "activities.noActivities": "No hay actividades",
+        "activities.refresh": "Actualizar",
+        "activities.timeline.activity": "Actividad",
+        "activities.types.comment": "Comentario",
+        "activities.types.call": "Llamada",
+        "activities.types.email": "Correo",
+        "activities.types.meeting": "Reunión",
+        "activities.types.task": "Tarea",
+        "activities.types.status_change": "Cambio de estado",
+        "activities.types.note": "Nota",
+        "activities.types.file_upload": "Subida de archivo",
+        "activities.types.custom": "Personalizado",
+      };
+      return translations[key] || key; // Return translation or key itself
+    },
+    language: "es",
+    setLanguage: vi.fn(),
+  }),
+}));
 
-// Establish API mocking before all tests
-// Use "warn" instead of "error" to see what requests are not being handled
-beforeAll(() => {
-  server.listen({ onUnhandledRequest: "warn" });
+// Mock localStorage
+const localStorageMock = (() => {
+  let store: Record<string, string> = {};
+
+  return {
+    getItem: (key: string) => store[key] || null,
+    setItem: (key: string, value: string) => {
+      store[key] = value.toString();
+    },
+    removeItem: (key: string) => {
+      delete store[key];
+    },
+    clear: () => {
+      store = {};
+    },
+    length: 0,
+    key: () => null,
+  };
+})();
+
+Object.defineProperty(global, "localStorage", {
+  value: localStorageMock,
 });
 
-// Reset any request handlers that are declared as a part of our tests
-// (i.e. for testing one-off error scenarios)
+// Mock sessionStorage
+const sessionStorageMock = (() => {
+  let store: Record<string, string> = {};
+
+  return {
+    getItem: (key: string) => store[key] || null,
+    setItem: (key: string, value: string) => {
+      store[key] = value.toString();
+    },
+    removeItem: (key: string) => {
+      delete store[key];
+    },
+    clear: () => {
+      store = {};
+    },
+    length: 0,
+    key: () => null,
+  };
+})();
+
+Object.defineProperty(global, "sessionStorage", {
+  value: sessionStorageMock,
+});
+
+// Mock window.matchMedia
+Object.defineProperty(window, "matchMedia", {
+  writable: true,
+  value: vi.fn().mockImplementation((query) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});
+
+// Mock IntersectionObserver
+global.IntersectionObserver = class IntersectionObserver {
+  constructor() {}
+  disconnect() {}
+  observe() {}
+  takeRecords() {
+    return [];
+  }
+  unobserve() {}
+} as any;
+
+// Mock ResizeObserver
+global.ResizeObserver = class ResizeObserver {
+  constructor() {}
+  disconnect() {}
+  observe() {}
+  unobserve() {}
+} as any;
+
+// Mock crypto.getRandomValues for tests
+Object.defineProperty(global, "crypto", {
+  value: {
+    getRandomValues: (arr: Uint8Array) => {
+      for (let i = 0; i < arr.length; i++) {
+        arr[i] = Math.floor(Math.random() * 256);
+      }
+      return arr;
+    },
+  },
+});
+
+// Mock window.location.href to prevent navigation errors
+Object.defineProperty(window, "location", {
+  value: {
+    href: "http://localhost:3000",
+    protocol: "http:",
+    host: "localhost:3000",
+    hostname: "localhost",
+    port: "3000",
+    pathname: "/",
+    search: "",
+    hash: "",
+    assign: vi.fn(),
+    replace: vi.fn(),
+    reload: vi.fn(),
+  },
+  writable: true,
+});
+
+// Cleanup after each test
 afterEach(() => {
   cleanup();
-  server.resetHandlers();
+  localStorageMock.clear();
+  sessionStorageMock.clear();
 });
-
-// Clean up after the tests are finished
-afterAll(() => {
-  server.close();
-});
-

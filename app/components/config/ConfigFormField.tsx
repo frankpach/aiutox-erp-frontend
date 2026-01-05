@@ -58,26 +58,38 @@ export function ConfigFormField({
 }: ConfigFormFieldProps) {
   return (
     <div className={cn("space-y-2", className)}>
-      <Label htmlFor={id} className={required ? "after:content-['*'] after:ml-0.5 after:text-destructive" : ""}>
-        {label}
-      </Label>
-      {description && (
-        <p className="text-sm text-muted-foreground">{description}</p>
-      )}
       {input ? (
-        <div data-testid={dataTestId}>{input}</div>
+        <>
+          <Label id={`${id}-label`} className={required ? "after:content-['*'] after:ml-0.5 after:text-destructive" : ""}>
+            {label}
+          </Label>
+          {description && (
+            <p className="text-sm text-muted-foreground">{description}</p>
+          )}
+          <div data-testid={dataTestId} aria-labelledby={`${id}-label`}>
+            {input}
+          </div>
+        </>
       ) : (
-        <Input
-          id={id}
-          type={type}
-          value={value ?? ""}
-          onChange={(e) => onChange?.(e.target.value)}
-          placeholder={placeholder}
-          disabled={disabled}
-          required={required}
-          data-testid={dataTestId}
-          className={error ? "border-destructive" : ""}
-        />
+        <>
+          <Label htmlFor={id} className={required ? "after:content-['*'] after:ml-0.5 after:text-destructive" : ""}>
+            {label}
+          </Label>
+          {description && (
+            <p className="text-sm text-muted-foreground">{description}</p>
+          )}
+          <Input
+            id={id}
+            type={type}
+            value={value ?? ""}
+            onChange={(e) => onChange?.(e.target.value)}
+            placeholder={placeholder}
+            disabled={disabled}
+            required={required}
+            data-testid={dataTestId}
+            className={error ? "border-destructive" : ""}
+          />
+        </>
       )}
       {error && (
         <p className="text-sm text-destructive" role="alert">

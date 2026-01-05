@@ -120,7 +120,7 @@ describe("CsvPreview", () => {
       </Wrapper>
     );
 
-    expect(screen.getByText("No hay datos")).toBeInTheDocument();
+    expect(screen.getByText("Vista previa no disponible")).toBeInTheDocument();
   });
 });
 

@@ -13,10 +13,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Save, CheckSquare, Square, Trash2, Power, PowerOff } from "lucide-react";
 import { ConfirmDialog } from "~/components/common/ConfirmDialog";
 import { showToast } from "~/components/common/Toast";
 import { UserListSkeleton } from "~/components/common/UserListSkeleton";
+import { EmptyState } from "~/components/common/EmptyState";
+import { ErrorState } from "~/components/common/ErrorState";
 import {
   Tooltip,
   TooltipContent,
@@ -252,224 +255,250 @@ export function UsersList({ onManageFiltersClick }: UsersListProps) {
 
   return (
     <TooltipProvider>
-      <div className="space-y-4">
-      {/* Filters and Actions Bar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap items-center gap-2">
-          <SavedFilters
-            module="users"
-            fields={userFieldsConfig}
-            onApply={handleApplyFilter}
-            currentFilterId={filterId}
-            onManageClick={handleManageFilters}
-            filters={savedFiltersList}
-            defaultFilter={savedFiltersDefaultFilter}
-            loading={savedFiltersLoading}
-            error={savedFiltersError}
-            getMyFilters={savedFiltersGetMyFilters}
-            getSharedFilters={savedFiltersGetSharedFilters}
-            refreshFilters={refreshFilters}
-            createFilter={createFilter}
-            autoLoad={false}
-          />
-          {filterId && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSaveCurrentFilter}
-              className="gap-2"
-            >
-              <Save className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("savedFilters.saveCurrent")}</span>
-            </Button>
-          )}
-        </div>
-        {/* Bulk Actions Bar */}
-        {selectedUserIds.size > 0 && (
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">
-              {selectedUserIds.size} {t("users.selected") || "seleccionados"}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleBulkActionClick("activate")}
-              disabled={bulkActionLoading}
-              className="gap-2"
-            >
-              <Power className="h-4 w-4" />
-              {t("users.activate") || "Activar"}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleBulkActionClick("deactivate")}
-              disabled={bulkActionLoading}
-              className="gap-2"
-            >
-              <PowerOff className="h-4 w-4" />
-              {t("users.deactivate") || "Desactivar"}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleBulkActionClick("delete")}
-              disabled={bulkActionLoading}
-              className="gap-2 text-destructive hover:text-destructive"
-            >
-              <Trash2 className="h-4 w-4" />
-              {t("users.delete") || "Eliminar"}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setSelectedUserIds(new Set())}
-            >
-              {t("users.clearSelection") || "Limpiar"}
-            </Button>
-          </div>
-        )}
-      </div>
-
-      {/* Loading State */}
-      {loading && (
-        <div className="space-y-4">
-          <UserListSkeleton rows={pageSize} />
-        </div>
-      )}
-
-      {/* Error State */}
-      {error && (
-        <div className="rounded-md border border-destructive bg-destructive/10 p-4">
-          <div className="text-sm text-destructive">
-            {t("users.error")}: {error.message}
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => refresh()}
-            className="mt-2"
-          >
-            {t("users.retry")}
-          </Button>
-        </div>
-      )}
-
-      {/* Search and Filters */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-        <input
-          type="text"
-          placeholder={t("users.search") || "Buscar usuarios..."}
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:max-w-md"
-        />
-        <select
-          value={isActiveFilter === undefined ? "all" : isActiveFilter ? "active" : "inactive"}
-          onChange={(e) => {
-            const value = e.target.value;
-            setIsActiveFilter(
-              value === "all" ? undefined : value === "active"
-            );
-            setPage(1);
-          }}
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:w-[150px]"
-        >
-          <option value="all">{t("users.allStatus") || "Todos"}</option>
-          <option value="active">{t("users.active") || "Activos"}</option>
-          <option value="inactive">{t("users.inactive") || "Inactivos"}</option>
-        </select>
-      </div>
-
-      {/* Users Table */}
-      {!loading && !error && (
-        <>
-          {users.length === 0 ? (
-            <div className="rounded-md border p-8 text-center">
-              <p className="text-muted-foreground">
-                {debouncedSearch || filterId || isActiveFilter !== undefined
-                  ? t("users.noUsersFound") || "No se encontraron usuarios que coincidan con la búsqueda"
-                  : t("users.noUsers") || "No hay usuarios registrados"}
-              </p>
+      <div className="space-y-6">
+        <Card>
+          <CardHeader className="pb-4">
+            <div className="space-y-1">
+              <CardTitle className="text-base">{t("users.sectionTitle")}</CardTitle>
+              <CardDescription>{t("users.sectionDescription")}</CardDescription>
             </div>
-          ) : (
-            <>
-              <div className="rounded-md border overflow-x-auto">
-                <table className="w-full min-w-[640px]">
-                  <thead>
-                    <tr className="border-b bg-muted/50">
-                      <th className="px-4 py-3 text-left text-sm font-medium w-12">
-                        <button
-                          onClick={handleSelectAll}
-                          className="flex items-center justify-center"
-                          aria-label={t("users.selectAll") || "Seleccionar todos"}
-                        >
-                          {selectedUserIds.size === users.length && users.length > 0 ? (
-                            <CheckSquare className="h-5 w-5" />
-                          ) : (
-                            <Square className="h-5 w-5" />
-                          )}
-                        </button>
-                      </th>
-                      <th className="px-4 py-3 text-left text-sm font-medium">{t("users.email") || "Email"}</th>
-                      <th className="px-4 py-3 text-left text-sm font-medium hidden md:table-cell">{t("users.name") || "Nombre"}</th>
-                      <th className="px-4 py-3 text-left text-sm font-medium hidden lg:table-cell">{t("users.jobTitle") || "Cargo"}</th>
-                      <th className="px-4 py-3 text-left text-sm font-medium">{t("users.status") || "Estado"}</th>
-                      <th className="px-4 py-3 text-left text-sm font-medium hidden xl:table-cell">{t("users.created") || "Creado"}</th>
-                      <th className="px-4 py-3 text-right text-sm font-medium">{t("users.actions") || "Acciones"}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {users.map((user) => (
-                      <UserRow
-                        key={user.id}
-                        user={user}
-                        onDelete={handleDeleteUserMemoized}
-                        deleting={deleting}
-                        selected={selectedUserIds.has(user.id)}
-                        onSelect={() => handleSelectUser(user.id)}
-                      />
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Pagination */}
-              {pagination && pagination.total_pages > 1 && (
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-muted-foreground">
-                    {t("users.showing") || "Mostrando"} {users.length} {t("users.of") || "de"} {pagination.total} {t("users.users") || "usuarios"}
-                  </div>
-                  <div className="flex items-center gap-2">
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex flex-col gap-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {t("users.filtersTitle")}
+              </p>
+              {/* Filters and Actions Bar */}
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-wrap items-center gap-2">
+                  <SavedFilters
+                    module="users"
+                    fields={userFieldsConfig}
+                    onApply={handleApplyFilter}
+                    currentFilterId={filterId}
+                    onManageClick={handleManageFilters}
+                    filters={savedFiltersList}
+                    defaultFilter={savedFiltersDefaultFilter}
+                    loading={savedFiltersLoading}
+                    error={savedFiltersError}
+                    getMyFilters={savedFiltersGetMyFilters}
+                    getSharedFilters={savedFiltersGetSharedFilters}
+                    refreshFilters={refreshFilters}
+                    createFilter={createFilter}
+                    autoLoad={false}
+                  />
+                  {filterId && (
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handlePageChange(Math.max(1, page - 1))}
-                      disabled={page === 1}
+                      onClick={handleSaveCurrentFilter}
+                      className="gap-2"
                     >
-                      {t("users.previous") || "Anterior"}
+                      <Save className="h-4 w-4" />
+                      <span className="hidden sm:inline">{t("savedFilters.saveCurrent")}</span>
                     </Button>
-                    <span className="text-sm">
-                      {t("users.page") || "Página"} {page} {t("users.of") || "de"} {pagination.total_pages}
+                  )}
+                </div>
+                {/* Bulk Actions Bar */}
+                {selectedUserIds.size > 0 && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm text-muted-foreground">
+                      {selectedUserIds.size} {t("users.selected")}
                     </span>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handlePageChange(Math.min(pagination.total_pages, page + 1))}
-                      disabled={page >= pagination.total_pages}
+                      onClick={() => handleBulkActionClick("activate")}
+                      disabled={bulkActionLoading}
+                      className="gap-2"
                     >
-                      {t("users.next") || "Siguiente"}
+                      <Power className="h-4 w-4" />
+                      {t("users.activate")}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleBulkActionClick("deactivate")}
+                      disabled={bulkActionLoading}
+                      className="gap-2"
+                    >
+                      <PowerOff className="h-4 w-4" />
+                      {t("users.deactivate")}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleBulkActionClick("delete")}
+                      disabled={bulkActionLoading}
+                      className="gap-2 text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      {t("users.delete")}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedUserIds(new Set())}
+                    >
+                      {t("users.clearSelection")}
                     </Button>
                   </div>
-                </div>
-              )}
-            </>
-          )}
-        </>
-      )}
+                )}
+              </div>
+            </div>
+
+            {/* Search and Filters */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+              <input
+                type="text"
+                placeholder={t("users.search")}
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:max-w-md"
+              />
+              <select
+                value={isActiveFilter === undefined ? "all" : isActiveFilter ? "active" : "inactive"}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setIsActiveFilter(
+                    value === "all" ? undefined : value === "active"
+                  );
+                  setPage(1);
+                }}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:w-[150px]"
+              >
+                <option value="all">{t("users.allStatus")}</option>
+                <option value="active">{t("users.active")}</option>
+                <option value="inactive">{t("users.inactive")}</option>
+              </select>
+            </div>
+
+            {/* Loading State */}
+            {loading && (
+              <div className="space-y-4">
+                <UserListSkeleton rows={pageSize} />
+              </div>
+            )}
+
+            {/* Error State */}
+            {error && (
+              <ErrorState
+                message={`${t("users.error")}: ${error.message}`}
+                onRetry={() => refresh()}
+                inCard={false}
+              />
+            )}
+
+            {/* Users Table */}
+            {!loading && !error && (
+              <>
+                {users.length === 0 ? (
+                  <EmptyState
+                    title={
+                      debouncedSearch || filterId || isActiveFilter !== undefined
+                        ? t("users.noUsersFound")
+                        : t("users.noUsers")
+                    }
+                    description={
+                      debouncedSearch || filterId || isActiveFilter !== undefined
+                        ? t("users.noUsersFoundDesc")
+                        : t("users.noUsersDesc")
+                    }
+                    inCard={false}
+                  />
+                ) : (
+                  <>
+                    <div className="rounded-md border overflow-x-auto">
+                      <table className="w-full min-w-[640px]">
+                        <thead>
+                          <tr className="border-b bg-muted/40">
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground w-12">
+                              <button
+                                onClick={handleSelectAll}
+                                className="flex items-center justify-center"
+                                aria-label={t("users.selectAll")}
+                              >
+                                {selectedUserIds.size === users.length && users.length > 0 ? (
+                                  <CheckSquare className="h-5 w-5" />
+                                ) : (
+                                  <Square className="h-5 w-5" />
+                                )}
+                              </button>
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                              {t("users.email")}
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground hidden md:table-cell">
+                              {t("users.name")}
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground hidden lg:table-cell">
+                              {t("users.jobTitle")}
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                              {t("users.status")}
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground hidden xl:table-cell">
+                              {t("users.created")}
+                            </th>
+                            <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                              {t("users.actions")}
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {users.map((user) => (
+                            <UserRow
+                              key={user.id}
+                              user={user}
+                              onDelete={handleDeleteUserMemoized}
+                              deleting={deleting}
+                              selected={selectedUserIds.has(user.id)}
+                              onSelect={() => handleSelectUser(user.id)}
+                            />
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Pagination */}
+                    {pagination && pagination.total_pages > 1 && (
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm text-muted-foreground">
+                          {t("users.showing")} {users.length} {t("users.of")} {pagination.total} {t("users.users")}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handlePageChange(Math.max(1, page - 1))}
+                            disabled={page === 1}
+                          >
+                            {t("users.previous")}
+                          </Button>
+                          <span className="text-sm">
+                            {t("users.page")} {page} {t("users.of")} {pagination.total_pages}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handlePageChange(Math.min(pagination.total_pages, page + 1))}
+                            disabled={page >= pagination.total_pages}
+                          >
+                            {t("users.next")}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog
@@ -539,8 +568,6 @@ export function UsersList({ onManageFiltersClick }: UsersListProps) {
         variant={bulkActionConfirm.action === "delete" ? "destructive" : "default"}
         loading={bulkActionLoading}
       />
-    </div>
     </TooltipProvider>
   );
 }
-

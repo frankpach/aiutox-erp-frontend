@@ -17,6 +17,18 @@ import {
 } from "~/features/import-export/hooks/useImportExport";
 import type { ImportJob, ExportJob, ImportTemplate, ImportExportStats } from "~/features/import-export/types/import-export.types";
 
+// Mock api client
+const mockApiClient = {
+  get: vi.fn(),
+  post: vi.fn(),
+  put: vi.fn(),
+  delete: vi.fn(),
+};
+
+vi.mock("~/lib/api/client", () => ({
+  default: mockApiClient,
+}));
+
 // Mock data
 const mockImportJob: ImportJob = {
   id: "import-123",
@@ -229,7 +241,7 @@ describe("Import/Export Module", () => {
     vi.clearAllMocks();
 
     // Default mock for apiClient.get
-    const { default: apiClient } = require("~/lib/api/client");
+    const apiClient = mockApiClient;
     (apiClient.get as any).mockResolvedValue({
       data: {
         data: [mockImportJob],
@@ -281,7 +293,7 @@ describe("Import/Export Module", () => {
     });
 
     it("useExportJobs should fetch export jobs", async () => {
-      const { default: apiClient } = require("~/lib/api/client");
+      const apiClient = mockApiClient;
       (apiClient.get as any).mockResolvedValue({
         data: {
           data: [mockExportJob],
@@ -314,7 +326,7 @@ describe("Import/Export Module", () => {
     });
 
     it("useImportTemplates should fetch import templates", async () => {
-      const { default: apiClient } = require("~/lib/api/client");
+      const apiClient = mockApiClient;
       (apiClient.get as any).mockResolvedValue({
         data: {
           data: [mockImportTemplate],
@@ -385,7 +397,7 @@ describe("Import/Export Module", () => {
     });
 
     it("useCreateImportJob should create import job", async () => {
-      const { default: apiClient } = require("~/lib/api/client");
+      const apiClient = mockApiClient;
       (apiClient.post as any).mockResolvedValue({
         data: {
           data: mockImportJob,
@@ -431,7 +443,7 @@ describe("Import/Export Module", () => {
     });
 
     it("useCreateExportJob should create export job", async () => {
-      const { default: apiClient } = require("~/lib/api/client");
+      const apiClient = mockApiClient;
       (apiClient.post as any).mockResolvedValue({
         data: {
           data: mockExportJob,

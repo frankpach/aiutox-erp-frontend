@@ -9,6 +9,7 @@ import { NotificationBell } from "~/components/notifications/NotificationBell";
 import { Button } from "~/components/ui/button";
 import { useTheme } from "~/providers/ThemeProvider";
 import { cn } from "~/lib/utils";
+import { useTranslation } from "~/lib/i18n/useTranslation";
 
 /**
  * Header - Barra superior de la aplicación
@@ -27,6 +28,7 @@ interface HeaderProps {
 
 export const Header = memo(function Header({ onSidebarToggle, isSidebarOpen, isSidebarCollapsed }: HeaderProps) {
   const { theme, setTheme, resolvedTheme } = useTheme();
+  const { t } = useTranslation();
 
   const toggleTheme = () => {
     if (theme === "light") {
@@ -61,7 +63,7 @@ export const Header = memo(function Header({ onSidebarToggle, isSidebarOpen, isS
               ? "opacity-100 max-w-[200px] visible"
               : "opacity-0 max-w-0 invisible"
           )}
-          aria-label="Ir al inicio"
+          aria-label={t("layout.header.goHome")}
         >
           <img
             src="/logo-name.png"
@@ -73,7 +75,7 @@ export const Header = memo(function Header({ onSidebarToggle, isSidebarOpen, isS
         <Link
           to="/"
           className="lg:hidden flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded"
-          aria-label="Ir al inicio"
+          aria-label={t("layout.header.goHome")}
         >
           <span className="text-xl font-bold text-primary">AiutoX ERP</span>
         </Link>
@@ -86,16 +88,16 @@ export const Header = memo(function Header({ onSidebarToggle, isSidebarOpen, isS
             <HugeiconsIcon
               icon={SearchIcon}
               size={20}
-              color="#9CA3AF"
+              color="hsl(var(--muted-foreground))"
               strokeWidth={1.5}
             />
           </div>
           <input
             type="text"
-            placeholder="Buscar..."
+            placeholder={t("layout.header.searchPlaceholder")}
             className="w-full pl-10 pr-4 py-2 border border-input/50 bg-muted/30 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent focus:bg-background transition-colors"
             disabled
-            aria-label="Buscar"
+            aria-label={t("layout.header.searchAria")}
           />
         </div>
       </div>
@@ -107,7 +109,7 @@ export const Header = memo(function Header({ onSidebarToggle, isSidebarOpen, isS
           variant="ghost"
           size="icon"
           onClick={toggleTheme}
-          aria-label={resolvedTheme === "dark" ? "Cambiar a tema claro" : "Cambiar a tema oscuro"}
+          aria-label={resolvedTheme === "dark" ? t("layout.header.themeToLight") : t("layout.header.themeToDark")}
           className="hidden md:flex"
         >
           {resolvedTheme === "dark" ? (
@@ -127,7 +129,6 @@ export const Header = memo(function Header({ onSidebarToggle, isSidebarOpen, isS
     </header>
   );
 });
-
 
 
 

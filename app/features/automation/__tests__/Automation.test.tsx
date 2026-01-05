@@ -20,6 +20,34 @@ import {
 } from "~/features/automation/hooks/useAutomation";
 import type { AutomationRule, AutomationRuleCreate } from "~/features/automation/types/automation.types";
 
+// Mock api client
+const mockApiClient = {
+  get: vi.fn(),
+  post: vi.fn(),
+  put: vi.fn(),
+  delete: vi.fn(),
+};
+
+vi.mock("~/lib/api/client", () => ({
+  default: mockApiClient,
+}));
+
+// Mock automation hooks
+vi.mock("~/features/automation/hooks/useAutomation", () => ({
+  useAutomationRules: vi.fn(),
+  useCreateAutomationRule: vi.fn(),
+  useUpdateAutomationRule: vi.fn(),
+  useDeleteAutomationRule: vi.fn(),
+  useExecuteAutomationRule: vi.fn(),
+  useEnableAutomationRule: vi.fn(),
+  useDisableAutomationRule: vi.fn(),
+  useCloneAutomationRule: vi.fn(),
+  useTestAutomationRule: vi.fn(),
+}));
+
+// Import the mocked hooks
+const mockedUseAutomation = vi.mocked(import("~/features/automation/hooks/useAutomation"));
+
 // Mock data
 const mockAutomationRule: AutomationRule = {
   id: "1",
@@ -215,8 +243,7 @@ describe("Automation Module", () => {
     vi.clearAllMocks();
 
     // Default mock for apiClient.get
-    const { default: apiClient } = require("~/lib/api/client");
-    (apiClient.get as any).mockResolvedValue({
+    mockApiClient.get = vi.fn().mockResolvedValue({
       data: {
         data: mockAutomationRules,
         meta: {
@@ -230,20 +257,16 @@ describe("Automation Module", () => {
     });
 
     // Mock executions
-    (apiClient.get as any).mockResolvedValue({
+    mockApiClient.get = vi.fn().mockResolvedValue({
       data: {
         data: [
           {
             id: "exec-1",
             rule_id: "1",
             trigger_data: {},
-            status: "completed",
-            result: { success: true },
-            error_message: null,
-            started_at: "2025-01-01T00:00:00Z",
-            completed_at: "2025-01-01T00:01:00Z",
-            created_at: "2025-01-01T00:00:00Z",
-          }
+            result: "success",
+            executed_at: "2024-01-01T00:00:00Z",
+          },
         ],
         meta: {
           total: 1,
@@ -253,6 +276,55 @@ describe("Automation Module", () => {
         },
         error: null,
       },
+    });
+
+    // Mock automation hooks
+    const mockedHooks = vi.mocked(require("~/features/automation/hooks/useAutomation"));
+    mockedHooks.useAutomationRules = vi.fn().mockReturnValue({
+      data: mockAutomationRules,
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    mockedHooks.useCreateAutomationRule = vi.fn().mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+      error: null,
+    });
+    mockedHooks.useUpdateAutomationRule = vi.fn().mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+      error: null,
+    });
+    mockedHooks.useDeleteAutomationRule = vi.fn().mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+      error: null,
+    });
+    mockedHooks.useExecuteAutomationRule = vi.fn().mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+      error: null,
+    });
+    mockedHooks.useEnableAutomationRule = vi.fn().mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+      error: null,
+    });
+    mockedHooks.useDisableAutomationRule = vi.fn().mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+      error: null,
+    });
+    mockedHooks.useCloneAutomationRule = vi.fn().mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+      error: null,
+    });
+    mockedHooks.useTestAutomationRule = vi.fn().mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+      error: null,
     });
   });
 
@@ -298,7 +370,7 @@ describe("Automation Module", () => {
     });
 
     it("shows loading state initially", () => {
-      const { default: apiClient } = require("~/lib/api/client");
+      const apiClient = mockApiClient;
       (apiClient.get as any).mockImplementation(
         () => new Promise(() => {}) // Never resolves
       );
@@ -310,7 +382,7 @@ describe("Automation Module", () => {
     });
 
     it("shows error state when API fails", async () => {
-      const { default: apiClient } = require("~/lib/api/client");
+      const apiClient = mockApiClient;
       (apiClient.get as any).mockRejectedValue(
         new Error("Failed to load automation rules")
       );
@@ -416,7 +488,7 @@ describe("Automation Module", () => {
     });
 
     it("shows empty state when no rules", async () => {
-      const { default: apiClient } = require("~/lib/api/client");
+      const apiClient = mockApiClient;
       (apiClient.get as any).mockResolvedValue({
         data: {
           data: [],
@@ -536,7 +608,7 @@ describe("Automation Module", () => {
     });
 
     it("shows empty state when no executions", async () => {
-      const { default: apiClient } = require("~/lib/api/client");
+      const apiClient = mockApiClient;
       (apiClient.get as any).mockResolvedValue({
         data: {
           data: [],

@@ -16,6 +16,7 @@ import { cn } from "~/lib/utils";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Card, CardContent } from "~/components/ui/card";
 import { AlertCircle } from "lucide-react";
+import { useTranslation } from "~/lib/i18n/useTranslation";
 
 export interface BreadcrumbItem {
   label: string;
@@ -57,12 +58,14 @@ export function PageLayout({
   className,
   fullWidth = false,
 }: PageLayoutProps) {
+  const { t } = useTranslation();
+
   // Renderizar breadcrumb si existe
   const renderBreadcrumb = () => {
     if (!breadcrumb || breadcrumb.length === 0) return null;
 
     return (
-      <nav aria-label="Breadcrumb" className="mb-4">
+      <nav aria-label={t("layout.breadcrumb")} className="mb-4">
         <ol className="flex items-center space-x-2 text-sm text-muted-foreground">
           {breadcrumb.map((item, index) => (
             <li key={index} className="flex items-center">
@@ -124,7 +127,7 @@ export function PageLayout({
             <div className="flex items-center gap-3 text-destructive">
               <AlertCircle className="h-5 w-5" />
               <div>
-                <h3 className="font-semibold">Error al cargar</h3>
+                <h3 className="font-semibold">{t("common.errorLoadingTitle")}</h3>
                 <p className="text-sm text-muted-foreground">{errorMessage}</p>
               </div>
             </div>
@@ -160,7 +163,7 @@ export function PageLayout({
 
       {/* Footer sticky */}
       {footer && (
-        <div className="sticky bottom-0 z-10 shadow-[0_-2px_8px_rgba(0,0,0,0.03)] bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="sticky bottom-0 z-10 border-t border-border/70 shadow-[0_-2px_8px_rgba(0,0,0,0.04)] bg-background/98 backdrop-blur supports-[backdrop-filter]:bg-background/95">
           <div className={cn(
             fullWidth ? "w-full px-6" : "container mx-auto",
             "py-4"
@@ -172,4 +175,3 @@ export function PageLayout({
     </div>
   );
 }
-

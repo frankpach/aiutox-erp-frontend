@@ -14,7 +14,7 @@ interface NotificationBellProps {
 }
 
 export function NotificationBell({ className }: NotificationBellProps) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -48,10 +48,10 @@ export function NotificationBell({ className }: NotificationBellProps) {
     const diffDays = Math.floor(diffMs / 86400000);
 
     if (diffMins < 1) return t("notifications.justNow");
-    if (diffMins < 60) return t("notifications.minutesAgo", { count: diffMins });
-    if (diffHours < 24) return t("notifications.hoursAgo", { count: diffHours });
-    if (diffDays < 7) return t("notifications.daysAgo", { count: diffDays });
-    return date.toLocaleDateString("es-ES", {
+    if (diffMins < 60) return `${diffMins} ${t("notifications.minutesAgo")}`;
+    if (diffHours < 24) return `${diffHours} ${t("notifications.hoursAgo")}`;
+    if (diffDays < 7) return `${diffDays} ${t("notifications.daysAgo")}`;
+    return date.toLocaleDateString(language === "en" ? "en-US" : "es-ES", {
       year: "numeric",
       month: "short",
       day: "numeric",
@@ -60,10 +60,10 @@ export function NotificationBell({ className }: NotificationBellProps) {
 
   const getChannelLabel = (channel: string): string => {
     const channelMap: Record<string, string> = {
-      email: t("notifications.channelEmail"),
-      sms: t("notifications.channelSMS"),
-      webhook: t("notifications.channelWebhook"),
-      "in-app": t("notifications.channelInApp"),
+      email: t("notifications.channels.email"),
+      sms: t("notifications.channels.sms"),
+      webhook: t("notifications.channels.webhook"),
+      "in-app": t("notifications.channels.inApp"),
     };
     return channelMap[channel] || channel;
   };
@@ -84,19 +84,19 @@ export function NotificationBell({ className }: NotificationBellProps) {
   return (
     <div className={cn("relative", className)} ref={dropdownRef}>
       <button
-        className="relative p-2 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[#023E87] focus:ring-offset-2 transition-colors"
+        className="relative p-2 rounded-md hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 transition-colors"
         aria-label={t("notifications.title")}
         onClick={() => setIsOpen(!isOpen)}
       >
         <HugeiconsIcon
           icon={PlugIcon}
           size={20}
-          color="#121212"
+          color="hsl(var(--foreground))"
           strokeWidth={1.5}
         />
         {unreadCount > 0 && (
           <Badge
-            className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs bg-red-500 hover:bg-red-600"
+            className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs bg-destructive text-destructive-foreground hover:bg-destructive/90"
             variant="destructive"
           >
             {unreadCount > 9 ? "9+" : unreadCount}
@@ -104,14 +104,14 @@ export function NotificationBell({ className }: NotificationBellProps) {
         )}
         {!isConnected && (
           <span
-            className="absolute top-0 right-0 h-2 w-2 bg-yellow-500 rounded-full"
+            className="absolute top-0 right-0 h-2 w-2 bg-[hsl(var(--warning))] rounded-full"
             title={t("notifications.disconnected")}
           />
         )}
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-[600px] flex flex-col">
+        <div className="absolute right-0 mt-2 w-96 bg-popover text-popover-foreground rounded-lg shadow-lg border border-border z-50 max-h-[600px] flex flex-col">
           <Card className="border-0 shadow-none">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -128,7 +128,7 @@ export function NotificationBell({ className }: NotificationBellProps) {
                 )}
               </div>
               {!isConnected && (
-                <CardDescription className="text-yellow-600 text-xs">
+                <CardDescription className="text-[hsl(var(--warning))] text-xs">
                   {t("notifications.disconnected")}
                 </CardDescription>
               )}
@@ -143,7 +143,7 @@ export function NotificationBell({ className }: NotificationBellProps) {
                   {notifications.map((notification) => (
                     <div
                       key={notification.id}
-                      className="p-4 hover:bg-gray-50 transition-colors cursor-pointer"
+                      className="p-4 hover:bg-accent/40 transition-colors cursor-pointer"
                       onClick={() => setIsOpen(false)}
                     >
                       <div className="flex items-start justify-between gap-2">
@@ -159,7 +159,7 @@ export function NotificationBell({ className }: NotificationBellProps) {
                               {formatDate(notification.created_at)}
                             </span>
                           </div>
-                          <p className="text-sm font-medium text-gray-900">
+                          <p className="text-sm font-medium text-foreground">
                             {notification.event_type}
                           </p>
                           {notification.data && (
@@ -168,7 +168,7 @@ export function NotificationBell({ className }: NotificationBellProps) {
                             </p>
                           )}
                           {notification.error_message && (
-                            <p className="text-xs text-red-600 mt-1">
+                            <p className="text-xs text-destructive mt-1">
                               {notification.error_message}
                             </p>
                           )}
@@ -185,7 +185,6 @@ export function NotificationBell({ className }: NotificationBellProps) {
     </div>
   );
 }
-
 
 
 

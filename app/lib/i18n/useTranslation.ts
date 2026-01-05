@@ -120,8 +120,8 @@ export function useTranslation() {
 
   // Translation function with fallback
   const t = useCallback((key: TranslationPath): string => {
-    const translations = getTranslations();
-    const value = getNestedValue(translations, key);
+    const activeTranslations = getTranslations();
+    const value = getNestedValue(activeTranslations, key);
 
     // If translation not found, try Spanish as fallback
     if (!value && language !== "es") {
@@ -131,8 +131,13 @@ export function useTranslation() {
       }
     }
 
-    // If still not found, return the key itself
-    return value || key;
+    const missingTranslation =
+      getNestedValue(activeTranslations, "common.missingTranslation") ||
+      getNestedValue(translations.es, "common.missingTranslation") ||
+      "Texto no disponible";
+
+    // If still not found, return safe fallback instead of the key
+    return value || missingTranslation;
   }, [language, getTranslations]);
 
   // Sync with localStorage changes (for multi-tab support)
@@ -153,4 +158,3 @@ export function useTranslation() {
 
   return { t, setLanguage, language };
 }
-

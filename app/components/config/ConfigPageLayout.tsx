@@ -69,6 +69,7 @@ export function ConfigPageLayout({
           <Button
             onClick={onSave}
             disabled={!hasChanges || isSaving || saveDisabled}
+
           >
             {isSaving ? savingText : defaultSaveText}
           </Button>
@@ -79,4 +80,3 @@ export function ConfigPageLayout({
 
   return <PageLayout {...pageLayoutProps} footer={footer} />;
 }
-

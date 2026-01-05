@@ -120,7 +120,7 @@ export function ReportList({
                 <SelectValue placeholder={t("reporting.filters.module")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">{t("reporting.filters.all")}</SelectItem>
+                <SelectItem value="all">{t("reporting.filters.all")}</SelectItem>
                 <SelectItem value="sales">{t("reporting.modules.sales")}</SelectItem>
                 <SelectItem value="products">{t("reporting.modules.products")}</SelectItem>
                 <SelectItem value="customers">{t("reporting.modules.customers")}</SelectItem>
@@ -132,7 +132,7 @@ export function ReportList({
                 <SelectValue placeholder={t("reporting.filters.status")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">{t("reporting.filters.all")}</SelectItem>
+                <SelectItem value="all">{t("reporting.filters.all")}</SelectItem>
                 <SelectItem value="active">{t("reporting.status.active")}</SelectItem>
                 <SelectItem value="inactive">{t("reporting.status.inactive")}</SelectItem>
               </SelectContent>

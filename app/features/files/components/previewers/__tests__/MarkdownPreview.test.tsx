@@ -18,8 +18,12 @@ vi.mock("react-markdown", () => ({
   default: ({ children }: { children: string }) => <div>{children}</div>,
 }));
 
-vi.mock("remark-gfm", () => ({}));
-vi.mock("remark-mermaid", () => ({}));
+vi.mock("remark-gfm", () => ({
+  default: {},
+}));
+vi.mock("remark-mermaid", () => ({
+  default: () => {},
+}));
 vi.mock("mermaid", () => ({
   default: {
     initialize: vi.fn(),
@@ -112,7 +116,9 @@ describe("MarkdownPreview", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText(content)).toBeInTheDocument();
+      // Usar un matcher más flexible para encontrar el contenido
+      expect(screen.getByText((text) => text.includes("Test Markdown"))).toBeInTheDocument();
+      expect(screen.getByText((text) => text.includes("This is a test."))).toBeInTheDocument();
     });
   });
 

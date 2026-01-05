@@ -5,7 +5,7 @@
  * Uses ConfigPageLayout and shared components for visual consistency
  */
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 import { useThemeConfig } from "~/hooks/useThemeConfig";
 import { showToast } from "~/components/common/Toast";
@@ -98,24 +98,26 @@ export function meta() {
 export default function ThemeConfigPage() {
   const { t } = useTranslation();
   const { theme, isLoading, error, updateTheme, isUpdating } = useThemeConfig();
+  const didNormalizeDefaults = useRef(false);
+  const [isNormalizing, setIsNormalizing] = useState(false);
 
   const defaultValues: ThemeConfigValues = {
     primary_color: "#023E87",
-    secondary_color: "#00B6BC",
-    accent_color: "#FFC107",
+    secondary_color: "#F1F5F9",
+    accent_color: "#F1F5F9",
     background_color: "#FFFFFF",
-    surface_color: "#F5F5F5",
-    error_color: "#F44336",
-    warning_color: "#FF9800",
-    success_color: "#4CAF50",
-    info_color: "#2196F3",
-    text_primary: "#212121",
-    text_secondary: "#757575",
-    text_disabled: "#BDBDBD",
-    sidebar_bg: "#2C3E50",
-    sidebar_text: "#ECF0F1",
-    navbar_bg: "#34495E",
-    navbar_text: "#FFFFFF",
+    surface_color: "#FFFFFF",
+    error_color: "#EF4444",
+    warning_color: "#F59E0B",
+    success_color: "#10B981",
+    info_color: "#3B82F6",
+    text_primary: "#0F172A",
+    text_secondary: "#64748B",
+    text_disabled: "#94A3B8",
+    sidebar_bg: "#FAFAFA",
+    sidebar_text: "#0F172A",
+    navbar_bg: "#FFFFFF",
+    navbar_text: "#0F172A",
     logo_primary: "/assets/logos/logo.png",
     logo_white: "/assets/logos/logo-white.png",
     logo_small: "/assets/logos/logo-sm.png",
@@ -145,20 +147,44 @@ export default function ThemeConfigPage() {
 
   // Actualizar valores cuando se carga la data
   useEffect(() => {
-    if (theme && Object.keys(theme).length > 0) {
-      const updatedValues = { ...defaultValues, ...theme };
-      form.updateOriginalValues(updatedValues);
-    }
-  }, [theme]);
+    const hasTheme = theme && Object.keys(theme).length > 0;
+    const mergedValues = { ...defaultValues, ...theme };
+    const hasMissingKeys = Object.keys(defaultValues).some(
+      (key) => !(key in (theme || {}))
+    );
 
-  const handleSave = async () => {
-    try {
-      updateTheme(form.values);
-      form.updateOriginalValues(form.values);
-      showToast(t("config.theme.saveSuccess"), "success");
-    } catch (err) {
-      showToast(t("config.theme.errorSaving"), "error");
+    if (!hasTheme && !didNormalizeDefaults.current) {
+      didNormalizeDefaults.current = true;
+      setIsNormalizing(true);
+      updateTheme(defaultValues, {
+        onSettled: () => setIsNormalizing(false),
+      });
+      form.updateOriginalValues(defaultValues);
+      return;
     }
+
+    if (hasTheme) {
+      if (hasMissingKeys && !didNormalizeDefaults.current) {
+        didNormalizeDefaults.current = true;
+        setIsNormalizing(true);
+        updateTheme(mergedValues, {
+          onSettled: () => setIsNormalizing(false),
+        });
+      }
+      form.updateOriginalValues(mergedValues);
+    }
+  }, [theme, updateTheme]);
+
+  const handleSave = () => {
+    updateTheme(form.values, {
+      onSuccess: () => {
+        form.updateOriginalValues(form.values);
+        showToast(t("config.theme.saveSuccess"), "success");
+      },
+      onError: () => {
+        showToast(t("config.theme.errorSaving"), "error");
+      },
+    });
   };
 
 
@@ -197,7 +223,7 @@ export default function ThemeConfigPage() {
       title={t("config.theme.title")}
       description={t("config.theme.description")}
       hasChanges={form.hasChanges}
-      isSaving={isUpdating}
+      isSaving={isUpdating && !isNormalizing}
       onReset={handleReset}
       onSave={handleSave}
     >
