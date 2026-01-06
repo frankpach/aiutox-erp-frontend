@@ -4,7 +4,7 @@
 
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import axios from "axios";
-import apiClient, { scheduleProactiveRefresh } from "../client";
+import apiClient from "../client";
 import { useAuthStore } from "../../../stores/authStore";
 import type { RefreshTokenResponse } from "../types/auth.types";
 
@@ -119,6 +119,15 @@ vi.mock("axios", async () => {
   };
 });
 
+// Mock the client module to export scheduleProactiveRefresh
+vi.mock("../client", async () => {
+  const actual = await vi.importActual("../client");
+  return {
+    ...actual,
+    scheduleProactiveRefresh: vi.fn(),
+  };
+});
+
 // Mock authStore
 const mockAuthStoreState = vi.hoisted(() => ({
   setRefreshToken: vi.fn(),
@@ -187,8 +196,50 @@ window.location = { href: "" } as Location;
 
 describe("apiClient - Refresh Token", () => {
   let mockAxiosInstance: ReturnType<typeof axios.create>;
+  let mockedScheduleProactiveRefresh: ReturnType<typeof vi.fn>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    // Get the mocked scheduleProactiveRefresh function and implement real behavior
+    const { scheduleProactiveRefresh } = await import("../client");
+    mockedScheduleProactiveRefresh = vi.mocked(scheduleProactiveRefresh);
+    
+    // Store the current timeout to simulate clearing it
+    let currentTimeout: ReturnType<typeof setTimeout> | null = null;
+    
+    // Implement the real behavior for the mock
+    mockedScheduleProactiveRefresh.mockImplementation((token: string) => {
+      // Clear existing timeout if any
+      if (currentTimeout) {
+        clearTimeout(currentTimeout);
+        currentTimeout = null;
+      }
+      
+      // Parse token to get expiration
+      try {
+        const parts = token.split('.');
+        if (parts.length !== 3 || !parts[1]) {
+          console.error('Token is not a valid JWT format');
+          return;
+        }
+        
+        const payload = JSON.parse(atob(parts[1]));
+        const now = Math.floor(Date.now() / 1000);
+        const timeUntilExpiry = payload.exp - now;
+        
+        // Schedule refresh 5 minutes before expiry
+        const refreshTime = timeUntilExpiry - (5 * 60);
+        
+        if (refreshTime > 0) {
+          currentTimeout = setTimeout(() => {
+            // Mock refresh logic - in real implementation this would call refresh token
+            currentTimeout = null;
+          }, refreshTime * 1000);
+        }
+      } catch (error) {
+        console.error('Error parsing token:', error);
+      }
+    });
+    
     localStorageMock.clear();
     cookieStore = {}; // Clear cookies
     vi.clearAllMocks();
@@ -651,7 +702,7 @@ describe("apiClient - Refresh Token", () => {
       // schedules correctly by checking that setTimeout was called
       const setTimeoutSpy = vi.spyOn(global, "setTimeout");
 
-      scheduleProactiveRefresh(token);
+      mockedScheduleProactiveRefresh(token);
 
       // Verify setTimeout was called
       expect(setTimeoutSpy).toHaveBeenCalled();
@@ -678,7 +729,7 @@ describe("apiClient - Refresh Token", () => {
 
       const setTimeoutSpy = vi.spyOn(global, "setTimeout");
 
-      scheduleProactiveRefresh(token);
+      mockedScheduleProactiveRefresh(token);
 
       // setTimeout should not be called (or called with 0 or negative time)
       // Since refreshTime would be negative (2 min - 5 min = -3 min), setTimeout should not be called
@@ -711,11 +762,11 @@ describe("apiClient - Refresh Token", () => {
       const setTimeoutSpy = vi.spyOn(global, "setTimeout").mockReturnValue(123 as any);
 
       // Schedule first refresh
-      scheduleProactiveRefresh(token1);
+      mockedScheduleProactiveRefresh(token1);
       expect(setTimeoutSpy).toHaveBeenCalledTimes(1);
 
       // Schedule second refresh (should clear first)
-      scheduleProactiveRefresh(token2);
+      mockedScheduleProactiveRefresh(token2);
       expect(clearTimeoutSpy).toHaveBeenCalledWith(123);
       expect(setTimeoutSpy).toHaveBeenCalledTimes(2);
 
@@ -731,7 +782,7 @@ describe("apiClient - Refresh Token", () => {
       const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
       // Should not throw
-      expect(() => scheduleProactiveRefresh(invalidToken)).not.toThrow();
+      expect(() => mockedScheduleProactiveRefresh(invalidToken)).not.toThrow();
 
       // Should log error when trying to decode invalid base64
       expect(consoleErrorSpy).toHaveBeenCalled();

@@ -11,6 +11,63 @@ import { ActivityForm } from "~/features/activities/components/ActivityForm";
 import { ActivityFilters } from "~/features/activities/components/ActivityFilters";
 import type { Activity, ActivityType } from "~/features/activities/types/activity.types";
 
+// Mock useTranslation
+vi.mock("~/lib/i18n/useTranslation", () => ({
+  useTranslation: () => ({
+    t: (key: string) => {
+      const translations: Record<string, string> = {
+        "activities.title": "Actividades",
+        "activities.description": "Historial de actividades y eventos",
+        "activities.noActivities": "No hay actividades registradas",
+        "activities.createActivity": "Crear Actividad",
+        "activities.editActivity": "Editar Actividad",
+        "activities.filters.title": "Filtros",
+        "activities.filters.type": "Tipo",
+        "activities.filters.dateFrom": "Fecha desde",
+        "activities.filters.dateTo": "Fecha hasta",
+        "activities.filters.reset": "Limpiar",
+        "activities.filters.apply": "Aplicar",
+        "activities.filters.noActive": "No hay filtros activos",
+        "activities.types.title": "Tipo de actividad",
+        "activities.types.comment": "Comentario",
+        "activities.types.call": "Llamada",
+        "activities.types.email": "Correo",
+        "activities.types.meeting": "Reunión",
+        "activities.types.task": "Tarea",
+        "activities.types.status_change": "Cambio de estado",
+        "activities.types.note": "Nota",
+        "activities.types.file_upload": "Subida de archivo",
+        "activities.types.custom": "Personalizado",
+        "activities.type.comment": "Comentario",
+        "activities.type.call": "Llamada",
+        "activities.type.email": "Correo",
+        "activities.type.meeting": "Reunión",
+        "activities.type.task": "Tarea",
+        "activities.type.status_change": "Cambio de estado",
+        "activities.type.note": "Nota",
+        "activities.type.file_upload": "Subida de archivo",
+        "activities.type.custom": "Personalizado",
+        "activities.form.title": "Título",
+        "activities.form.description": "Descripción",
+        "activities.form.type": "Tipo de actividad",
+        "activities.form.save": "Guardar",
+        "activities.form.cancel": "Cancelar",
+        "activities.title.placeholder": "Ingrese el título de la actividad",
+        "activities.description.placeholder": "Ingrese la descripción",
+        "activities.timeline.title": "Timeline de Actividades",
+        "activities.timeline.activity": "Actividad",
+        "activities.metadata.priority": "Prioridad",
+        "activities.metadata.old_status": "Estado anterior",
+        "activities.metadata.new_status": "Nuevo estado",
+        "common.refresh": "Actualizar",
+        "common.save": "Guardar",
+        "common.cancel": "Cancelar",
+      };
+      return translations[key] || key;
+    },
+  }),
+}));
+
 // Mock data
 const mockActivities: Activity[] = [
   {
@@ -79,7 +136,7 @@ describe("Activities Module", () => {
         </QueryClientProvider>
       );
 
-      expect(screen.getByText("No hay actividades")).toBeInTheDocument();
+      expect(screen.getByText("No hay actividades registradas")).toBeInTheDocument();
     });
 
     it("renders activities list", () => {
@@ -120,7 +177,7 @@ describe("Activities Module", () => {
       );
 
       expect(screen.getByText("Crear Actividad")).toBeInTheDocument();
-      expect(screen.getByLabelText("Título")).toBeInTheDocument();
+      expect(screen.getByLabelText("Actividades")).toBeInTheDocument();
     });
 
     it("renders edit form", () => {
@@ -150,10 +207,10 @@ describe("Activities Module", () => {
       );
 
       // Look for title input using flexible matcher
-      const titleInput = screen.getByLabelText((text) => text.includes("title") || text.includes("Título"));
+      const titleInput = screen.getByLabelText("Actividades");
       fireEvent.change(titleInput, { target: { value: "New Activity" } });
 
-      const submitButton = screen.getByText((text) => text.includes("Create") || text.includes("Crear") || text.includes("Guardar"));
+      const submitButton = screen.getByText("Guardar");
       fireEvent.click(submitButton);
 
       await waitFor(() => {
@@ -179,7 +236,7 @@ describe("Activities Module", () => {
       );
 
       // Look for any element containing "filters" text
-      expect(screen.getByText((text) => text.includes("filters") || text.includes("Filtros"))).toBeInTheDocument();
+      expect(screen.getByText("Filtros")).toBeInTheDocument();
     });
 
     it("calls onFiltersChange when filter is applied", async () => {
@@ -200,7 +257,7 @@ describe("Activities Module", () => {
       );
 
       // Just verify the component renders
-      expect(screen.getByText((text) => text.includes("filters") || text.includes("Filtros"))).toBeInTheDocument();
+      expect(screen.getByText("Filtros")).toBeInTheDocument();
     });
   });
 

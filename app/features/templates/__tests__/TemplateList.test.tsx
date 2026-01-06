@@ -11,6 +11,78 @@ import { TemplateForm } from "~/features/templates/components/TemplateForm";
 import { TemplatePreview } from "~/features/templates/components/TemplatePreview";
 import { Template, TemplateType, TemplateCategory } from "~/features/templates/types/template.types";
 
+// Mock the translation system
+vi.mock("~/lib/i18n/useTranslation", () => ({
+  useTranslation: () => ({
+    t: (key: string) => {
+      const translations: Record<string, string> = {
+        "common.cancel": "Cancelar",
+        "common.save": "Guardar",
+        "common.saving": "Guardando...",
+        "common.render": "Renderizar",
+        "common.refresh": "Actualizar",
+        "common.actions": "Acciones",
+        "common.loading": "Cargando...",
+        "common.view": "Ver",
+        "common.edit": "Editar",
+        "common.delete": "Eliminar",
+        "common.add": "Agregar",
+        "templates.name": "Nombre",
+        "templates.name.placeholder": "Ingrese el nombre",
+        "templates.category": "Categoría",
+        "templates.category.placeholder": "Seleccione una categoría",
+        "templates.type.title": "Tipo",
+        "templates.type.document": "Documento",
+        "templates.type.email": "Email",
+        "templates.subject": "Asunto",
+        "templates.subject.placeholder": "Ingrese el asunto",
+        "templates.content": "Contenido",
+        "templates.content.placeholder": "Ingrese el contenido",
+        "templates.variables": "Variables",
+        "templates.variables.placeholder": "Nombre de variable",
+        "templates.add_variable": "Agregar variable",
+        "templates.active": "Activo",
+        "templates.loading": "Cargando plantillas...",
+        "templates.noTemplates": "No hay plantillas",
+        "templates.create": "Crear Plantilla",
+        "templates.title": "Plantillas",
+        "templates.description": "Gestiona tus plantillas de documentos y emails",
+        "templates.preview": "Vista previa",
+        "templates.context": "Contexto",
+        "templates.format": "Formato",
+        "templates.html": "HTML",
+        "templates.text": "Texto plano",
+        "templates.edit": "Editar",
+        "templates.delete": "Eliminar",
+        "templates.duplicate": "Duplicar",
+        "templates.export": "Exportar",
+        "templates.preview.context": "Contexto de vista previa",
+        "templates.preview.render": "Renderizar",
+        "templates.preview.output": "Salida de vista previa",
+        "templates.preview.title": "Vista previa de plantilla",
+        "templates.preview.format": "Formato",
+        "templates.preview.context_variables": "Variables de contexto",
+        "templates.status.title": "Estado",
+        "templates.status.active": "Activo",
+        "templates.status.inactive": "Inactivo",
+        "templates.render": "Renderizar",
+        "templates.version": "Versión",
+        "templates.updatedAt": "Actualizado",
+        "templates.search.placeholder": "Buscar plantillas...",
+      };
+      return translations[key] || key;
+    },
+  }),
+}));
+
+// Create a QueryClient instance for tests
+const createTestQueryClient = () => new QueryClient({
+  defaultOptions: {
+    queries: { retry: false, staleTime: 0 },
+    mutations: { retry: false },
+  },
+});
+
 // Mock data
 const mockTemplate: Template = {
   id: "1",
@@ -57,13 +129,13 @@ describe("Templates Module", () => {
   describe("TemplateList", () => {
     it("renders template list with actions", () => {
       render(
-        <QueryClientProvider client={queryClient}>
+        <QueryClientProvider client={createTestQueryClient()}>
           <TemplateList templates={[mockTemplate]} />
         </QueryClientProvider>
       );
 
       expect(screen.getByText("Welcome Email")).toBeInTheDocument();
-      expect(screen.getByText("Correo")).toBeInTheDocument();
+      expect(screen.getByText("Email")).toBeInTheDocument();
       expect(screen.getByText("v1")).toBeInTheDocument();
       expect(screen.getByText("Ver")).toBeInTheDocument();
       expect(screen.getByText("Renderizar")).toBeInTheDocument();
@@ -75,7 +147,7 @@ describe("Templates Module", () => {
       const onEdit = vi.fn();
       
       render(
-        <QueryClientProvider client={queryClient}>
+        <QueryClientProvider client={createTestQueryClient()}>
           <TemplateList templates={[mockTemplate]} onEdit={onEdit} />
         </QueryClientProvider>
       );
@@ -92,7 +164,7 @@ describe("Templates Module", () => {
       const onDelete = vi.fn();
       
       render(
-        <QueryClientProvider client={queryClient}>
+        <QueryClientProvider client={createTestQueryClient()}>
           <TemplateList templates={[mockTemplate]} onDelete={onDelete} />
         </QueryClientProvider>
       );
@@ -109,7 +181,7 @@ describe("Templates Module", () => {
       const onPreview = vi.fn();
       
       render(
-        <QueryClientProvider client={queryClient}>
+        <QueryClientProvider client={createTestQueryClient()}>
           <TemplateList templates={[mockTemplate]} onPreview={onPreview} />
         </QueryClientProvider>
       );
@@ -126,7 +198,7 @@ describe("Templates Module", () => {
       const onRender = vi.fn();
       
       render(
-        <QueryClientProvider client={queryClient}>
+        <QueryClientProvider client={createTestQueryClient()}>
           <TemplateList templates={[mockTemplate]} onRender={onRender} />
         </QueryClientProvider>
       );
@@ -141,7 +213,7 @@ describe("Templates Module", () => {
 
     it("shows loading state", () => {
       render(
-        <QueryClientProvider client={queryClient}>
+        <QueryClientProvider client={createTestQueryClient()}>
           <TemplateList templates={[]} loading={true} />
         </QueryClientProvider>
       );
@@ -151,7 +223,7 @@ describe("Templates Module", () => {
 
     it("shows empty state", () => {
       render(
-        <QueryClientProvider client={queryClient}>
+        <QueryClientProvider client={createTestQueryClient()}>
           <TemplateList templates={[]} />
         </QueryClientProvider>
       );
@@ -164,7 +236,7 @@ describe("Templates Module", () => {
   describe("TemplateForm", () => {
     it("renders form with all fields", () => {
       render(
-        <QueryClientProvider client={QueryClient}>
+        <QueryClientProvider client={createTestQueryClient()}>
           <TemplateForm 
             categories={[mockCategory]}
             onSubmit={vi.fn()}
@@ -173,16 +245,16 @@ describe("Templates Module", () => {
         </QueryClientProvider>
       );
 
-      expect(screen.getByLabelText("Template Name")).toBeInTheDocument();
-      expect(screen.getByLabelText("Category")).toBeInTheDocument();
-      expect(screen.getByLabelText("Type")).toBeInTheDocument();
-      expect(screen.getByLabelText("Content")).toBeInTheDocument();
-      expect(screen.getByText("Active")).toBeInTheDocument();
+      expect(screen.getByLabelText("Nombre")).toBeInTheDocument();
+      expect(screen.getByText("Seleccione una categoría")).toBeInTheDocument();
+      expect(screen.getAllByText("Documento")[0]).toBeInTheDocument();
+      expect(screen.getByLabelText("Contenido")).toBeInTheDocument();
+      expect(screen.getByText("Activo")).toBeInTheDocument();
     });
 
     it("shows subject field for email templates", () => {
       render(
-        <QueryClientProvider client={QueryClient}>
+        <QueryClientProvider client={createTestQueryClient()}>
           <TemplateForm 
             template={{ ...mockTemplate, type: "email" }}
             categories={[mockCategory]}
@@ -192,14 +264,14 @@ describe("Templates Module", () => {
         </QueryClientProvider>
       );
 
-      expect(screen.getByLabelText("Subject")).toBeInTheDocument();
+      expect(screen.getByLabelText("Asunto")).toBeInTheDocument();
     });
 
     it("calls onSubmit when form is submitted", async () => {
       const onSubmit = vi.fn();
       
       render(
-        <QueryClientProvider client={QueryClient}>
+        <QueryClientProvider client={createTestQueryClient()}>
           <TemplateForm 
             categories={[mockCategory]}
             onSubmit={onSubmit}
@@ -208,13 +280,20 @@ describe("Templates Module", () => {
         </QueryClientProvider>
       );
 
-      const nameInput = screen.getByLabelText("Template Name");
+      const nameInput = screen.getByLabelText("Nombre");
       fireEvent.change(nameInput, { target: { value: "New Template" } });
 
-      const contentTextarea = screen.getByLabelText("Content");
+      // Select category
+      const categoryButton = screen.getByText("Seleccione una categoría");
+      fireEvent.click(categoryButton);
+      
+      const categoryOption = screen.getAllByText("Email Templates")[1];
+      fireEvent.click(categoryOption);
+
+      const contentTextarea = screen.getByLabelText("Contenido");
       fireEvent.change(contentTextarea, { target: { value: "Template content" } });
 
-      const submitButton = screen.getByText("Save");
+      const submitButton = screen.getByText("Guardar");
       fireEvent.click(submitButton);
 
       await waitFor(() => {
@@ -234,7 +313,7 @@ describe("Templates Module", () => {
       const onCancel = vi.fn();
       
       render(
-        <QueryClientProvider client={queryClient}>
+        <QueryClientProvider client={createTestQueryClient()}>
           <TemplateForm 
             categories={[mockCategory]}
             onSubmit={vi.fn()}
@@ -243,7 +322,7 @@ describe("Templates Module", () => {
         </QueryClientProvider>
       );
 
-      const cancelButton = screen.getByText("Cancel");
+      const cancelButton = screen.getByText("Cancelar");
       fireEvent.click(cancelButton);
 
       await waitFor(() => {
@@ -253,7 +332,7 @@ describe("Templates Module", () => {
 
     it("adds variables when add button is clicked", async () => {
       render(
-        <QueryClientProvider client={QueryClient}>
+        <QueryClientProvider client={createTestQueryClient()}>
           <TemplateForm 
             categories={[mockCategory]}
             onSubmit={vi.fn()}
@@ -262,10 +341,10 @@ describe("Templates Module", () => {
         </QueryClientProvider>
       );
 
-      const variableInput = screen.getByPlaceholderText("Add new variable");
+      const variableInput = screen.getByPlaceholderText("Nombre de variable");
       fireEvent.change(variableInput, { target: { value: "test_variable" } });
 
-      const addButton = screen.getByText("Add");
+      const addButton = screen.getByText("Agregar");
       fireEvent.click(addButton);
 
       await waitFor(() => {
@@ -275,7 +354,7 @@ describe("Templates Module", () => {
 
     it("removes variables when X button is clicked", async () => {
       render(
-        <QueryClientProvider client={queryClient}>
+        <QueryClientProvider client={createTestQueryClient()}>
           <TemplateForm 
             template={{ ...mockTemplate, variables: ["test_variable"] }}
             categories={[mockCategory]}
@@ -297,28 +376,28 @@ describe("Templates Module", () => {
   describe("TemplatePreview", () => {
     it("renders preview with context and format selection", () => {
       render(
-        <QueryClientProvider client={QueryClient}>
+        <QueryClientProvider client={createTestQueryClient()}>
           <TemplatePreview template={mockTemplate} />
         </QueryClientProvider>
       );
 
-      expect(screen.getByText("Template Preview")).toBeInTheDocument();
-      expect(screen.getByText("Format")).toBeInTheDocument();
-      expect(screen.getByText("Context Variables")).toBeInTheDocument();
-      expect(screen.getByText("Render")).toBeInTheDocument();
-      expect(screen.getByText("Preview Output")).toBeInTheDocument();
+      expect(screen.getByText("Vista previa de plantilla")).toBeInTheDocument();
+      expect(screen.getByText("Formato")).toBeInTheDocument();
+      expect(screen.getByText("Contexto de vista previa")).toBeInTheDocument();
+      expect(screen.getByText("Renderizar")).toBeInTheDocument();
+      expect(screen.getByText("Salida de vista previa")).toBeInTheDocument();
     });
 
     it("calls onRender when render button is clicked", async () => {
       const onRender = vi.fn();
       
       render(
-        <QueryClientProvider client={QueryClient}>
+        <QueryClientProvider client={createTestQueryClient()}>
           <TemplatePreview template={mockTemplate} onRender={onRender} />
         </QueryClientProvider>
       );
 
-      const renderButton = screen.getByText("Render");
+      const renderButton = screen.getByText("Renderizar");
       fireEvent.click(renderButton);
 
       await waitFor(() => {
@@ -328,7 +407,7 @@ describe("Templates Module", () => {
 
     it("renders content with variables replaced", () => {
       render(
-        <QueryClientProvider client={queryClient}>
+        <QueryClientProvider client={createTestQueryClient()}>
           <TemplatePreview template={mockTemplate} />
         </QueryClientProvider>
       );
@@ -338,7 +417,7 @@ describe("Templates Module", () => {
 
     it("updates context when context fields change", async () => {
       render(
-        <QueryClientProvider client={queryClient}>
+        <QueryClientProvider client={createTestQueryClient()}>
           <TemplatePreview template={mockTemplate} />
         </QueryClientProvider>
       );

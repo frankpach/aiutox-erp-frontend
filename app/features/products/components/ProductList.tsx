@@ -281,7 +281,7 @@ export function ProductList({
                   <SelectValue placeholder={t("products.filters.category")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">{t("products.filters.allCategories")}</SelectItem>
+                  <SelectItem value="all">{t("products.filters.allCategories")}</SelectItem>
                   {categories.map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       {category.name}
@@ -298,7 +298,7 @@ export function ProductList({
                   <SelectValue placeholder={t("products.filters.status")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">{t("products.filters.allStatus")}</SelectItem>
+                  <SelectItem value="all">{t("products.filters.allStatus")}</SelectItem>
                   <SelectItem value="true">{t("products.status.active")}</SelectItem>
                   <SelectItem value="false">{t("products.status.inactive")}</SelectItem>
                 </SelectContent>
@@ -312,7 +312,7 @@ export function ProductList({
                   <SelectValue placeholder={t("products.filters.inventory")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">{t("products.filters.allInventory")}</SelectItem>
+                  <SelectItem value="all">{t("products.filters.allInventory")}</SelectItem>
                   <SelectItem value="true">{t("products.inventory.tracked")}</SelectItem>
                   <SelectItem value="false">{t("products.inventory.notTracked")}</SelectItem>
                 </SelectContent>
@@ -340,14 +340,17 @@ export function ProductList({
               onPageChange: (page) => handleFilterChange("page", page),
               onPageSizeChange: (pageSize) => handleFilterChange("page_size", pageSize),
             }}
-            emptyState={{
-              title: t("products.empty.title"),
-              description: t("products.empty.description"),
-              action: onCreate ? {
-                label: t("products.create"),
-                onClick: onCreate,
-              } : undefined,
-            }}
+            emptyState={
+              <div className="text-center py-8">
+                <h3 className="text-lg font-medium">{t("products.empty.title")}</h3>
+                <p className="text-muted-foreground mt-2">{t("products.empty.description")}</p>
+                {onCreate && (
+                  <Button onClick={onCreate} className="mt-4">
+                    {t("products.create")}
+                  </Button>
+                )}
+              </div>
+            }
           />
         </CardContent>
       </Card>

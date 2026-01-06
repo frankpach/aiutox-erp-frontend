@@ -110,7 +110,7 @@ describe("Comments Module", () => {
         </QueryClientProvider>
       );
 
-      const deleteButtons = screen.getAllByText("Delete");
+      const deleteButtons = screen.getAllByText("comments.delete");
       fireEvent.click(deleteButtons[0]);
 
       await waitFor(() => {
@@ -125,7 +125,7 @@ describe("Comments Module", () => {
         </QueryClientProvider>
       );
 
-      expect(screen.getByText("Loading comments...")).toBeInTheDocument();
+      expect(screen.getByText("comments.loading")).toBeInTheDocument();
     });
   });
 
@@ -155,7 +155,7 @@ describe("Comments Module", () => {
         </QueryClientProvider>
       );
 
-      expect(screen.getByText("(edited)")).toBeInTheDocument();
+      expect(screen.getByText("comments.edited")).toBeInTheDocument();
     });
 
     it("shows mentions when present", () => {
@@ -183,8 +183,8 @@ describe("Comments Module", () => {
         </QueryClientProvider>
       );
 
-      expect(screen.getByPlaceholderText("Write a comment...")).toBeInTheDocument();
-      expect(screen.getByText("Comment")).toBeInTheDocument();
+      expect(screen.getByPlaceholderText("Escribe un comentario...")).toBeInTheDocument();
+      expect(screen.getByText("Comentar")).toBeInTheDocument();
     });
 
     it("calls onSubmit when form is submitted", async () => {
@@ -196,10 +196,10 @@ describe("Comments Module", () => {
         </QueryClientProvider>
       );
 
-      const textarea = screen.getByPlaceholderText("Write a comment...");
+      const textarea = screen.getByPlaceholderText("Escribe un comentario...");
       fireEvent.change(textarea, { target: { value: "New comment" } });
 
-      const submitButton = screen.getByText("Comment");
+      const submitButton = screen.getByText("Comentar");
       fireEvent.click(submitButton);
 
       await waitFor(() => {
@@ -216,7 +216,7 @@ describe("Comments Module", () => {
         </QueryClientProvider>
       );
 
-      const cancelButton = screen.getByText("Cancel");
+      const cancelButton = screen.getByText("Cancelar");
       fireEvent.click(cancelButton);
 
       await waitFor(() => {
@@ -231,7 +231,7 @@ describe("Comments Module", () => {
         </QueryClientProvider>
       );
 
-      const submitButton = screen.getByText("Comment");
+      const submitButton = screen.getByText("Comentar");
       expect(submitButton).toBeDisabled();
     });
 
@@ -242,7 +242,7 @@ describe("Comments Module", () => {
         </QueryClientProvider>
       );
 
-      expect(screen.getByText("Saving...")).toBeInTheDocument();
+      expect(screen.getByText("Guardando...")).toBeInTheDocument();
     });
   });
 

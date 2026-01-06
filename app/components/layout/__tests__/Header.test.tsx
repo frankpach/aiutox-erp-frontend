@@ -6,6 +6,22 @@ import { describe, it, expect, vi } from "vitest";
 import { render } from "@testing-library/react";
 import { Header } from "../Header";
 
+// Mock useTheme
+vi.mock("~/providers/ThemeProvider", () => ({
+  useTheme: () => ({
+    theme: "light",
+    setTheme: vi.fn(),
+    resolvedTheme: "light",
+  }),
+}));
+
+// Mock useTranslation
+vi.mock("~/lib/i18n/useTranslation", () => ({
+  useTranslation: () => ({
+    t: (key: string) => key,
+  }),
+}));
+
 // Mock child components
 vi.mock("../UserMenu", () => ({
   UserMenu: () => <div data-testid="user-menu">UserMenu</div>,
@@ -17,6 +33,11 @@ vi.mock("../SidebarToggle", () => ({
       Toggle
     </button>
   ),
+}));
+
+// Mock NotificationBell
+vi.mock("~/components/notifications/NotificationBell", () => ({
+  NotificationBell: () => <div data-testid="notification-bell">Notifications</div>,
 }));
 
 // Mock useNavigate

@@ -9,6 +9,53 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { TaskList } from "~/features/tasks/components/TaskList";
 import { Task, TaskStatus, TaskPriority } from "~/features/tasks/types/task.types";
 
+// Mock useTranslation
+vi.mock("~/lib/i18n/useTranslation", () => ({
+  useTranslation: () => ({
+    t: (key: string) => {
+      const translations: Record<string, string> = {
+        "tasks.loading": "Cargando tareas...",
+        "tasks.noTasks": "No hay tareas",
+        "tasks.createTask": "Crear Tarea",
+        "tasks.title": "Tareas",
+        "tasks.description": "Gestiona tus tareas y proyectos",
+        "tasks.refresh": "Actualizar",
+        "common.edit": "Editar",
+        "common.delete": "Eliminar",
+        "common.view": "Ver",
+        "common.refresh": "Actualizar",
+        "common.actions": "Acciones",
+        "tasks.status.todo": "Por hacer",
+        "tasks.status.in_progress": "En progreso",
+        "tasks.status.done": "Completado",
+        "tasks.status.title": "Estado",
+        "tasks.priority.low": "Baja",
+        "tasks.priority.medium": "Media",
+        "tasks.priority.high": "Alta",
+        "tasks.priority.urgent": "Urgente",
+        "tasks.priority.title": "Prioridad",
+        "tasks.assignedTo": "Asignado a",
+        "tasks.dueDate": "Fecha de vencimiento",
+        "tasks.checklist.title": "Checklist",
+        "tasks.search.placeholder": "Buscar tareas...",
+        "common.locale": "es",
+      };
+      return translations[key] || key;
+    },
+  }),
+}));
+
+// Mock date-fns/locale
+vi.mock("date-fns/locale", () => ({
+  es: {},
+  enUS: {},
+}));
+
+// Mock date-fns format
+vi.mock("date-fns", () => ({
+  format: (date: Date, formatStr: string, options?: any) => "15/01/2025",
+}));
+
 // Mock data
 const mockTasks: Task[] = [
   {

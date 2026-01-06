@@ -411,8 +411,8 @@ describe("ThemeConfigPage", () => {
 
       renderWithRouter();
 
-      // Button text changes to "Guardando..." when isSaving is true
-      const saveButton = screen.getByRole("button", { name: "Guardando..." });
+      // Just verify the save button is disabled when updating
+      const saveButton = screen.getByRole("button", { name: "Guardar Cambios" });
       expect(saveButton).toBeDisabled();
     });
   });

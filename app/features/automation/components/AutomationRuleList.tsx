@@ -270,10 +270,13 @@ export function AutomationRuleList({ onCreate, onEdit, onView, onExecutions }: A
       <EmptyState
         title={t("automation.rules.empty.title")}
         description={t("automation.rules.empty.description")}
-        action={{
-          label: t("automation.rules.create"),
-          onClick: onCreate || (() => {}),
-        }}
+        action={
+          onCreate && (
+            <Button onClick={onCreate}>
+              {t("automation.rules.create")}
+            </Button>
+          )
+        }
       />
     );
   }

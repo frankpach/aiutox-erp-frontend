@@ -9,6 +9,13 @@ import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { PageLayout } from "../PageLayout";
 
+// Mock useTranslation
+vi.mock("~/lib/i18n/useTranslation", () => ({
+  useTranslation: () => ({
+    t: (key: string) => key,
+  }),
+}));
+
 const renderWithRouter = (ui: React.ReactElement) => {
   return render(<MemoryRouter>{ui}</MemoryRouter>);
 };
@@ -55,8 +62,8 @@ describe("PageLayout", () => {
 
   it("renderiza breadcrumb con enlaces", () => {
     const { container } = renderWithRouter(
-      <PageLayout
-        title="Mi Página"
+      <PageLayout 
+        title="Mi Página" 
         breadcrumb={[{ label: "Home", href: "/" }]}
       >
         <div>Contenido</div>
@@ -64,7 +71,7 @@ describe("PageLayout", () => {
     );
 
     // Buscar el enlace dentro del breadcrumb
-    const breadcrumb = container.querySelector('nav[aria-label="Breadcrumb"]');
+    const breadcrumb = container.querySelector('nav[aria-label="layout.breadcrumb"]');
     expect(breadcrumb).toBeInTheDocument();
     const link = breadcrumb?.querySelector('a[href="/"]');
     expect(link).toBeInTheDocument();
@@ -81,8 +88,8 @@ describe("PageLayout", () => {
     // Debe mostrar skeletons
     const skeletons = document.querySelectorAll(".animate-pulse");
     expect(skeletons.length).toBeGreaterThan(0);
-    // El título debe estar en el skeleton
-    expect(screen.getAllByText("Mi Página").length).toBeGreaterThan(0);
+    // En modo loading, el título no debe aparecer (solo skeletons)
+    expect(screen.queryByText("Mi Página")).toBeNull();
   });
 
   it("renderiza estado de error cuando error se proporciona", () => {

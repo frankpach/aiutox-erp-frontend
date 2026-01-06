@@ -97,7 +97,7 @@ export function ProductFilters({ filters, onFiltersChange, onReset }: ProductFil
                 <SelectValue placeholder={t("products.filters.category.placeholder")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">{t("products.filters.allCategories")}</SelectItem>
+                <SelectItem value="all">{t("products.filters.allCategories")}</SelectItem>
                 {categories.map((category) => (
                   <SelectItem key={category.id} value={category.id}>
                     {category.name}
@@ -126,7 +126,7 @@ export function ProductFilters({ filters, onFiltersChange, onReset }: ProductFil
                 <SelectValue placeholder={t("products.filters.status.placeholder")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">{t("products.filters.allStatus")}</SelectItem>
+                <SelectItem value="all">{t("products.filters.allStatus")}</SelectItem>
                 <SelectItem value="active">{t("products.status.active")}</SelectItem>
                 <SelectItem value="inactive">{t("products.status.inactive")}</SelectItem>
               </SelectContent>
@@ -152,7 +152,7 @@ export function ProductFilters({ filters, onFiltersChange, onReset }: ProductFil
                 <SelectValue placeholder={t("products.filters.inventory.placeholder")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">{t("products.filters.allInventory")}</SelectItem>
+                <SelectItem value="all">{t("products.filters.allInventory")}</SelectItem>
                 <SelectItem value="tracked">{t("products.inventory.tracked")}</SelectItem>
                 <SelectItem value="not_tracked">{t("products.inventory.notTracked")}</SelectItem>
               </SelectContent>

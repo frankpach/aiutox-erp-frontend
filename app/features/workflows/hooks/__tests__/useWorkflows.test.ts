@@ -5,7 +5,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import * as api from "../api/workflows.api";
+import React from "react";
+import * as api from "../../api/workflows.api";
 import {
   useWorkflows,
   useWorkflow,
@@ -15,7 +16,7 @@ import {
 } from "../useWorkflows";
 
 // Mock the API
-vi.mock("../api/workflows.api");
+vi.mock("../../api/workflows.api");
 
 describe("useWorkflows hook", () => {
   let queryClient: QueryClient;
@@ -31,10 +32,10 @@ describe("useWorkflows hook", () => {
   });
 
   const wrapper = ({ children }: { children: React.ReactNode }) => {
-    return (
-      <QueryClientProvider client={queryClient}>
-        {children}
-      </QueryClientProvider>
+    return React.createElement(
+      QueryClientProvider,
+      { client: queryClient },
+      children
     );
   };
 
@@ -64,7 +65,7 @@ describe("useWorkflows hook", () => {
 
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-      expect(api.listWorkflows).toHaveBeenCalledWith({ page: 1, page_size: 20 });
+      expect(api.listWorkflows).toHaveBeenCalledWith(undefined);
       expect(result.current.data).toEqual(mockWorkflows);
     });
   });
@@ -183,7 +184,7 @@ describe("useWorkflows hook", () => {
 
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-      expect(api.deleteWorkflow).toHaveBeenCalledWith("1");
+      expect(api.deleteWorkflow).toHaveBeenCalledWith("1", expect.any(Object));
     });
   });
 });
