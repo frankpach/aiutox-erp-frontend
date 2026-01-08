@@ -27,20 +27,36 @@ interface ThemeConfigValues extends Record<string, string> {
   accent_color: string;
   background_color: string;
   surface_color: string;
+  dark_primary_color: string;
+  dark_secondary_color: string;
+  dark_accent_color: string;
+  dark_background_color: string;
+  dark_surface_color: string;
   // Status colors
   error_color: string;
   warning_color: string;
   success_color: string;
   info_color: string;
+  dark_error_color: string;
+  dark_warning_color: string;
+  dark_success_color: string;
+  dark_info_color: string;
   // Text colors
   text_primary: string;
   text_secondary: string;
   text_disabled: string;
+  dark_text_primary: string;
+  dark_text_secondary: string;
+  dark_text_disabled: string;
   // Component colors
   sidebar_bg: string;
   sidebar_text: string;
   navbar_bg: string;
   navbar_text: string;
+  dark_sidebar_bg: string;
+  dark_sidebar_text: string;
+  dark_navbar_bg: string;
+  dark_navbar_text: string;
   // Logos
   logo_primary: string;
   logo_white: string;
@@ -97,7 +113,7 @@ export function meta() {
 
 export default function ThemeConfigPage() {
   const { t } = useTranslation();
-  const { theme, isLoading, error, updateTheme, isUpdating } = useThemeConfig();
+  const { themeLight, themeDark, isLoading, error, updateTheme, isUpdating } = useThemeConfig();
   const didNormalizeDefaults = useRef(false);
   const [isNormalizing, setIsNormalizing] = useState(false);
 
@@ -107,17 +123,33 @@ export default function ThemeConfigPage() {
     accent_color: "#F1F5F9",
     background_color: "#FFFFFF",
     surface_color: "#FFFFFF",
+    dark_primary_color: "#F8FAFC",
+    dark_secondary_color: "#1E293B",
+    dark_accent_color: "#1E293B",
+    dark_background_color: "#020817",
+    dark_surface_color: "#0B1220",
     error_color: "#EF4444",
     warning_color: "#F59E0B",
     success_color: "#10B981",
     info_color: "#3B82F6",
+    dark_error_color: "#7F1D1D",
+    dark_warning_color: "#F59E0B",
+    dark_success_color: "#10B981",
+    dark_info_color: "#3B82F6",
     text_primary: "#0F172A",
     text_secondary: "#64748B",
     text_disabled: "#94A3B8",
+    dark_text_primary: "#F8FAFC",
+    dark_text_secondary: "#94A3B8",
+    dark_text_disabled: "#64748B",
     sidebar_bg: "#FAFAFA",
     sidebar_text: "#0F172A",
     navbar_bg: "#FFFFFF",
     navbar_text: "#0F172A",
+    dark_sidebar_bg: "#0B1220",
+    dark_sidebar_text: "#F8FAFC",
+    dark_navbar_bg: "#0B1220",
+    dark_navbar_text: "#F8FAFC",
     logo_primary: "/assets/logos/logo.png",
     logo_white: "/assets/logos/logo-white.png",
     logo_small: "/assets/logos/logo-sm.png",
@@ -138,7 +170,10 @@ export default function ThemeConfigPage() {
 
   const initialValues: ThemeConfigValues = {
     ...defaultValues,
-    ...theme,
+    ...themeLight,
+    ...Object.fromEntries(
+      Object.entries(themeDark).map(([key, value]) => [`dark_${key}`, value])
+    ),
   };
 
   const form = useConfigForm<ThemeConfigValues>({
@@ -147,13 +182,20 @@ export default function ThemeConfigPage() {
 
   // Actualizar valores cuando se carga la data
   useEffect(() => {
-    const hasTheme = theme && Object.keys(theme).length > 0;
-    const mergedValues = { ...defaultValues, ...theme };
+    const isOnline = typeof navigator === "undefined" ? true : navigator.onLine;
+    const mergedTheme: Record<string, string> = {
+      ...themeLight,
+      ...Object.fromEntries(
+        Object.entries(themeDark).map(([key, value]) => [`dark_${key}`, value])
+      ),
+    };
+    const hasTheme = Object.keys(mergedTheme).length > 0;
+    const mergedValues = { ...defaultValues, ...mergedTheme };
     const hasMissingKeys = Object.keys(defaultValues).some(
-      (key) => !(key in (theme || {}))
+      (key) => !(key in mergedTheme)
     );
 
-    if (!hasTheme && !didNormalizeDefaults.current) {
+    if (!hasTheme && !didNormalizeDefaults.current && isOnline) {
       didNormalizeDefaults.current = true;
       setIsNormalizing(true);
       updateTheme(defaultValues, {
@@ -164,7 +206,7 @@ export default function ThemeConfigPage() {
     }
 
     if (hasTheme) {
-      if (hasMissingKeys && !didNormalizeDefaults.current) {
+      if (hasMissingKeys && !didNormalizeDefaults.current && isOnline) {
         didNormalizeDefaults.current = true;
         setIsNormalizing(true);
         updateTheme(mergedValues, {
@@ -173,7 +215,7 @@ export default function ThemeConfigPage() {
       }
       form.updateOriginalValues(mergedValues);
     }
-  }, [theme, updateTheme]);
+  }, [themeLight, themeDark, updateTheme]);
 
   const handleSave = () => {
     updateTheme(form.values, {
@@ -237,138 +279,282 @@ export default function ThemeConfigPage() {
 
         {/* Tab: Colores */}
         <TabsContent value="colors" className="space-y-6">
-          <ConfigSection
-            title={t("config.theme.sectionMainColors")}
-            description={t("config.theme.sectionMainColorsDesc")}
-          >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <ConfigColorInput
-                label={t("config.theme.primaryColor")}
-                id="primary_color"
-                value={form.values.primary_color}
-                onChange={(value) => form.setValue("primary_color", value)}
-                description={t("config.theme.primaryColorDesc")}
-              />
-              <ConfigColorInput
-                label={t("config.theme.secondaryColor")}
-                id="secondary_color"
-                value={form.values.secondary_color}
-                onChange={(value) => form.setValue("secondary_color", value)}
-                description={t("config.theme.secondaryColorDesc")}
-              />
-              <ConfigColorInput
-                label={t("config.theme.accentColor")}
-                id="accent_color"
-                value={form.values.accent_color}
-                onChange={(value) => form.setValue("accent_color", value)}
-                description={t("config.theme.accentColorDesc")}
-              />
-              <ConfigColorInput
-                label={t("config.theme.backgroundColor")}
-                id="background_color"
-                value={form.values.background_color}
-                onChange={(value) => form.setValue("background_color", value)}
-                description={t("config.theme.backgroundColorDesc")}
-              />
-              <ConfigColorInput
-                label={t("config.theme.surfaceColor")}
-                id="surface_color"
-                value={form.values.surface_color}
-                onChange={(value) => form.setValue("surface_color", value)}
-                description={t("config.theme.surfaceColorDesc")}
-              />
-            </div>
-          </ConfigSection>
+          <Tabs defaultValue="day" className="space-y-6">
+            <TabsList>
+              <TabsTrigger value="day">Tema Día</TabsTrigger>
+              <TabsTrigger value="night">Tema Nocturno</TabsTrigger>
+            </TabsList>
 
-          <ConfigSection
-            title={t("config.theme.sectionStatusColors")}
-            description={t("config.theme.sectionStatusColorsDesc")}
-          >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <ConfigColorInput
-                label={t("config.theme.errorColor")}
-                id="error_color"
-                value={form.values.error_color}
-                onChange={(value) => form.setValue("error_color", value)}
-              />
-              <ConfigColorInput
-                label={t("config.theme.warningColor")}
-                id="warning_color"
-                value={form.values.warning_color}
-                onChange={(value) => form.setValue("warning_color", value)}
-              />
-              <ConfigColorInput
-                label={t("config.theme.successColor")}
-                id="success_color"
-                value={form.values.success_color}
-                onChange={(value) => form.setValue("success_color", value)}
-              />
-              <ConfigColorInput
-                label={t("config.theme.infoColor")}
-                id="info_color"
-                value={form.values.info_color}
-                onChange={(value) => form.setValue("info_color", value)}
-              />
-            </div>
-          </ConfigSection>
+            <TabsContent value="day" className="space-y-6">
+              <ConfigSection
+                title={t("config.theme.sectionMainColors")}
+                description={t("config.theme.sectionMainColorsDesc")}
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <ConfigColorInput
+                    label={t("config.theme.primaryColor")}
+                    id="primary_color"
+                    value={form.values.primary_color}
+                    onChange={(value) => form.setValue("primary_color", value)}
+                    description={t("config.theme.primaryColorDesc")}
+                  />
+                  <ConfigColorInput
+                    label={t("config.theme.secondaryColor")}
+                    id="secondary_color"
+                    value={form.values.secondary_color}
+                    onChange={(value) => form.setValue("secondary_color", value)}
+                    description={t("config.theme.secondaryColorDesc")}
+                  />
+                  <ConfigColorInput
+                    label={t("config.theme.accentColor")}
+                    id="accent_color"
+                    value={form.values.accent_color}
+                    onChange={(value) => form.setValue("accent_color", value)}
+                    description={t("config.theme.accentColorDesc")}
+                  />
+                  <ConfigColorInput
+                    label={t("config.theme.backgroundColor")}
+                    id="background_color"
+                    value={form.values.background_color}
+                    onChange={(value) => form.setValue("background_color", value)}
+                    description={t("config.theme.backgroundColorDesc")}
+                  />
+                  <ConfigColorInput
+                    label={t("config.theme.surfaceColor")}
+                    id="surface_color"
+                    value={form.values.surface_color}
+                    onChange={(value) => form.setValue("surface_color", value)}
+                    description={t("config.theme.surfaceColorDesc")}
+                  />
+                </div>
+              </ConfigSection>
 
-          <ConfigSection
-            title={t("config.theme.sectionTextColors")}
-            description={t("config.theme.sectionTextColorsDesc")}
-          >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <ConfigColorInput
-                label={t("config.theme.textPrimary")}
-                id="text_primary"
-                value={form.values.text_primary}
-                onChange={(value) => form.setValue("text_primary", value)}
-              />
-              <ConfigColorInput
-                label={t("config.theme.textSecondary")}
-                id="text_secondary"
-                value={form.values.text_secondary}
-                onChange={(value) => form.setValue("text_secondary", value)}
-              />
-              <ConfigColorInput
-                label={t("config.theme.textDisabled")}
-                id="text_disabled"
-                value={form.values.text_disabled}
-                onChange={(value) => form.setValue("text_disabled", value)}
-              />
-            </div>
-          </ConfigSection>
+              <ConfigSection
+                title={t("config.theme.sectionStatusColors")}
+                description={t("config.theme.sectionStatusColorsDesc")}
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <ConfigColorInput
+                    label={t("config.theme.errorColor")}
+                    id="error_color"
+                    value={form.values.error_color}
+                    onChange={(value) => form.setValue("error_color", value)}
+                  />
+                  <ConfigColorInput
+                    label={t("config.theme.warningColor")}
+                    id="warning_color"
+                    value={form.values.warning_color}
+                    onChange={(value) => form.setValue("warning_color", value)}
+                  />
+                  <ConfigColorInput
+                    label={t("config.theme.successColor")}
+                    id="success_color"
+                    value={form.values.success_color}
+                    onChange={(value) => form.setValue("success_color", value)}
+                  />
+                  <ConfigColorInput
+                    label={t("config.theme.infoColor")}
+                    id="info_color"
+                    value={form.values.info_color}
+                    onChange={(value) => form.setValue("info_color", value)}
+                  />
+                </div>
+              </ConfigSection>
 
-          <ConfigSection
-            title={t("config.theme.sectionComponentColors")}
-            description={t("config.theme.sectionComponentColorsDesc")}
-          >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <ConfigColorInput
-                label={t("config.theme.sidebarBg")}
-                id="sidebar_bg"
-                value={form.values.sidebar_bg}
-                onChange={(value) => form.setValue("sidebar_bg", value)}
-              />
-              <ConfigColorInput
-                label={t("config.theme.sidebarText")}
-                id="sidebar_text"
-                value={form.values.sidebar_text}
-                onChange={(value) => form.setValue("sidebar_text", value)}
-              />
-              <ConfigColorInput
-                label={t("config.theme.navbarBg")}
-                id="navbar_bg"
-                value={form.values.navbar_bg}
-                onChange={(value) => form.setValue("navbar_bg", value)}
-              />
-              <ConfigColorInput
-                label={t("config.theme.navbarText")}
-                id="navbar_text"
-                value={form.values.navbar_text}
-                onChange={(value) => form.setValue("navbar_text", value)}
-              />
-            </div>
-          </ConfigSection>
+              <ConfigSection
+                title={t("config.theme.sectionTextColors")}
+                description={t("config.theme.sectionTextColorsDesc")}
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <ConfigColorInput
+                    label={t("config.theme.textPrimary")}
+                    id="text_primary"
+                    value={form.values.text_primary}
+                    onChange={(value) => form.setValue("text_primary", value)}
+                  />
+                  <ConfigColorInput
+                    label={t("config.theme.textSecondary")}
+                    id="text_secondary"
+                    value={form.values.text_secondary}
+                    onChange={(value) => form.setValue("text_secondary", value)}
+                  />
+                  <ConfigColorInput
+                    label={t("config.theme.textDisabled")}
+                    id="text_disabled"
+                    value={form.values.text_disabled}
+                    onChange={(value) => form.setValue("text_disabled", value)}
+                  />
+                </div>
+              </ConfigSection>
+
+              <ConfigSection
+                title={t("config.theme.sectionComponentColors")}
+                description={t("config.theme.sectionComponentColorsDesc")}
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <ConfigColorInput
+                    label={t("config.theme.sidebarBg")}
+                    id="sidebar_bg"
+                    value={form.values.sidebar_bg}
+                    onChange={(value) => form.setValue("sidebar_bg", value)}
+                  />
+                  <ConfigColorInput
+                    label={t("config.theme.sidebarText")}
+                    id="sidebar_text"
+                    value={form.values.sidebar_text}
+                    onChange={(value) => form.setValue("sidebar_text", value)}
+                  />
+                  <ConfigColorInput
+                    label={t("config.theme.navbarBg")}
+                    id="navbar_bg"
+                    value={form.values.navbar_bg}
+                    onChange={(value) => form.setValue("navbar_bg", value)}
+                  />
+                  <ConfigColorInput
+                    label={t("config.theme.navbarText")}
+                    id="navbar_text"
+                    value={form.values.navbar_text}
+                    onChange={(value) => form.setValue("navbar_text", value)}
+                  />
+                </div>
+              </ConfigSection>
+            </TabsContent>
+
+            <TabsContent value="night" className="space-y-6">
+              <ConfigSection
+                title={t("config.theme.sectionMainColors")}
+                description={t("config.theme.sectionMainColorsDesc")}
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <ConfigColorInput
+                    label={t("config.theme.primaryColor")}
+                    id="dark_primary_color"
+                    value={form.values.dark_primary_color}
+                    onChange={(value) => form.setValue("dark_primary_color", value)}
+                    description={t("config.theme.primaryColorDesc")}
+                  />
+                  <ConfigColorInput
+                    label={t("config.theme.secondaryColor")}
+                    id="dark_secondary_color"
+                    value={form.values.dark_secondary_color}
+                    onChange={(value) => form.setValue("dark_secondary_color", value)}
+                    description={t("config.theme.secondaryColorDesc")}
+                  />
+                  <ConfigColorInput
+                    label={t("config.theme.accentColor")}
+                    id="dark_accent_color"
+                    value={form.values.dark_accent_color}
+                    onChange={(value) => form.setValue("dark_accent_color", value)}
+                    description={t("config.theme.accentColorDesc")}
+                  />
+                  <ConfigColorInput
+                    label={t("config.theme.backgroundColor")}
+                    id="dark_background_color"
+                    value={form.values.dark_background_color}
+                    onChange={(value) => form.setValue("dark_background_color", value)}
+                    description={t("config.theme.backgroundColorDesc")}
+                  />
+                  <ConfigColorInput
+                    label={t("config.theme.surfaceColor")}
+                    id="dark_surface_color"
+                    value={form.values.dark_surface_color}
+                    onChange={(value) => form.setValue("dark_surface_color", value)}
+                    description={t("config.theme.surfaceColorDesc")}
+                  />
+                </div>
+              </ConfigSection>
+
+              <ConfigSection
+                title={t("config.theme.sectionStatusColors")}
+                description={t("config.theme.sectionStatusColorsDesc")}
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <ConfigColorInput
+                    label={t("config.theme.errorColor")}
+                    id="dark_error_color"
+                    value={form.values.dark_error_color}
+                    onChange={(value) => form.setValue("dark_error_color", value)}
+                  />
+                  <ConfigColorInput
+                    label={t("config.theme.warningColor")}
+                    id="dark_warning_color"
+                    value={form.values.dark_warning_color}
+                    onChange={(value) => form.setValue("dark_warning_color", value)}
+                  />
+                  <ConfigColorInput
+                    label={t("config.theme.successColor")}
+                    id="dark_success_color"
+                    value={form.values.dark_success_color}
+                    onChange={(value) => form.setValue("dark_success_color", value)}
+                  />
+                  <ConfigColorInput
+                    label={t("config.theme.infoColor")}
+                    id="dark_info_color"
+                    value={form.values.dark_info_color}
+                    onChange={(value) => form.setValue("dark_info_color", value)}
+                  />
+                </div>
+              </ConfigSection>
+
+              <ConfigSection
+                title={t("config.theme.sectionTextColors")}
+                description={t("config.theme.sectionTextColorsDesc")}
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <ConfigColorInput
+                    label={t("config.theme.textPrimary")}
+                    id="dark_text_primary"
+                    value={form.values.dark_text_primary}
+                    onChange={(value) => form.setValue("dark_text_primary", value)}
+                  />
+                  <ConfigColorInput
+                    label={t("config.theme.textSecondary")}
+                    id="dark_text_secondary"
+                    value={form.values.dark_text_secondary}
+                    onChange={(value) => form.setValue("dark_text_secondary", value)}
+                  />
+                  <ConfigColorInput
+                    label={t("config.theme.textDisabled")}
+                    id="dark_text_disabled"
+                    value={form.values.dark_text_disabled}
+                    onChange={(value) => form.setValue("dark_text_disabled", value)}
+                  />
+                </div>
+              </ConfigSection>
+
+              <ConfigSection
+                title={t("config.theme.sectionComponentColors")}
+                description={t("config.theme.sectionComponentColorsDesc")}
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <ConfigColorInput
+                    label={t("config.theme.sidebarBg")}
+                    id="dark_sidebar_bg"
+                    value={form.values.dark_sidebar_bg}
+                    onChange={(value) => form.setValue("dark_sidebar_bg", value)}
+                  />
+                  <ConfigColorInput
+                    label={t("config.theme.sidebarText")}
+                    id="dark_sidebar_text"
+                    value={form.values.dark_sidebar_text}
+                    onChange={(value) => form.setValue("dark_sidebar_text", value)}
+                  />
+                  <ConfigColorInput
+                    label={t("config.theme.navbarBg")}
+                    id="dark_navbar_bg"
+                    value={form.values.dark_navbar_bg}
+                    onChange={(value) => form.setValue("dark_navbar_bg", value)}
+                  />
+                  <ConfigColorInput
+                    label={t("config.theme.navbarText")}
+                    id="dark_navbar_text"
+                    value={form.values.dark_navbar_text}
+                    onChange={(value) => form.setValue("dark_navbar_text", value)}
+                  />
+                </div>
+              </ConfigSection>
+            </TabsContent>
+          </Tabs>
         </TabsContent>
 
         {/* Tab: Logos */}

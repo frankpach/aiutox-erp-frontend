@@ -3,8 +3,8 @@
  * Displays a list of files with pagination and actions
  */
 
-import { useState, useCallback, useEffect, useMemo } from "react";
-import { Download, Trash2, Eye, Edit, MoreVertical, Search, Grid3x3, List } from "lucide-react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
+import { Download, Trash2, Eye, MoreVertical, Search, Grid3x3, List } from "lucide-react";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import {
@@ -169,9 +169,13 @@ export function FileList({
 
   // State for filtered files from FileFilters component
   const [filteredFiles, setFilteredFiles] = useState<File[]>([]);
+  const lastFilesSignatureRef = useRef<string>("");
 
   // Initialize filteredFiles when files change
   useEffect(() => {
+    const signature = (files || []).map((f) => f.id).join("|");
+    if (signature === lastFilesSignatureRef.current) return;
+    lastFilesSignatureRef.current = signature;
     setFilteredFiles(files);
   }, [files]);
 

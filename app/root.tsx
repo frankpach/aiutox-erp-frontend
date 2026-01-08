@@ -20,6 +20,7 @@ import { useAuthStore } from "~/stores/authStore";
 import { ToastProvider } from "~/components/common/Toast";
 import { PWAUpdatePrompt } from "~/components/common/PWAUpdatePrompt";
 import { ThemeProvider } from "~/providers";
+import { useThemeConfig } from "~/hooks/useThemeConfig";
 
 // Create QueryClient with optimized configuration
 const queryClient = new QueryClient({
@@ -104,6 +105,11 @@ const PUBLIC_ROUTES = [
   "/unauthorized",
 ];
 
+function ThemeConfigBootstrap() {
+  useThemeConfig();
+  return null;
+}
+
 export default function App() {
   const location = useLocation();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -148,7 +154,10 @@ export default function App() {
 
   return (
     <ThemeProvider>
-      <QueryClientProvider client={queryClient}>{content}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}>
+        {isAuthenticated && !isPublicRoute ? <ThemeConfigBootstrap /> : null}
+        {content}
+      </QueryClientProvider>
     </ThemeProvider>
   );
 }
@@ -186,7 +195,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
 
   // Show stack trace only in development
   const stack =
-    import.meta.env.DEV && error && error instanceof Error ? error.stack : undefined;
+    (import.meta as any).env?.DEV && error && error instanceof Error ? error.stack : undefined;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">

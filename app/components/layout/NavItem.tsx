@@ -25,7 +25,7 @@ export function NavItem({ item, isActive, isCollapsed }: NavItemProps) {
       className={cn(
         "flex items-center gap-3 px-4 py-2.5 rounded-md text-sm font-medium",
         "transition-all duration-200 ease-in-out",
-        "hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+        "hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--accent-foreground))] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
         isCurrentActive
           ? "bg-primary/10 text-primary"
           : "text-foreground hover:text-primary",

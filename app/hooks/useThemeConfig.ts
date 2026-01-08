@@ -5,6 +5,8 @@ import {
   setThemeConfig,
   updateThemeConfigProperty,
 } from "~/features/config/api/config.api";
+import { useAuthStore } from "~/stores/authStore";
+import { useTheme } from "~/providers";
 
 interface ThemeColors {
   // Main colors
@@ -138,6 +140,60 @@ const coerceThemeConfig = (config: Record<string, unknown>): Record<string, stri
   return result;
 };
 
+const THEME_LAST_TENANT_KEY = "aiutox:last_tenant_id";
+const THEME_CACHE_PREFIX = "aiutox:theme:";
+
+const safeParseJson = (value: string | null): unknown => {
+  if (!value) return null;
+  try {
+    return JSON.parse(value) as unknown;
+  } catch {
+    return null;
+  }
+};
+
+const getLastTenantId = (): string | null => {
+  if (typeof window === "undefined") return null;
+  const raw = window.localStorage.getItem(THEME_LAST_TENANT_KEY);
+  return raw && raw.trim().length > 0 ? raw : null;
+};
+
+const setLastTenantId = (tenantId: string) => {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(THEME_LAST_TENANT_KEY, tenantId);
+};
+
+const getThemeCacheKey = (tenantId: string) => `${THEME_CACHE_PREFIX}${tenantId}`;
+
+const readCachedTheme = (tenantId: string): Record<string, unknown> | null => {
+  if (typeof window === "undefined") return null;
+  const raw = window.localStorage.getItem(getThemeCacheKey(tenantId));
+  const parsed = safeParseJson(raw);
+  if (!parsed || typeof parsed !== "object") return null;
+  return parsed as Record<string, unknown>;
+};
+
+const writeCachedTheme = (tenantId: string, config: Record<string, unknown>) => {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(getThemeCacheKey(tenantId), JSON.stringify(config));
+};
+
+const splitThemeConfig = (config: Record<string, unknown>) => {
+  const light: Record<string, unknown> = {};
+  const dark: Record<string, unknown> = {};
+
+  Object.entries(config).forEach(([key, value]) => {
+    if (key.startsWith("dark_")) {
+      const unprefixed = key.replace(/^dark_/, "");
+      dark[unprefixed] = value;
+      return;
+    }
+    light[key] = value;
+  });
+
+  return { light, dark };
+};
+
 const applyThemeToCSS = (config: Record<string, unknown>) => {
   const root = document.documentElement;
   const stringConfig = coerceThemeConfig(config);
@@ -200,6 +256,19 @@ const applyThemeToCSS = (config: Record<string, unknown>) => {
  */
 export function useThemeConfig() {
   const queryClient = useQueryClient();
+  const { resolvedTheme } = useTheme();
+
+  const tenantIdFromUser = useAuthStore((state) => state.user?.tenant_id ?? null);
+
+  const tenantId = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    return tenantIdFromUser ?? getLastTenantId();
+  }, [tenantIdFromUser]);
+
+  const cachedThemeConfig = useMemo(() => {
+    if (!tenantId) return null;
+    return readCachedTheme(tenantId);
+  }, [tenantId]);
 
   // Fetch theme configuration
   const {
@@ -208,20 +277,36 @@ export function useThemeConfig() {
     error,
     refetch,
   } = useQuery({
-    queryKey: ["theme-config"],
+    queryKey: ["theme-config", tenantId],
     queryFn: async () => {
-      return await getThemeConfig();
+      const data = await getThemeConfig();
+      if (tenantId && data?.config) {
+        setLastTenantId(tenantId);
+        writeCachedTheme(tenantId, data.config);
+      }
+      return data;
     },
-    staleTime: 1000 * 60 * 10, // Cache for 10 minutes
-    retry: 2,
+    enabled:
+      typeof window !== "undefined" &&
+      Boolean(tenantId) &&
+      (typeof navigator === "undefined" ? true : navigator.onLine),
+    initialData: cachedThemeConfig ? { module: "app_theme", config: cachedThemeConfig } : undefined,
+    staleTime: Infinity,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    retry: 1,
   });
 
   // Apply theme to CSS when data changes
   useEffect(() => {
-    if (themeData?.config) {
-      applyThemeToCSS(themeData.config);
-    }
-  }, [themeData]);
+    const config = themeData?.config ?? cachedThemeConfig;
+    if (!config) return;
+
+    const { light, dark } = splitThemeConfig(config);
+    const active =
+      resolvedTheme === "dark" && Object.keys(dark).length > 0 ? dark : light;
+    applyThemeToCSS(active);
+  }, [themeData, cachedThemeConfig, resolvedTheme]);
 
   // Mutation to update theme
   const updateThemeMutation = useMutation({
@@ -229,14 +314,20 @@ export function useThemeConfig() {
       return await setThemeConfig(newConfig as Record<string, unknown>);
     },
     onSuccess: (data) => {
-      // Update cache
-      queryClient.setQueryData(["theme-config"], data);
-      // Apply new theme immediately
+      queryClient.setQueryData(["theme-config", tenantId], data);
       if (data.config) {
-        applyThemeToCSS(data.config);
+        const { light, dark } = splitThemeConfig(data.config);
+        const active =
+          resolvedTheme === "dark" && Object.keys(dark).length > 0 ? dark : light;
+        applyThemeToCSS(active);
       }
-      // Refetch to ensure we have the latest data from backend
-      refetch();
+      if (tenantId && data.config) {
+        setLastTenantId(tenantId);
+        writeCachedTheme(tenantId, data.config);
+      }
+      if (typeof navigator === "undefined" ? true : navigator.onLine) {
+        refetch();
+      }
     },
   });
 
@@ -246,18 +337,32 @@ export function useThemeConfig() {
       return await updateThemeConfigProperty(key, value);
     },
     onSuccess: () => {
-      // Refetch entire theme to get updated config
-      refetch();
+      if (typeof navigator === "undefined" ? true : navigator.onLine) {
+        refetch();
+      }
     },
   });
 
-  const theme = useMemo(
-    () => coerceThemeConfig(themeData?.config || {}),
-    [themeData?.config]
-  );
+  const { themeLight, themeDark, theme } = useMemo(() => {
+    const config = themeData?.config ?? cachedThemeConfig ?? {};
+    const { light, dark } = splitThemeConfig(config);
+    const lightCoerced = coerceThemeConfig(light);
+    const darkCoerced = coerceThemeConfig(dark);
+    const active =
+      resolvedTheme === "dark" && Object.keys(darkCoerced).length > 0
+        ? darkCoerced
+        : lightCoerced;
+    return {
+      themeLight: lightCoerced,
+      themeDark: darkCoerced,
+      theme: active,
+    };
+  }, [themeData?.config, cachedThemeConfig, resolvedTheme]);
 
   return {
     theme,
+    themeLight,
+    themeDark,
     isLoading,
     error,
     updateTheme: updateThemeMutation.mutate,

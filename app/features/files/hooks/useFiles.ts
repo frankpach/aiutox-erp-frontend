@@ -14,7 +14,6 @@ import {
   deleteFile,
   downloadFile,
   getFileContent,
-  getFilePreview,
   listFileVersions,
   createFileVersion,
   downloadFileVersion,
@@ -24,11 +23,12 @@ import {
 import type {
   File,
   FileUpdate,
-  FileVersion,
   FilePermissionRequest,
   FilesListParams,
   FileUploadParams,
 } from "../types/file.types";
+
+const EMPTY_FILES: File[] = [];
 
 // Query keys for React Query
 export const fileKeys = {
@@ -57,7 +57,7 @@ export function useFiles(params?: FilesListParams) {
   });
 
   return {
-    files: response?.data || [],
+    files: response?.data ?? EMPTY_FILES,
     loading,
     error: error as Error | null,
     pagination: response?.meta && typeof response.meta === "object" && "total" in response.meta

@@ -84,7 +84,7 @@ export function NotificationBell({ className }: NotificationBellProps) {
   return (
     <div className={cn("relative", className)} ref={dropdownRef}>
       <button
-        className="relative p-2 rounded-md hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 transition-colors"
+        className="relative p-2 rounded-md hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--accent-foreground))] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 transition-colors"
         aria-label={t("notifications.title")}
         onClick={() => setIsOpen(!isOpen)}
       >

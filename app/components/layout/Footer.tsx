@@ -1,20 +1,26 @@
 import { memo } from "react";
 import { useTranslation } from "~/lib/i18n/useTranslation";
+import { useAuthStore } from "~/stores/authStore";
 
 /**
  * Footer - Pie de página de la aplicación
  *
- * Muestra copyright y versión de la aplicación.
+ * Muestra copyright, versión de la aplicación y tenant actual.
  */
 
 export const Footer = memo(function Footer() {
   const currentYear = new Date().getFullYear();
   const version = "0.0.126";
   const { t } = useTranslation();
+  const user = useAuthStore((state) => state.user);
 
   const footerText = t("layout.footer.text")
     .replace("{year}", String(currentYear))
     .replace("{version}", version);
+
+  const tenantInfo = user?.tenant_name
+    ? ` | ${user.tenant_name}`
+    : "";
 
   return (
     <footer
@@ -22,7 +28,7 @@ export const Footer = memo(function Footer() {
       role="contentinfo"
     >
       <div className="text-sm text-muted-foreground">
-        {footerText}
+        {footerText}{tenantInfo}
       </div>
     </footer>
   );

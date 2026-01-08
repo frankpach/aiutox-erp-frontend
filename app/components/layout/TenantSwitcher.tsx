@@ -39,7 +39,7 @@ export function TenantSwitcher({ isCollapsed = false }: TenantSwitcherProps) {
 
   return (
     <button
-      className="flex items-center gap-2 w-full px-3 py-2.5 rounded-lg transition-all duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-sm bg-muted/60"
+      className="flex items-center gap-2 w-full px-3 py-2.5 rounded-lg transition-all duration-150 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--accent-foreground))] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-sm bg-muted/60"
       aria-label="Cambiar organización"
       title="Cambiar organización"
       // TODO: Implementar funcionalidad de cambio de tenant cuando haya múltiples

@@ -141,7 +141,11 @@ export async function logout(page: Page) {
 /**
  * Extended test with auth fixtures
  */
-export const test = base.extend({
+type AuthFixtures = {
+  authenticatedPage: Page;
+};
+
+export const test = base.extend<AuthFixtures>({
   // Auto-login as admin before each test
   authenticatedPage: async ({ page }, use) => {
     await loginAsAdmin(page);

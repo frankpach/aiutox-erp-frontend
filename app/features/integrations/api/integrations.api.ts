@@ -32,6 +32,9 @@ import type {
 export async function listIntegrations(type?: string): Promise<StandardListResponse<Integration>> {
   const params = type ? `?type=${type}` : "";
   const response = await apiClient.get<StandardListResponse<Integration>>(`/api/v1/integrations${params}`);
+  if (!response.data) {
+    throw new Error("API response is empty");
+  }
   return response.data;
 }
 
@@ -42,6 +45,9 @@ export async function listIntegrations(type?: string): Promise<StandardListRespo
  */
 export async function getIntegration(integrationId: string): Promise<StandardResponse<Integration>> {
   const response = await apiClient.get<StandardResponse<Integration>>(`/api/v1/integrations/${integrationId}`);
+  if (!response.data) {
+    throw new Error("API response is empty");
+  }
   return response.data;
 }
 
@@ -52,6 +58,9 @@ export async function getIntegration(integrationId: string): Promise<StandardRes
  */
 export async function createIntegration(data: IntegrationCreate): Promise<StandardResponse<Integration>> {
   const response = await apiClient.post<StandardResponse<Integration>>("/api/v1/integrations", data);
+  if (!response.data) {
+    throw new Error("API response is empty");
+  }
   return response.data;
 }
 
@@ -63,6 +72,9 @@ export async function createIntegration(data: IntegrationCreate): Promise<Standa
  */
 export async function updateIntegration(integrationId: string, data: IntegrationUpdate): Promise<StandardResponse<Integration>> {
   const response = await apiClient.put<StandardResponse<Integration>>(`/api/v1/integrations/${integrationId}`, data);
+  if (!response.data) {
+    throw new Error("API response is empty");
+  }
   return response.data;
 }
 
@@ -73,6 +85,9 @@ export async function updateIntegration(integrationId: string, data: Integration
  */
 export async function deleteIntegration(integrationId: string): Promise<StandardResponse<{ message: string }>> {
   const response = await apiClient.delete<StandardResponse<{ message: string }>>(`/api/v1/integrations/${integrationId}`);
+  if (!response.data) {
+    throw new Error("API response is empty");
+  }
   return response.data;
 }
 
@@ -84,6 +99,9 @@ export async function deleteIntegration(integrationId: string): Promise<Standard
  */
 export async function activateIntegration(integrationId: string, data: IntegrationActivateRequest): Promise<StandardResponse<Integration>> {
   const response = await apiClient.post<StandardResponse<Integration>>(`/api/v1/integrations/${integrationId}/activate`, data);
+  if (!response.data) {
+    throw new Error("API response is empty");
+  }
   return response.data;
 }
 
@@ -94,6 +112,9 @@ export async function activateIntegration(integrationId: string, data: Integrati
  */
 export async function deactivateIntegration(integrationId: string): Promise<StandardResponse<Integration>> {
   const response = await apiClient.post<StandardResponse<Integration>>(`/api/v1/integrations/${integrationId}/deactivate`);
+  if (!response.data) {
+    throw new Error("API response is empty");
+  }
   return response.data;
 }
 
@@ -104,6 +125,9 @@ export async function deactivateIntegration(integrationId: string): Promise<Stan
  */
 export async function testIntegration(integrationId: string): Promise<StandardResponse<IntegrationTestResponse>> {
   const response = await apiClient.post<StandardResponse<IntegrationTestResponse>>(`/api/v1/integrations/${integrationId}/test`);
+  if (!response.data) {
+    throw new Error("API response is empty");
+  }
   return response.data;
 }
 
@@ -113,6 +137,9 @@ export async function testIntegration(integrationId: string): Promise<StandardRe
  */
 export async function getIntegrationStats(): Promise<StandardResponse<IntegrationStats>> {
   const response = await apiClient.get<StandardResponse<IntegrationStats>>("/api/v1/integrations/stats");
+  if (!response.data) {
+    throw new Error("API response is empty");
+  }
   return response.data;
 }
 
@@ -137,6 +164,9 @@ export async function getIntegrationLogs(
 
   const url = `/api/v1/integrations/${integrationId}/logs${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
   const response = await apiClient.get<StandardListResponse<IntegrationLog>>(url);
+  if (!response.data) {
+    throw new Error("API response is empty");
+  }
   return response.data;
 }
 
@@ -147,6 +177,9 @@ export async function getIntegrationLogs(
  */
 export async function getIntegrationWebhooks(integrationId: string): Promise<StandardListResponse<IntegrationWebhook>> {
   const response = await apiClient.get<StandardListResponse<IntegrationWebhook>>(`/api/v1/integrations/${integrationId}/webhooks`);
+  if (!response.data) {
+    throw new Error("API response is empty");
+  }
   return response.data;
 }
 
@@ -161,6 +194,9 @@ export async function createIntegrationWebhook(
   data: Omit<IntegrationWebhook, "id" | "integration_id" | "trigger_count" | "created_at" | "updated_at">
 ): Promise<StandardResponse<IntegrationWebhook>> {
   const response = await apiClient.post<StandardResponse<IntegrationWebhook>>(`/api/v1/integrations/${integrationId}/webhooks`, data);
+  if (!response.data) {
+    throw new Error("API response is empty");
+  }
   return response.data;
 }
 
@@ -177,6 +213,9 @@ export async function updateIntegrationWebhook(
   data: Partial<Pick<IntegrationWebhook, "event_type" | "url" | "secret" | "active">>
 ): Promise<StandardResponse<IntegrationWebhook>> {
   const response = await apiClient.put<StandardResponse<IntegrationWebhook>>(`/api/v1/integrations/${integrationId}/webhooks/${webhookId}`, data);
+  if (!response.data) {
+    throw new Error("API response is empty");
+  }
   return response.data;
 }
 
@@ -188,6 +227,9 @@ export async function updateIntegrationWebhook(
  */
 export async function deleteIntegrationWebhook(integrationId: string, webhookId: string): Promise<StandardResponse<{ message: string }>> {
   const response = await apiClient.delete<StandardResponse<{ message: string }>>(`/api/v1/integrations/${integrationId}/webhooks/${webhookId}`);
+  if (!response.data) {
+    throw new Error("API response is empty");
+  }
   return response.data;
 }
 
@@ -214,6 +256,9 @@ export async function getIntegrationEvents(
 
   const url = `/api/v1/integrations/${integrationId}/events${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
   const response = await apiClient.get<StandardListResponse<IntegrationEvent>>(url);
+  if (!response.data) {
+    throw new Error("API response is empty");
+  }
   return response.data;
 }
 
@@ -224,6 +269,9 @@ export async function getIntegrationEvents(
  */
 export async function getIntegrationHealth(integrationId: string): Promise<StandardResponse<IntegrationHealth>> {
   const response = await apiClient.get<StandardResponse<IntegrationHealth>>(`/api/v1/integrations/${integrationId}/health`);
+  if (!response.data) {
+    throw new Error("API response is empty");
+  }
   return response.data;
 }
 
@@ -234,6 +282,9 @@ export async function getIntegrationHealth(integrationId: string): Promise<Stand
  */
 export async function getIntegrationCredentials(integrationId: string): Promise<StandardListResponse<IntegrationCredentials>> {
   const response = await apiClient.get<StandardListResponse<IntegrationCredentials>>(`/api/v1/integrations/${integrationId}/credentials`);
+  if (!response.data) {
+    throw new Error("API response is empty");
+  }
   return response.data;
 }
 
@@ -250,6 +301,9 @@ export async function updateIntegrationCredentials(
   data: Partial<Pick<IntegrationCredentials, "name" | "encrypted_data" | "expires_at">>
 ): Promise<StandardResponse<IntegrationCredentials>> {
   const response = await apiClient.put<StandardResponse<IntegrationCredentials>>(`/api/v1/integrations/${integrationId}/credentials/${credentialId}`, data);
+  if (!response.data) {
+    throw new Error("API response is empty");
+  }
   return response.data;
 }
 
@@ -260,6 +314,9 @@ export async function updateIntegrationCredentials(
  */
 export async function getIntegrationConfig(integrationId: string): Promise<StandardListResponse<IntegrationConfig>> {
   const response = await apiClient.get<StandardListResponse<IntegrationConfig>>(`/api/v1/integrations/${integrationId}/config`);
+  if (!response.data) {
+    throw new Error("API response is empty");
+  }
   return response.data;
 }
 
@@ -276,6 +333,9 @@ export async function updateIntegrationConfig(
   data: Partial<Pick<IntegrationConfig, "value" | "description">>
 ): Promise<StandardResponse<IntegrationConfig>> {
   const response = await apiClient.put<StandardResponse<IntegrationConfig>>(`/api/v1/integrations/${integrationId}/config/${configId}`, data);
+  if (!response.data) {
+    throw new Error("API response is empty");
+  }
   return response.data;
 }
 
@@ -285,6 +345,9 @@ export async function updateIntegrationConfig(
  */
 export async function getAvailableIntegrationTypes(): Promise<StandardResponse<string[]>> {
   const response = await apiClient.get<StandardResponse<string[]>>("/api/v1/integrations/types");
+  if (!response.data) {
+    throw new Error("API response is empty");
+  }
   return response.data;
 }
 
@@ -295,5 +358,8 @@ export async function getAvailableIntegrationTypes(): Promise<StandardResponse<s
  */
 export async function syncIntegration(integrationId: string): Promise<StandardResponse<Integration>> {
   const response = await apiClient.post<StandardResponse<Integration>>(`/api/v1/integrations/${integrationId}/sync`);
+  if (!response.data) {
+    throw new Error("API response is empty");
+  }
   return response.data;
 }

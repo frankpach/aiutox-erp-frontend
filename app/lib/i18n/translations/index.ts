@@ -8,7 +8,10 @@ import { searchTranslations as esSearchTranslations } from "./search.es";
 const translations = {
   en: {
     ...enTranslations,
-    ...enSearchTranslations,
+    search: {
+      ...enTranslations.search,
+      ...enSearchTranslations,
+    },
     common: {
       ...enTranslations.common,
       ...enSearchTranslations.common,
@@ -16,7 +19,10 @@ const translations = {
   },
   es: {
     ...esTranslations,
-    ...esSearchTranslations,
+    search: {
+      ...esTranslations.search,
+      ...esSearchTranslations,
+    },
     common: {
       ...esTranslations.common,
       ...esSearchTranslations.common,

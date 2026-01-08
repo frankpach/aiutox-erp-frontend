@@ -1,6 +1,7 @@
 import { useEffect, memo } from "react";
 import { useAuthStore } from "~/stores/authStore";
 import { useModulesStore } from "~/stores/modulesStore";
+import { useThemeConfig } from "~/hooks/useThemeConfig";
 import { NavigationTree } from "./NavigationTree";
 import { TenantSwitcher } from "./TenantSwitcher";
 import { cn } from "~/lib/utils";
@@ -31,6 +32,7 @@ export const Sidebar = memo(function Sidebar({
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const { isInitialized, loadModules } = useModulesStore();
   const { t } = useTranslation();
+  const { theme } = useThemeConfig();
 
   // Cargar módulos cuando el usuario esté autenticado
   useEffect(() => {
@@ -73,6 +75,7 @@ export const Sidebar = memo(function Sidebar({
       {/* Sidebar */}
       <aside
         data-sidebar
+        style={{ ["--foreground" as any]: "var(--sidebar-text)" }}
         className={cn(
           "fixed lg:static inset-y-0 left-0 z-50",
           "w-64 bg-[hsl(var(--sidebar))] shadow-[2px_0_8px_rgba(0,0,0,0.04)]",
@@ -89,12 +92,12 @@ export const Sidebar = memo(function Sidebar({
         <div className="h-16 px-4 flex items-center justify-center bg-[hsl(var(--sidebar))] overflow-hidden transition-all duration-200">
           <div className="flex items-center gap-3 w-full min-w-0">
             <img
-              src="/logo-icon.png"
+              src={theme.logo_small || "/logo-icon.png"}
               alt="AiutoX Logo"
               className="h-10 w-10 object-contain flex-shrink-0 transition-all duration-200"
             />
             <img
-              src="/logo-name.png"
+              src={theme.logo_name || "/logo-name.png"}
               alt="AiutoX"
               className={cn(
                 "h-6 object-contain transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
@@ -139,7 +142,7 @@ export const Sidebar = memo(function Sidebar({
             variant="ghost"
             size="icon"
             onClick={onToggleCollapse}
-            className="h-9 w-9 hover:bg-accent"
+            className="h-9 w-9 hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--accent-foreground))]"
             aria-label={isCollapsed ? t("layout.sidebar.expandMenu") : t("layout.sidebar.collapseMenu")}
             title={isCollapsed ? t("layout.sidebar.expandMenu") : t("layout.sidebar.collapseMenu")}
           >

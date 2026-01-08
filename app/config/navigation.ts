@@ -33,6 +33,12 @@ export interface NavItem {
  *
  * Los items se filtran por permisos antes de mostrarse en el sidebar.
  * Si un item no tiene `permission`, se muestra siempre para usuarios autenticados.
+ *
+ * Estructura propuesta:
+ * - Navbar principal (operativo): Dashboard, Operación, Gestión, Análisis, Automatización
+ * - Navbar técnico/admin (oculto por rol): Sistema/Avanzado
+ * - Configuración (solo admin): Items de configuración agrupados
+ * - Contextual (no en navbar): Activities/Timeline, Comments, Views/Filters
  */
 export const navigationItems: NavItem[] = [
   {
@@ -42,61 +48,117 @@ export const navigationItems: NavItem[] = [
     to: "/",
     // Sin permiso requerido - visible para todos los usuarios autenticados
   },
+
+  // Categoría: Operación
   {
-    id: "files",
-    label: "Archivos",
-    icon: FileEditIcon,
-    to: "/files",
-    permission: "files.view",
-  },
-  {
-    id: "tasks",
-    label: "Tareas",
+    id: "operations",
+    label: "Operación",
     icon: CheckmarkSquareIcon,
-    to: "/tasks",
-    permission: "tasks.view",
+    requiresAnyPermission: [
+      "files.view",
+      "tasks.view",
+      "approvals.view",
+    ],
+    children: [
+      {
+        id: "tasks",
+        label: "Tareas",
+        icon: CheckmarkSquareIcon,
+        to: "/tasks",
+        permission: "tasks.view",
+      },
+      {
+        id: "approvals",
+        label: "Aprobaciones",
+        icon: ShieldIcon,
+        to: "/approvals",
+        permission: "approvals.view",
+      },
+      {
+        id: "files",
+        label: "Archivos",
+        icon: FileEditIcon,
+        to: "/files",
+        permission: "files.view",
+      },
+    ],
   },
+
+  // Categoría: Gestión
   {
-    id: "approvals",
-    label: "Aprobaciones",
-    icon: ShieldIcon,
-    to: "/approvals",
-    permission: "approvals.view",
+    id: "management",
+    label: "Gestión",
+    icon: UploadIcon,
+    requiresAnyPermission: [
+      "products.view",
+    ],
+    children: [
+      {
+        id: "products",
+        label: "Productos",
+        icon: UploadIcon,
+        to: "/products",
+        permission: "products.view",
+      },
+    ],
   },
+
+  // Categoría: Análisis
+  {
+    id: "analysis",
+    label: "Análisis",
+    icon: SearchIcon,
+    requiresAnyPermission: [
+      "search.view",
+    ],
+    children: [
+      {
+        id: "search",
+        label: "Búsqueda Avanzada",
+        icon: SearchIcon,
+        to: "/search",
+        permission: "search.view",
+      },
+    ],
+  },
+
+  // Categoría: Automatización
   {
     id: "automation",
     label: "Automatización",
     icon: ZapIcon,
-    to: "/automation",
-    permission: "automation.view",
+    requiresAnyPermission: [
+      "automation.view",
+    ],
+    children: [
+      {
+        id: "automation",
+        label: "Automatización",
+        icon: ZapIcon,
+        to: "/automation",
+        permission: "automation.view",
+      },
+    ],
   },
+
+  // Categoría: Sistema/Avanzado (oculto por rol - solo admin/tecnico)
   {
-    id: "pubsub",
-    label: "PubSub",
+    id: "system",
+    label: "Sistema",
     icon: PlugIcon,
-    to: "/pubsub",
-    permission: "pubsub.view",
-  },
-  {
-    id: "products",
-    label: "Productos",
-    icon: UploadIcon,
-    to: "/products",
-    permission: "products.view",
-  },
-  {
-    id: "search",
-    label: "Búsqueda",
-    icon: SearchIcon,
-    to: "/search",
-    permission: "search.view",
-  },
-  {
-    id: "activities",
-    label: "Actividades",
-    icon: ArrowLeftIcon,
-    to: "/activities",
-    permission: "activities.view",
+    requiresAnyPermission: [
+      "pubsub.view",
+      "system.configure",
+    ],
+    children: [
+      {
+        id: "pubsub",
+        label: "PubSub",
+        icon: PlugIcon,
+        to: "/pubsub",
+        permission: "pubsub.view",
+      },
+    ],
   },
 
   // Sección de Configuración (items directos, sin módulos intermedios)
@@ -125,18 +187,11 @@ export const navigationItems: NavItem[] = [
         permission: "users.view",
       },
       {
-        id: "config-theme",
-        label: "Tema y Apariencia",
-        icon: DownloadIcon,
-        to: "/config/theme",
-        permission: "config.view_theme",
-      },
-      {
-        id: "config-general",
-        label: "Preferencias Generales",
-        icon: CheckmarkSquareIcon,
-        to: "/config/general",
-        permission: "config.view",
+        id: "config-roles",
+        label: "Roles y Permisos",
+        icon: ShieldIcon,
+        to: "/config/roles",
+        permission: "auth.manage_roles",
       },
       {
         id: "config-modules",
@@ -146,11 +201,25 @@ export const navigationItems: NavItem[] = [
         permission: "config.view",
       },
       {
-        id: "config-roles",
-        label: "Roles y Permisos",
-        icon: ShieldIcon,
-        to: "/config/roles",
-        permission: "auth.manage_roles",
+        id: "config-integrations",
+        label: "Integraciones",
+        icon: PlugIcon,
+        to: "/config/integrations",
+        permission: "integrations.view",
+      },
+      {
+        id: "config-quick-actions",
+        label: "Acciones Rápidas",
+        icon: ZapIcon,
+        to: "/config/quick-actions",
+        permission: "config.view",
+      },
+      {
+        id: "config-import-export",
+        label: "Importar / Exportar",
+        icon: UploadIcon,
+        to: "/config/import-export",
+        permission: "import_export.view",
       },
       {
         id: "config-notifications",
@@ -160,18 +229,18 @@ export const navigationItems: NavItem[] = [
         permission: "notifications.manage",
       },
       {
-        id: "config-integrations",
-        label: "Integraciones",
-        icon: PlugIcon,
-        to: "/config/integrations",
-        permission: "integrations.view",
+        id: "config-general",
+        label: "Preferencias Generales",
+        icon: CheckmarkSquareIcon,
+        to: "/config/general",
+        permission: "config.view",
       },
       {
-        id: "config-import-export",
-        label: "Importar / Exportar",
-        icon: UploadIcon,
-        to: "/config/import-export",
-        permission: "import_export.view",
+        id: "config-theme",
+        label: "Tema y Apariencia",
+        icon: DownloadIcon,
+        to: "/config/theme",
+        permission: "config.view_theme",
       },
       {
         id: "config-audit",

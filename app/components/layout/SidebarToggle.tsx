@@ -25,14 +25,14 @@ export function SidebarToggle({
       variant="ghost"
       size="icon"
       onClick={onClick}
-      className={cn("lg:hidden", className)}
+      className={cn("lg:hidden hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--accent-foreground))]", className)}
       aria-label={isOpen ? "Cerrar menú" : "Abrir menú"}
       aria-expanded={isOpen}
     >
       <HugeiconsIcon
         icon={isOpen ? DownloadIcon : PlugIcon}
         size={24}
-        color="#121212"
+        color="currentColor"
         strokeWidth={1.5}
       />
     </Button>

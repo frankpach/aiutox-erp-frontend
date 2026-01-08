@@ -9,12 +9,14 @@
  * Filtra automáticamente por permisos del usuario.
  */
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Link, useLocation } from "react-router";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { GridIcon } from "@hugeicons/core-free-icons";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useNavigation } from "~/hooks/useNavigation";
+import { useCategoryCollapse } from "~/hooks/useCategoryCollapse";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "~/components/ui/collapsible";
 import type { NavigationItem, ModuleNode } from "~/lib/modules/types";
 import { cn } from "~/lib/utils";
 
@@ -67,12 +69,12 @@ function NavigationItemComponent({
     <Link
       to={item.to}
       className={cn(
-        "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md mx-2 border-l-2 border-transparent",
+        "flex items-center gap-2 px-5 py-2 text-sm font-medium rounded-md mx-2 border-l-2 border-t border-r border-b",
         "transition-all duration-150 ease-[cubic-bezier(0.4,0,0.2,1)]",
-        "hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+        "hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--accent-foreground))] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
         isActive
-          ? "bg-primary/10 text-primary border-primary"
-          : "text-foreground hover:text-primary",
+          ? "bg-primary/10 text-primary border-l-primary border-t-primary/50 border-r-primary/50 border-b-primary/50"
+          : "text-foreground hover:text-primary border-transparent",
         isCollapsed && "justify-center px-2"
       )}
       style={{ paddingLeft: isCollapsed ? undefined : `${paddingLeft}px` }}
@@ -95,15 +97,15 @@ function NavigationItemComponent({
         }
       }}
     >
-      {item.icon && (
+      {item.icon ? (
         <HugeiconsIcon
-          icon={item.icon}
+          icon={item.icon as any}
           size={18}
           color={isActive ? "hsl(var(--primary))" : "hsl(var(--foreground))"}
           strokeWidth={1.5}
           className="transition-colors duration-150"
         />
-      )}
+      ) : null}
       <span
         className={cn(
           "flex-1 truncate transition-all duration-150",
@@ -152,9 +154,12 @@ function ModuleNodeComponent({
 
   // ✅ SIMPLIFIED: If module has only 1 item, render it as a direct link (no expandable button)
   if (module.items.length === 1) {
+    const firstItem = module.items[0];
+    if (!firstItem) return null;
+    
     return (
       <NavigationItemComponent
-        item={module.items[0]}
+        item={firstItem}
         isCollapsed={isCollapsed}
         level={0} // Direct item, no nesting
       />
@@ -232,14 +237,17 @@ interface CategoryNodeComponentProps {
   categoryName: string;
   modules: Map<string, ModuleNode>;
   isCollapsed: boolean;
+  isExpanded: boolean;
+  onToggle: (categoryName: string) => void;
 }
 
 function CategoryNodeComponent({
   categoryName,
   modules,
   isCollapsed,
+  isExpanded,
+  onToggle,
 }: CategoryNodeComponentProps) {
-  const [isExpanded, setIsExpanded] = useState(true); // Categories expanded by default
   const location = useLocation();
 
   // Check if any module in this category has active items
@@ -250,13 +258,6 @@ function CategoryNodeComponent({
       return false;
     })
   );
-
-  // Auto-expand if has active item
-  useEffect(() => {
-    if (hasActiveItem && !isExpanded) {
-      setIsExpanded(true);
-    }
-  }, [hasActiveItem, isExpanded]);
 
   if (isCollapsed) {
     // In collapsed mode, show modules without category headers
@@ -291,32 +292,34 @@ function CategoryNodeComponent({
   }
 
   return (
-    <div className="space-y-1 m-1">
-      {/* Category header */}
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className={cn(
-          "w-full flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-md mx-2",
-          "transition-all duration-150 ease-[cubic-bezier(0.4,0,0.2,1)]",
-          "hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
-          hasActiveItem
-            ? "bg-primary/5 text-primary"
-            : "text-muted-foreground hover:text-primary"
-        )}
-        aria-expanded={isExpanded}
-        aria-label={`${categoryName} category`}
-      >
-        {isExpanded ? (
-          <ChevronDown className="h-3.5 w-3.5 transition-transform duration-150" />
-        ) : (
-          <ChevronRight className="h-3.5 w-3.5 transition-transform duration-150" />
-        )}
-        <span className="flex-1 text-left truncate">{categoryName}</span>
-      </button>
+    <Collapsible open={isExpanded} onOpenChange={() => onToggle(categoryName)}>
+      <div className="space-y-1 m-1">
+        {/* Category header */}
+        <CollapsibleTrigger asChild>
+          <button
+            className={cn(
+              "w-full flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-md mx-2",
+              "transition-all duration-150 ease-[cubic-bezier(0.4,0,0.2,1)]",
+              "hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+              "data-[state=open]:bg-primary/5 data-[state=open]:text-primary",
+              hasActiveItem
+                ? "bg-primary/5 text-primary"
+                : "text-muted-foreground hover:text-primary"
+            )}
+            aria-expanded={isExpanded}
+            aria-label={`${categoryName} category`}
+          >
+            {isExpanded ? (
+              <ChevronDown className="h-3.5 w-3.5 transition-transform duration-150" />
+            ) : (
+              <ChevronRight className="h-3.5 w-3.5 transition-transform duration-150" />
+            )}
+            <span className="flex-1 text-left truncate">{categoryName}</span>
+          </button>
+        </CollapsibleTrigger>
 
-      {/* Category modules (Nivel 2) - Simplified: direct items or expandable modules */}
-      {isExpanded && (
-        <div className="ml-2 space-y-1">
+        {/* Category modules (Nivel 2) - Simplified: direct items or expandable modules */}
+        <CollapsibleContent className="ml-2 space-y-1">
           {Array.from(modules.values()).map((module) => {
             // ✅ FIXED: If module id ends with "-direct", render items directly (no module header)
             if (module.id.endsWith("-direct")) {
@@ -345,9 +348,9 @@ function CategoryNodeComponent({
               />
             );
           })}
-        </div>
-      )}
-    </div>
+        </CollapsibleContent>
+      </div>
+    </Collapsible>
   );
 }
 
@@ -362,6 +365,7 @@ interface NavigationTreeProps {
 
 export function NavigationTree({ isCollapsed = false }: NavigationTreeProps) {
   const navigationTree = useNavigation();
+  const { toggleCategory, isExpanded } = useCategoryCollapse({ maxExpanded: 2 });
 
   if (!navigationTree || navigationTree.categories.size === 0) {
     return (
@@ -394,6 +398,8 @@ export function NavigationTree({ isCollapsed = false }: NavigationTreeProps) {
             categoryName={categoryName}
             modules={categoryNode.modules}
             isCollapsed={isCollapsed}
+            isExpanded={isExpanded(categoryName)}
+            onToggle={toggleCategory}
           />
         )
       )}

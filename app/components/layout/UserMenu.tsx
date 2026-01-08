@@ -27,7 +27,10 @@ export function UserMenu() {
     if (!name) return "U";
     const parts = name.trim().split(" ");
     if (parts.length >= 2) {
-      return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+      const first = parts[0]?.[0] ?? "";
+      const last = parts[parts.length - 1]?.[0] ?? "";
+      const initials = `${first}${last}`.trim();
+      return (initials.length > 0 ? initials : name.substring(0, 2)).toUpperCase();
     }
     return name.substring(0, 2).toUpperCase();
   };
@@ -43,11 +46,11 @@ export function UserMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
-          className="flex items-center gap-2 rounded-full focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          className="flex items-center gap-2 rounded-full px-2 py-1 transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
           aria-label={t("layout.userMenu.label")}
         >
           <Avatar>
-            <AvatarFallback className="bg-primary text-primary-foreground">
+            <AvatarFallback className="bg-[hsl(var(--primary))] text-[hsl(var(--secondary))]">
               {getInitials(user?.full_name)}
             </AvatarFallback>
           </Avatar>
@@ -70,20 +73,20 @@ export function UserMenu() {
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={() => navigate("/profile")}
-          className="cursor-pointer"
+          className="cursor-pointer hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--accent-foreground))]"
         >
           {t("layout.userMenu.profile")}
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => navigate("/settings")}
-          className="cursor-pointer"
+          className="cursor-pointer hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--accent-foreground))]"
         >
           {t("layout.userMenu.settings")}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={handleLogout}
-          className="cursor-pointer text-destructive focus:text-destructive"
+          className="cursor-pointer text-destructive focus:text-destructive hover:bg-[hsl(var(--color-error))]/20 hover:text-[hsl(var(--color-error))]"
         >
           {t("layout.userMenu.logout")}
         </DropdownMenuItem>

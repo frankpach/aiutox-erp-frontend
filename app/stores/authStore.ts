@@ -9,6 +9,7 @@ interface User {
   full_name: string | null;
   is_active: boolean;
   tenant_id?: string;
+  tenant_name?: string;
   roles?: string[];
   permissions?: string[];
 }
@@ -37,13 +38,16 @@ export const useAuthStore = create<AuthState>()(
       setAuth: (user, token, refreshToken) => {
         // Store access token in localStorage
         localStorage.setItem("auth_token", token);
+        if (user?.tenant_id) {
+          localStorage.setItem("aiutox:last_tenant_id", user.tenant_id);
+        }
         // Refresh token is now stored in httpOnly cookie, not localStorage
         // We keep refreshToken in state for backward compatibility but don't store it
         set({ user, token, refreshToken, isAuthenticated: true });
       },
       // Helper to sync from localStorage (used when localStorage changes externally)
       _syncFromLocalStorage: () => {
-        if (typeof window === "undefined") return;
+        if (typeof window === "undefined") return false;
 
         const token = localStorage.getItem("auth_token");
         const refreshToken = localStorage.getItem("refresh_token");
@@ -165,7 +169,7 @@ export const useAuthStore = create<AuthState>()(
       }),
       // Sync with localStorage changes from other contexts (e.g., tests)
       onRehydrateStorage: () => {
-        return (state, error) => {
+        return (state) => {
           // Mark as hydrated immediately
           if (typeof window !== "undefined") {
             useAuthStore.setState({ _hasHydrated: true });

@@ -110,6 +110,8 @@ body {
   overflow: hidden;
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
+  font-family: var(--font-family-primary, var(--font-sans));
+  font-size: var(--font-size-base, 14px);
 
   @media (prefers-color-scheme: dark) {
     color-scheme: dark;

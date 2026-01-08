@@ -7,7 +7,7 @@ import { render } from "@testing-library/react";
 import { Header } from "../Header";
 
 // Mock useTheme
-vi.mock("~/providers/ThemeProvider", () => ({
+vi.mock("~/providers", () => ({
   useTheme: () => ({
     theme: "light",
     setTheme: vi.fn(),

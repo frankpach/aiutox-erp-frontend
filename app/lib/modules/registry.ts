@@ -208,28 +208,69 @@ class ModuleRegistry {
 
   /**
    * Get category for module based on type and ID
+   *
+   * ✅ UPDATED: Maps modules to new navigation categories:
+   * - Core modules → Configuración, Sistema, Automatización, Análisis
+   * - Business modules → Gestión/Catálogo
    */
   private getCategoryForModule(
     moduleInfo: ModuleListItem | ModuleInfoResponse
   ): string {
-    // Core modules go to "Administración"
+    // Core modules mapped to new categories
     if (moduleInfo.type === "core") {
-      if (["auth", "users"].includes(moduleInfo.id)) {
-        return "Administración";
-      }
-      return "Infraestructura";
+      const coreCategoryMap: Record<string, string> = {
+        auth: "Configuración",
+        users: "Configuración",
+        audit: "Configuración",
+        config: "Configuración",
+        preferences: "Configuración",
+        notifications: "Configuración",
+        pubsub: "Sistema",
+        automation: "Automatización",
+        reporting: "Análisis",
+      };
+      return coreCategoryMap[moduleInfo.id] ?? "Sistema";
     }
 
-    // Business modules categorized by domain
-    const categoryMap: Record<string, string> = {
-      products: "Catálogo",
-      inventory: "Operaciones",
-      customers: "Ventas",
-      sales: "Ventas",
-      purchases: "Compras",
+    // Infrastructure modules mapped to new categories
+    const infraCategoryMap: Record<string, string> = {
+      files: "Operación",
+      tasks: "Operación",
+      approvals: "Operación",
+      calendar: "Operación",
+      tags: "Gestión",
+      filters: "Gestión",
+      templates: "Gestión",
+      comments: "Contextual",
+      views: "Contextual",
+      activities: "Contextual",
+      search: "Análisis",
+      integrations: "Configuración",
+      import_export: "Configuración",
     };
 
-    return categoryMap[moduleInfo.id] || "Negocio";
+    // Business modules mapped to categories
+    const businessCategoryMap: Record<string, string> = {
+      products: "Gestión",
+      inventory: "Gestión",
+      customers: "Gestión",
+      sales: "Gestión",
+      purchases: "Gestión",
+    };
+
+    // Check infrastructure map first, then business map
+    const infraCategory = infraCategoryMap[moduleInfo.id];
+    if (infraCategory) {
+      return infraCategory;
+    }
+
+    const businessCategory = businessCategoryMap[moduleInfo.id];
+    if (businessCategory) {
+      return businessCategory;
+    }
+
+    // Default category (moduleInfo.type is not "core" at this point)
+    return "Gestión";
   }
 
   /**
@@ -299,6 +340,9 @@ class ModuleRegistry {
    * Organizes modules into 3-level hierarchy:
    * Category → Module → Items
    * Also integrates static navigation items from navigation.ts
+   *
+   * ✅ FIXED: Avoids duplicates by tracking all IDs from static navigation
+   * and skipping dynamic modules that already exist in the tree
    */
   getNavigationTree(): NavigationTree {
     // Return cached tree if available
@@ -308,6 +352,10 @@ class ModuleRegistry {
 
     const categories = new Map<string, CategoryNode>();
     const allItems: NavigationItem[] = [];
+
+    // ✅ FIXED: Create a set to track all IDs already used in static navigation
+    // This prevents duplicates when adding dynamic modules
+    const usedIds = new Set<string>();
 
     // 1. Add static navigation items from navigation.ts
     for (const navItem of navigationItems) {
@@ -325,6 +373,9 @@ class ModuleRegistry {
           };
           categories.set(categoryName, categoryNode);
         }
+
+        // ✅ FIXED: Track this ID to prevent duplicates
+        usedIds.add(navItem.id);
 
         // Create a module node for this item (but it will render as a direct link, not expandable)
         // Debug: Log files item to verify it's correct
@@ -366,6 +417,11 @@ class ModuleRegistry {
           categories.set(categoryName, categoryNode);
         }
 
+        // ✅ FIXED: Track all child IDs to prevent duplicates
+        for (const child of navItem.children) {
+          usedIds.add(child.id);
+        }
+
         // ✅ Create a special "direct" module that will be rendered as direct items
         // The id ending in "-direct" signals NavigationTree to render items directly
         const directModuleId = `${categoryName.toLowerCase()}-direct`;
@@ -396,6 +452,7 @@ class ModuleRegistry {
     }
 
     // 2. Group modules from backend by category
+    // ✅ FIXED: Skip modules that already exist in static navigation to avoid duplicates
     for (const module of this.modules.values()) {
       if (!module.enabled || !module.navigation) {
         continue;
@@ -403,6 +460,12 @@ class ModuleRegistry {
 
       const { category, module: moduleId, items, categoryOrder, moduleOrder } =
         module.navigation;
+
+      // ✅ FIXED: Skip this module if its ID is already used in static navigation
+      if (usedIds.has(moduleId)) {
+        console.log(`[ModuleRegistry] Skipping duplicate module: ${moduleId}`);
+        continue;
+      }
 
       // Get or create category node
       let categoryNode = categories.get(category);

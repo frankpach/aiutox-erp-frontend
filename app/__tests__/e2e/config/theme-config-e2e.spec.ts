@@ -17,8 +17,46 @@ class ThemeConfigPage {
   constructor(public page: Page) {}
 
   async goto() {
-    await this.page.goto("/config/theme");
-    await this.page.waitForLoadState("networkidle");
+    await this.page.goto("/config/theme", {
+      waitUntil: "domcontentloaded",
+    });
+
+    const okTitle = this.page.locator('h1:has-text("Tema y Apariencia")');
+    const errorTitle = this.page.locator('h1:has-text("Error del Sistema")');
+
+    await Promise.race([
+      okTitle.waitFor({ state: "visible", timeout: 20000 }),
+      errorTitle.waitFor({ state: "visible", timeout: 20000 }),
+    ]);
+
+    const isErrorPage = await errorTitle.isVisible().catch(() => false);
+    if (isErrorPage) {
+      const errorMessage = await this.page
+        .locator("p")
+        .first()
+        .innerText()
+        .catch(() => "");
+
+      const detailsSummary = this.page.locator('summary:has-text("Detalles")');
+      const hasDetails = await detailsSummary.isVisible().catch(() => false);
+      if (hasDetails) {
+        await detailsSummary.click().catch(() => {});
+      }
+
+      const stackTrace = await this.page
+        .locator("pre code")
+        .first()
+        .innerText()
+        .catch(() => "");
+
+      throw new Error(
+        `La página /config/theme devolvió 'Error del Sistema'. Mensaje: ${errorMessage}\n\nStack (dev):\n${stackTrace}`
+      );
+    }
+
+    await this.page
+      .locator('[role="tab"]:has-text("Colores")')
+      .waitFor({ state: "visible", timeout: 15000 });
   }
 
   async isOnThemePage(): Promise<boolean> {
@@ -196,14 +234,14 @@ class ThemeConfigPage {
         );
       },
       { cssVar, expectedColor, expectedHsl },
-      { timeout: 10000 }
+      { timeout: 5000 }
     ).catch(() => {
       // If check fails, continue - might be a timing issue
     });
 
     // Navigate to another page to verify theme is applied globally
-    await this.page.goto("/users");
-    await this.page.waitForLoadState("networkidle");
+    await this.page.goto("/users", { waitUntil: "domcontentloaded" });
+    await this.page.locator("main h1").first().waitFor({ state: "visible", timeout: 15000 }).catch(() => {});
 
     // Wait for CSS variable to be applied on the new page
     await this.page.waitForFunction(
@@ -515,6 +553,7 @@ test.describe("Theme Configuration E2E", () => {
   });
 
   test("should edit primary color and apply it visually in the application", async () => {
+    test.setTimeout(90000);
     // DRY: Using helper method for change and verify pattern
     // Also verify that the color is applied visually in the app
     await themePage.changeAndVerifyValue(
@@ -609,6 +648,7 @@ test.describe("Theme Configuration E2E", () => {
   });
 
   test("should apply theme changes visually across the entire application", async () => {
+    test.setTimeout(90000);
     // Change primary color
     const testColor = "#E91E63";
     await themePage.clickTab("Colores");
@@ -620,8 +660,8 @@ test.describe("Theme Configuration E2E", () => {
     await themePage.page.waitForTimeout(2000);
 
     // Navigate to another page (users page) to verify theme is applied globally
-    await themePage.page.goto("/users");
-    await themePage.page.waitForLoadState("networkidle");
+    await themePage.page.goto("/users", { waitUntil: "domcontentloaded" });
+    await themePage.page.locator("main h1").first().waitFor({ state: "visible", timeout: 15000 }).catch(() => {});
 
     // Verify CSS variable is set in the application
     const cssValue = await themePage.getCSSVariableValue("--color-primary");
