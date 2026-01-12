@@ -4,11 +4,22 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import { Sidebar } from "../Sidebar";
 import * as permissionsHook from "~/hooks/usePermissions";
 import { navigationItems } from "~/config/navigation";
 import { useAuthStore } from "~/stores/authStore";
 import { useModulesStore } from "~/stores/modulesStore";
+
+// Mock ThemeProvider
+vi.mock("~/providers", () => ({
+  useTheme: () => ({
+    theme: "light",
+    setTheme: vi.fn(),
+    resolvedTheme: "light",
+  }),
+}));
 
 // Mock useAuthStore
 vi.mock("~/stores/authStore", () => ({
@@ -33,7 +44,7 @@ vi.mock("../TenantSwitcher", () => ({
 }));
 
 // Variable global para almacenar el estado de los permisos
-let mockHasPermission = ((perm: string) => true);
+let mockHasPermission = (perm: string) => true;
 
 // Mock usePermissions
 vi.mock("~/hooks/usePermissions", () => ({
@@ -71,6 +82,33 @@ vi.mock("react-router", async () => {
   };
 });
 
+// QueryClient para tests
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+    },
+  },
+});
+
+// Wrapper combinado con QueryClientProvider y RouterProvider para tests
+const createWrapper = () => {
+  return ({ children }: { children: React.ReactNode }) => {
+    const routeWithChildren = createMemoryRouter([
+      {
+        path: "/",
+        element: children,
+      },
+    ]);
+
+    return (
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={routeWithChildren} />
+      </QueryClientProvider>
+    );
+  };
+};
+
 describe("Sidebar", () => {
   beforeEach(() => {
     // Reset mock permission to default (allow all)
@@ -87,7 +125,9 @@ describe("Sidebar", () => {
   });
 
   it("should render navigation items", () => {
-    const { getByTestId } = render(<Sidebar isOpen={true} />);
+    const { getByTestId } = render(<Sidebar isOpen={true} />, {
+      wrapper: createWrapper(),
+    });
 
     expect(getByTestId("nav-item-home")).toBeTruthy();
     expect(getByTestId("nav-item-users")).toBeTruthy();
@@ -97,7 +137,9 @@ describe("Sidebar", () => {
     // Mock hasPermission to return false for users.view
     mockHasPermission = (perm: string) => perm !== "users.view";
 
-    const { getByTestId, queryByTestId } = render(<Sidebar isOpen={true} />);
+    const { getByTestId, queryByTestId } = render(<Sidebar isOpen={true} />, {
+      wrapper: createWrapper(),
+    });
 
     // Home should be visible (no permission required)
     expect(getByTestId("nav-item-home")).toBeTruthy();
@@ -106,7 +148,9 @@ describe("Sidebar", () => {
   });
 
   it("should be hidden when isOpen is false", () => {
-    const { container } = render(<Sidebar isOpen={false} />);
+    const { container } = render(<Sidebar isOpen={false} />, {
+      wrapper: createWrapper(),
+    });
     const sidebar = container.querySelector("aside");
 
     expect(sidebar?.className).toContain("-translate-x-full");
@@ -119,35 +163,11 @@ describe("Sidebar", () => {
       value: 768,
     });
 
-    const { container } = render(<Sidebar isOpen={true} />);
+    const { container } = render(<Sidebar isOpen={true} />, {
+      wrapper: createWrapper(),
+    });
     const backdrop = container.querySelector(".bg-black\\/50");
 
     expect(backdrop).toBeTruthy();
   });
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

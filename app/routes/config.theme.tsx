@@ -16,7 +16,13 @@ import { ConfigSection } from "~/components/config/ConfigSection";
 import { ConfigLoadingState } from "~/components/config/ConfigLoadingState";
 import { ConfigErrorState } from "~/components/config/ConfigErrorState";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { Card, CardContent } from "~/components/ui/card";
 import { useConfigForm } from "~/hooks/useConfigForm";
 
@@ -107,13 +113,17 @@ const RADIUS_OPTIONS = [
 export function meta() {
   return [
     { title: "Tema y Apariencia - AiutoX ERP" },
-    { name: "description", content: "Personaliza los colores, logos y estilos de la aplicación" },
+    {
+      name: "description",
+      content: "Personaliza los colores, logos y estilos de la aplicación",
+    },
   ];
 }
 
 export default function ThemeConfigPage() {
   const { t } = useTranslation();
-  const { themeLight, themeDark, isLoading, error, updateTheme, isUpdating } = useThemeConfig();
+  const { themeLight, themeDark, isLoading, error, updateTheme, isUpdating } =
+    useThemeConfig();
   const didNormalizeDefaults = useRef(false);
   const [isNormalizing, setIsNormalizing] = useState(false);
 
@@ -171,9 +181,14 @@ export default function ThemeConfigPage() {
   const initialValues: ThemeConfigValues = {
     ...defaultValues,
     ...themeLight,
-    ...Object.fromEntries(
-      Object.entries(themeDark).map(([key, value]) => [`dark_${key}`, value])
-    ),
+    ...(themeDark
+      ? Object.fromEntries(
+          Object.entries(themeDark).map(([key, value]) => [
+            `dark_${key}`,
+            value,
+          ])
+        )
+      : {}),
   };
 
   const form = useConfigForm<ThemeConfigValues>({
@@ -185,9 +200,14 @@ export default function ThemeConfigPage() {
     const isOnline = typeof navigator === "undefined" ? true : navigator.onLine;
     const mergedTheme: Record<string, string> = {
       ...themeLight,
-      ...Object.fromEntries(
-        Object.entries(themeDark).map(([key, value]) => [`dark_${key}`, value])
-      ),
+      ...(themeDark
+        ? Object.fromEntries(
+            Object.entries(themeDark).map(([key, value]) => [
+              `dark_${key}`,
+              value,
+            ])
+          )
+        : {}),
     };
     const hasTheme = Object.keys(mergedTheme).length > 0;
     const mergedValues = { ...defaultValues, ...mergedTheme };
@@ -229,7 +249,6 @@ export default function ThemeConfigPage() {
     });
   };
 
-
   const handleReset = () => {
     form.reset();
   };
@@ -237,8 +256,8 @@ export default function ThemeConfigPage() {
   if (isLoading) {
     return (
       <ConfigPageLayout
-      title={t("config.theme.title")}
-      description={t("config.theme.description")}
+        title={t("config.theme.title")}
+        description={t("config.theme.description")}
         loading={true}
       >
         <ConfigLoadingState lines={8} />
@@ -249,13 +268,11 @@ export default function ThemeConfigPage() {
   if (error) {
     return (
       <ConfigPageLayout
-      title={t("config.theme.title")}
-      description={t("config.theme.description")}
+        title={t("config.theme.title")}
+        description={t("config.theme.description")}
         error={error instanceof Error ? error : String(error)}
       >
-        <ConfigErrorState
-          message={t("config.theme.errorLoading")}
-        />
+        <ConfigErrorState message={t("config.theme.errorLoading")} />
       </ConfigPageLayout>
     );
   }
@@ -271,10 +288,16 @@ export default function ThemeConfigPage() {
     >
       <Tabs defaultValue="colors" className="space-y-6">
         <TabsList>
-          <TabsTrigger value="colors">{t("config.theme.tabColors")}</TabsTrigger>
+          <TabsTrigger value="colors">
+            {t("config.theme.tabColors")}
+          </TabsTrigger>
           <TabsTrigger value="logos">{t("config.theme.tabLogos")}</TabsTrigger>
-          <TabsTrigger value="typography">{t("config.theme.tabTypography")}</TabsTrigger>
-          <TabsTrigger value="components">{t("config.theme.tabComponents")}</TabsTrigger>
+          <TabsTrigger value="typography">
+            {t("config.theme.tabTypography")}
+          </TabsTrigger>
+          <TabsTrigger value="components">
+            {t("config.theme.tabComponents")}
+          </TabsTrigger>
         </TabsList>
 
         {/* Tab: Colores */}
@@ -302,7 +325,9 @@ export default function ThemeConfigPage() {
                     label={t("config.theme.secondaryColor")}
                     id="secondary_color"
                     value={form.values.secondary_color}
-                    onChange={(value) => form.setValue("secondary_color", value)}
+                    onChange={(value) =>
+                      form.setValue("secondary_color", value)
+                    }
                     description={t("config.theme.secondaryColorDesc")}
                   />
                   <ConfigColorInput
@@ -316,7 +341,9 @@ export default function ThemeConfigPage() {
                     label={t("config.theme.backgroundColor")}
                     id="background_color"
                     value={form.values.background_color}
-                    onChange={(value) => form.setValue("background_color", value)}
+                    onChange={(value) =>
+                      form.setValue("background_color", value)
+                    }
                     description={t("config.theme.backgroundColorDesc")}
                   />
                   <ConfigColorInput
@@ -430,35 +457,45 @@ export default function ThemeConfigPage() {
                     label={t("config.theme.primaryColor")}
                     id="dark_primary_color"
                     value={form.values.dark_primary_color}
-                    onChange={(value) => form.setValue("dark_primary_color", value)}
+                    onChange={(value) =>
+                      form.setValue("dark_primary_color", value)
+                    }
                     description={t("config.theme.primaryColorDesc")}
                   />
                   <ConfigColorInput
                     label={t("config.theme.secondaryColor")}
                     id="dark_secondary_color"
                     value={form.values.dark_secondary_color}
-                    onChange={(value) => form.setValue("dark_secondary_color", value)}
+                    onChange={(value) =>
+                      form.setValue("dark_secondary_color", value)
+                    }
                     description={t("config.theme.secondaryColorDesc")}
                   />
                   <ConfigColorInput
                     label={t("config.theme.accentColor")}
                     id="dark_accent_color"
                     value={form.values.dark_accent_color}
-                    onChange={(value) => form.setValue("dark_accent_color", value)}
+                    onChange={(value) =>
+                      form.setValue("dark_accent_color", value)
+                    }
                     description={t("config.theme.accentColorDesc")}
                   />
                   <ConfigColorInput
                     label={t("config.theme.backgroundColor")}
                     id="dark_background_color"
                     value={form.values.dark_background_color}
-                    onChange={(value) => form.setValue("dark_background_color", value)}
+                    onChange={(value) =>
+                      form.setValue("dark_background_color", value)
+                    }
                     description={t("config.theme.backgroundColorDesc")}
                   />
                   <ConfigColorInput
                     label={t("config.theme.surfaceColor")}
                     id="dark_surface_color"
                     value={form.values.dark_surface_color}
-                    onChange={(value) => form.setValue("dark_surface_color", value)}
+                    onChange={(value) =>
+                      form.setValue("dark_surface_color", value)
+                    }
                     description={t("config.theme.surfaceColorDesc")}
                   />
                 </div>
@@ -473,25 +510,33 @@ export default function ThemeConfigPage() {
                     label={t("config.theme.errorColor")}
                     id="dark_error_color"
                     value={form.values.dark_error_color}
-                    onChange={(value) => form.setValue("dark_error_color", value)}
+                    onChange={(value) =>
+                      form.setValue("dark_error_color", value)
+                    }
                   />
                   <ConfigColorInput
                     label={t("config.theme.warningColor")}
                     id="dark_warning_color"
                     value={form.values.dark_warning_color}
-                    onChange={(value) => form.setValue("dark_warning_color", value)}
+                    onChange={(value) =>
+                      form.setValue("dark_warning_color", value)
+                    }
                   />
                   <ConfigColorInput
                     label={t("config.theme.successColor")}
                     id="dark_success_color"
                     value={form.values.dark_success_color}
-                    onChange={(value) => form.setValue("dark_success_color", value)}
+                    onChange={(value) =>
+                      form.setValue("dark_success_color", value)
+                    }
                   />
                   <ConfigColorInput
                     label={t("config.theme.infoColor")}
                     id="dark_info_color"
                     value={form.values.dark_info_color}
-                    onChange={(value) => form.setValue("dark_info_color", value)}
+                    onChange={(value) =>
+                      form.setValue("dark_info_color", value)
+                    }
                   />
                 </div>
               </ConfigSection>
@@ -505,19 +550,25 @@ export default function ThemeConfigPage() {
                     label={t("config.theme.textPrimary")}
                     id="dark_text_primary"
                     value={form.values.dark_text_primary}
-                    onChange={(value) => form.setValue("dark_text_primary", value)}
+                    onChange={(value) =>
+                      form.setValue("dark_text_primary", value)
+                    }
                   />
                   <ConfigColorInput
                     label={t("config.theme.textSecondary")}
                     id="dark_text_secondary"
                     value={form.values.dark_text_secondary}
-                    onChange={(value) => form.setValue("dark_text_secondary", value)}
+                    onChange={(value) =>
+                      form.setValue("dark_text_secondary", value)
+                    }
                   />
                   <ConfigColorInput
                     label={t("config.theme.textDisabled")}
                     id="dark_text_disabled"
                     value={form.values.dark_text_disabled}
-                    onChange={(value) => form.setValue("dark_text_disabled", value)}
+                    onChange={(value) =>
+                      form.setValue("dark_text_disabled", value)
+                    }
                   />
                 </div>
               </ConfigSection>
@@ -531,13 +582,17 @@ export default function ThemeConfigPage() {
                     label={t("config.theme.sidebarBg")}
                     id="dark_sidebar_bg"
                     value={form.values.dark_sidebar_bg}
-                    onChange={(value) => form.setValue("dark_sidebar_bg", value)}
+                    onChange={(value) =>
+                      form.setValue("dark_sidebar_bg", value)
+                    }
                   />
                   <ConfigColorInput
                     label={t("config.theme.sidebarText")}
                     id="dark_sidebar_text"
                     value={form.values.dark_sidebar_text}
-                    onChange={(value) => form.setValue("dark_sidebar_text", value)}
+                    onChange={(value) =>
+                      form.setValue("dark_sidebar_text", value)
+                    }
                   />
                   <ConfigColorInput
                     label={t("config.theme.navbarBg")}
@@ -549,7 +604,9 @@ export default function ThemeConfigPage() {
                     label={t("config.theme.navbarText")}
                     id="dark_navbar_text"
                     value={form.values.dark_navbar_text}
-                    onChange={(value) => form.setValue("dark_navbar_text", value)}
+                    onChange={(value) =>
+                      form.setValue("dark_navbar_text", value)
+                    }
                   />
                 </div>
               </ConfigSection>
@@ -627,12 +684,16 @@ export default function ThemeConfigPage() {
                 label={t("config.theme.fontFamilyPrimary")}
                 id="font_family_primary"
                 value={form.values.font_family_primary}
-                onChange={(value) => form.setValue("font_family_primary", value)}
+                onChange={(value) =>
+                  form.setValue("font_family_primary", value)
+                }
                 description={t("config.theme.fontFamilyPrimaryDesc")}
                 input={
                   <Select
                     value={form.values.font_family_primary}
-                    onValueChange={(value) => form.setValue("font_family_primary", value)}
+                    onValueChange={(value) =>
+                      form.setValue("font_family_primary", value)
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -651,12 +712,16 @@ export default function ThemeConfigPage() {
                 label={t("config.theme.fontFamilySecondary")}
                 id="font_family_secondary"
                 value={form.values.font_family_secondary}
-                onChange={(value) => form.setValue("font_family_secondary", value)}
+                onChange={(value) =>
+                  form.setValue("font_family_secondary", value)
+                }
                 description={t("config.theme.fontFamilySecondaryDesc")}
                 input={
                   <Select
                     value={form.values.font_family_secondary}
-                    onValueChange={(value) => form.setValue("font_family_secondary", value)}
+                    onValueChange={(value) =>
+                      form.setValue("font_family_secondary", value)
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -675,12 +740,16 @@ export default function ThemeConfigPage() {
                 label={t("config.theme.fontFamilyMonospace")}
                 id="font_family_monospace"
                 value={form.values.font_family_monospace}
-                onChange={(value) => form.setValue("font_family_monospace", value)}
+                onChange={(value) =>
+                  form.setValue("font_family_monospace", value)
+                }
                 description={t("config.theme.fontFamilyMonospaceDesc")}
                 input={
                   <Select
                     value={form.values.font_family_monospace}
-                    onValueChange={(value) => form.setValue("font_family_monospace", value)}
+                    onValueChange={(value) =>
+                      form.setValue("font_family_monospace", value)
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -711,7 +780,9 @@ export default function ThemeConfigPage() {
                 input={
                   <Select
                     value={form.values.font_size_base}
-                    onValueChange={(value) => form.setValue("font_size_base", value)}
+                    onValueChange={(value) =>
+                      form.setValue("font_size_base", value)
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -735,7 +806,9 @@ export default function ThemeConfigPage() {
                 input={
                   <Select
                     value={form.values.font_size_small}
-                    onValueChange={(value) => form.setValue("font_size_small", value)}
+                    onValueChange={(value) =>
+                      form.setValue("font_size_small", value)
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -759,7 +832,9 @@ export default function ThemeConfigPage() {
                 input={
                   <Select
                     value={form.values.font_size_large}
-                    onValueChange={(value) => form.setValue("font_size_large", value)}
+                    onValueChange={(value) =>
+                      form.setValue("font_size_large", value)
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -783,7 +858,9 @@ export default function ThemeConfigPage() {
                 input={
                   <Select
                     value={form.values.font_size_heading}
-                    onValueChange={(value) => form.setValue("font_size_heading", value)}
+                    onValueChange={(value) =>
+                      form.setValue("font_size_heading", value)
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -818,7 +895,9 @@ export default function ThemeConfigPage() {
                 input={
                   <Select
                     value={form.values.button_radius}
-                    onValueChange={(value) => form.setValue("button_radius", value)}
+                    onValueChange={(value) =>
+                      form.setValue("button_radius", value)
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -842,7 +921,9 @@ export default function ThemeConfigPage() {
                 input={
                   <Select
                     value={form.values.card_radius}
-                    onValueChange={(value) => form.setValue("card_radius", value)}
+                    onValueChange={(value) =>
+                      form.setValue("card_radius", value)
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -866,7 +947,9 @@ export default function ThemeConfigPage() {
                 input={
                   <Select
                     value={form.values.input_radius}
-                    onValueChange={(value) => form.setValue("input_radius", value)}
+                    onValueChange={(value) =>
+                      form.setValue("input_radius", value)
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -899,10 +982,16 @@ export default function ThemeConfigPage() {
                     P
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-semibold" style={{ color: form.values.text_primary }}>
+                    <h4
+                      className="font-semibold"
+                      style={{ color: form.values.text_primary }}
+                    >
                       {t("config.theme.previewTitle")}
                     </h4>
-                    <p className="text-sm" style={{ color: form.values.text_secondary }}>
+                    <p
+                      className="text-sm"
+                      style={{ color: form.values.text_secondary }}
+                    >
                       {t("config.theme.previewDescription")}
                     </p>
                   </div>
