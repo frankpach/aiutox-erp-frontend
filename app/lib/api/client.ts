@@ -1,14 +1,19 @@
-import axios, { type AxiosInstance, type AxiosError, type InternalAxiosRequestConfig } from "axios";
+import axios, {
+  type AxiosInstance,
+  type AxiosError,
+  type InternalAxiosRequestConfig,
+} from "axios";
 import type { RefreshTokenResponse } from "./types/auth.types";
 import { useAuthStore } from "../../stores/authStore";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 // Create axios instance
 const apiClient: AxiosInstance = axios.create({
   baseURL: `${API_BASE_URL}/api/v1`,
   headers: {
-    "Content-Type": "application/json",
+    "Content-Type": "application/json; charset=utf-8",
   },
   timeout: 30000,
   withCredentials: true, // Important: send cookies with requests
@@ -48,15 +53,19 @@ export const scheduleProactiveRefresh = (token: string) => {
   }
 
   // Validate token format before attempting to decode
-  if (!token || typeof token !== 'string') {
-    console.debug("[apiClient] Invalid token format, skipping proactive refresh");
+  if (!token || typeof token !== "string") {
+    console.debug(
+      "[apiClient] Invalid token format, skipping proactive refresh"
+    );
     return;
   }
 
   // Check if token has JWT format (3 parts separated by dots)
-  const parts = token.split('.');
+  const parts = token.split(".");
   if (parts.length !== 3) {
-    console.debug("[apiClient] Token is not a valid JWT format, skipping proactive refresh");
+    console.debug(
+      "[apiClient] Token is not a valid JWT format, skipping proactive refresh"
+    );
     return;
   }
 
@@ -65,8 +74,10 @@ export const scheduleProactiveRefresh = (token: string) => {
     const payload = JSON.parse(atob(parts[1]));
 
     // Validate that payload has expiration time
-    if (!payload.exp || typeof payload.exp !== 'number') {
-      console.debug("[apiClient] Token payload missing expiration time, skipping proactive refresh");
+    if (!payload.exp || typeof payload.exp !== "number") {
+      console.debug(
+        "[apiClient] Token payload missing expiration time, skipping proactive refresh"
+      );
       return;
     }
 
@@ -75,29 +86,38 @@ export const scheduleProactiveRefresh = (token: string) => {
     const timeUntilExpiry = expirationTime - now;
 
     // Schedule refresh 5 minutes before expiration
-    const refreshTime = timeUntilExpiry - (5 * 60 * 1000); // 5 minutes in ms
+    const refreshTime = timeUntilExpiry - 5 * 60 * 1000; // 5 minutes in ms
 
     if (refreshTime > 0) {
       proactiveRefreshTimeout = setTimeout(() => {
         console.debug("[apiClient] Proactive token refresh triggered");
-        refreshAccessToken().then((newToken) => {
-          if (newToken) {
-            // Schedule next proactive refresh with new token
-            scheduleProactiveRefresh(newToken);
-          }
-        }).catch((error) => {
-          console.error("[apiClient] Proactive refresh failed:", error);
-        });
+        refreshAccessToken()
+          .then((newToken) => {
+            if (newToken) {
+              // Schedule next proactive refresh with new token
+              scheduleProactiveRefresh(newToken);
+            }
+          })
+          .catch((error) => {
+            console.error("[apiClient] Proactive refresh failed:", error);
+          });
       }, refreshTime);
 
-      console.debug(`[apiClient] Proactive refresh scheduled in ${Math.round(refreshTime / 1000 / 60)} minutes`);
+      console.debug(
+        `[apiClient] Proactive refresh scheduled in ${Math.round(refreshTime / 1000 / 60)} minutes`
+      );
     } else {
-      console.debug("[apiClient] Token expires too soon, skipping proactive refresh");
+      console.debug(
+        "[apiClient] Token expires too soon, skipping proactive refresh"
+      );
     }
   } catch (error) {
     // Silently handle decode errors (invalid token format, etc.)
     // Log error for debugging (tests may check for this)
-    if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+    if (
+      process.env.NODE_ENV === "development" ||
+      process.env.NODE_ENV === "test"
+    ) {
       console.error("[apiClient] Error scheduling proactive refresh:", error);
     }
   }
@@ -135,17 +155,16 @@ const refreshAccessToken = async (): Promise<string | null> => {
     const refreshClient = axios.create({
       baseURL: `${API_BASE_URL}/api/v1`,
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": "application/json; charset=utf-8",
       },
       timeout: 30000,
       withCredentials: true, // Important: send cookies with request
     });
 
     // Send refresh token in body as fallback (cookie will be used if available)
-    const response = await refreshClient.post<{ data?: RefreshTokenResponse } & RefreshTokenResponse>(
-      "/auth/refresh",
-      refreshToken ? { refresh_token: refreshToken } : {}
-    );
+    const response = await refreshClient.post<
+      { data?: RefreshTokenResponse } & RefreshTokenResponse
+    >("/auth/refresh", refreshToken ? { refresh_token: refreshToken } : {});
 
     const accessToken =
       response.data?.data?.access_token ?? response.data?.access_token ?? null;
@@ -172,7 +191,7 @@ const refreshAccessToken = async (): Promise<string | null> => {
 
     // Clear authStore
     const authStore = useAuthStore.getState();
-    if (authStore && typeof authStore.clearAuth === 'function') {
+    if (authStore && typeof authStore.clearAuth === "function") {
       authStore.clearAuth();
     }
 
@@ -191,20 +210,33 @@ apiClient.interceptors.request.use(
       // Some endpoints may not require auth (e.g., public endpoints)
       // The encryption-secret endpoint requires auth but will fail gracefully if not available
       if (import.meta.env.DEV && !import.meta.env.VITEST) {
-        console.warn("[apiClient] No auth token found in localStorage for request:", config.url);
+        console.warn(
+          "[apiClient] No auth token found in localStorage for request:",
+          config.url
+        );
       }
     }
 
     // Log request details for debugging
-    if (config.url?.includes("contact-methods") || config.url?.includes("users")) {
-      console.log(`[apiClient] Request to ${config.url?.includes("users") ? "users" : "contact-methods"}:`, {
-        url: config.url,
-        method: config.method,
-        hasToken: !!token,
-        baseURL: config.baseURL,
-        fullURL: `${config.baseURL}${config.url}`,
-        data: config.data ? (typeof config.data === 'string' ? JSON.parse(config.data) : config.data) : undefined,
-      });
+    if (
+      config.url?.includes("contact-methods") ||
+      config.url?.includes("users")
+    ) {
+      console.log(
+        `[apiClient] Request to ${config.url?.includes("users") ? "users" : "contact-methods"}:`,
+        {
+          url: config.url,
+          method: config.method,
+          hasToken: !!token,
+          baseURL: config.baseURL,
+          fullURL: `${config.baseURL}${config.url}`,
+          data: config.data
+            ? typeof config.data === "string"
+              ? JSON.parse(config.data)
+              : config.data
+            : undefined,
+        }
+      );
     }
 
     return config;
@@ -229,18 +261,22 @@ apiClient.interceptors.response.use(
     return response;
   },
   async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    const originalRequest = error.config as InternalAxiosRequestConfig & {
+      _retry?: boolean;
+    };
 
     // Log errors for contact-methods requests
     if (originalRequest?.url?.includes("contact-methods")) {
       console.error("[apiClient] Error in contact-methods request:", {
         message: error.message,
         code: error.code,
-        response: error.response ? {
-          status: error.response.status,
-          statusText: error.response.statusText,
-          data: error.response.data,
-        } : null,
+        response: error.response
+          ? {
+              status: error.response.status,
+              statusText: error.response.statusText,
+              data: error.response.data,
+            }
+          : null,
         request: {
           url: originalRequest.url,
           method: originalRequest.method,
@@ -250,7 +286,11 @@ apiClient.interceptors.response.use(
     }
 
     // Handle 401 Unauthorized
-    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+    if (
+      error.response?.status === 401 &&
+      originalRequest &&
+      !originalRequest._retry
+    ) {
       if (isRefreshing) {
         // If already refreshing, queue this request
         return new Promise((resolve, reject) => {
