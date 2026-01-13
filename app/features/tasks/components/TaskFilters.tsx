@@ -7,16 +7,25 @@ import { useTranslation } from "~/lib/i18n/useTranslation";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { Badge } from "~/components/ui/badge";
 import { Separator } from "~/components/ui/separator";
-import { 
+import {
   SearchIcon,
   DownloadIcon,
   UploadIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import type { TaskStatus, TaskPriority } from "~/features/tasks/types/task.types";
+import type {
+  TaskStatus,
+  TaskPriority,
+} from "~/features/tasks/types/task.types";
 
 export interface TaskFilters {
   search?: string;
@@ -49,8 +58,8 @@ export function TaskFilters({ filters, onChange, onReset }: TaskFiltersProps) {
     onChange(newFilters);
   };
 
-  const hasActiveFilters = Object.values(filters).some(value => 
-    value !== undefined && value !== null && value !== ""
+  const hasActiveFilters = Object.values(filters).some(
+    (value) => value !== undefined && value !== null && value !== ""
   );
 
   return (
@@ -61,7 +70,12 @@ export function TaskFilters({ filters, onChange, onReset }: TaskFiltersProps) {
           <div className="flex items-center gap-2">
             {hasActiveFilters && (
               <Badge variant="outline" className="text-xs">
-                {Object.keys(filters).filter(key => filters[key as keyof TaskFilters]).length} active
+                {
+                  Object.keys(filters).filter(
+                    (key) => filters[key as keyof TaskFilters]
+                  ).length
+                }{" "}
+                active
               </Badge>
             )}
             <Button variant="outline" size="sm" onClick={onReset}>
@@ -78,7 +92,11 @@ export function TaskFilters({ filters, onChange, onReset }: TaskFiltersProps) {
             Search
           </label>
           <div className="relative">
-            <HugeiconsIcon icon={SearchIcon} size={16} className="absolute left-3 top-1/2 text-gray-400" />
+            <HugeiconsIcon
+              icon={SearchIcon}
+              size={16}
+              className="absolute left-3 top-1/2 text-gray-400"
+            />
             <Input
               placeholder="Search tasks..."
               value={filters.search || ""}
@@ -92,7 +110,11 @@ export function TaskFilters({ filters, onChange, onReset }: TaskFiltersProps) {
                 onClick={() => clearFilter("search")}
                 className="absolute right-1 top-1/2"
               >
-                <HugeiconsIcon icon={DownloadIcon} size={12} className="absolute right-1 top-1/2" />
+                <HugeiconsIcon
+                  icon={DownloadIcon}
+                  size={12}
+                  className="absolute right-1 top-1/2"
+                />
               </Button>
             )}
           </div>
@@ -107,7 +129,9 @@ export function TaskFilters({ filters, onChange, onReset }: TaskFiltersProps) {
           </label>
           <Select
             value={filters.status || ""}
-            onValueChange={(value) => updateFilter("status", value || undefined)}
+            onValueChange={(value) =>
+              updateFilter("status", value || undefined)
+            }
           >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="All statuses" />
@@ -140,7 +164,9 @@ export function TaskFilters({ filters, onChange, onReset }: TaskFiltersProps) {
           </label>
           <Select
             value={filters.priority || ""}
-            onValueChange={(value) => updateFilter("priority", value || undefined)}
+            onValueChange={(value) =>
+              updateFilter("priority", value || undefined)
+            }
           >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="All priorities" />
@@ -173,21 +199,29 @@ export function TaskFilters({ filters, onChange, onReset }: TaskFiltersProps) {
             Assigned To
           </label>
           <div className="relative">
-            <HugeiconsIcon icon={UploadIcon} size={16} className="absolute left-3 top-1/2 text-gray-400" />
+            <HugeiconsIcon
+              icon={UploadIcon}
+              size={16}
+              className="absolute left-3 top-1/2 text-gray-400"
+            />
             <Input
-              placeholder="Filter by assignee..."
-              value={filters.assigned_to || ""}
-              onChange={(e) => updateFilter("assigned_to", e.target.value)}
+              placeholder="Filter by assignee ID..."
+              value={filters.assigned_to_id || ""}
+              onChange={(e) => updateFilter("assigned_to_id", e.target.value)}
               className="pl-10"
             />
-            {filters.assigned_to && (
+            {filters.assigned_to_id && (
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => clearFilter("assigned_to")}
+                onClick={() => clearFilter("assigned_to_id")}
                 className="absolute right-1 top-1/2"
               >
-                <HugeiconsIcon icon={DownloadIcon} size={12} className="absolute right-1 top-1/2" />
+                <HugeiconsIcon
+                  icon={DownloadIcon}
+                  size={12}
+                  className="absolute right-1 top-1/2"
+                />
               </Button>
             )}
           </div>
@@ -206,11 +240,17 @@ export function TaskFilters({ filters, onChange, onReset }: TaskFiltersProps) {
                 From
               </label>
               <div className="relative">
-                <HugeiconsIcon icon={DownloadIcon} size={16} className="absolute left-3 top-1/2 text-gray-400" />
+                <HugeiconsIcon
+                  icon={DownloadIcon}
+                  size={16}
+                  className="absolute left-3 top-1/2 text-gray-400"
+                />
                 <Input
                   type="date"
                   value={filters.due_date_from || ""}
-                  onChange={(e) => updateFilter("due_date_from", e.target.value)}
+                  onChange={(e) =>
+                    updateFilter("due_date_from", e.target.value)
+                  }
                   className="pl-10"
                 />
                 {filters.due_date_from && (
@@ -220,18 +260,26 @@ export function TaskFilters({ filters, onChange, onReset }: TaskFiltersProps) {
                     onClick={() => clearFilter("due_date_from")}
                     className="absolute right-1 top-1/2"
                   >
-                    <HugeiconsIcon icon={DownloadIcon} size={12} className="absolute right-1 top-1/2" />
+                    <HugeiconsIcon
+                      icon={DownloadIcon}
+                      size={12}
+                      className="absolute right-1 top-1/2"
+                    />
                   </Button>
                 )}
               </div>
             </div>
-            
+
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">
                 To
               </label>
               <div className="relative">
-                <HugeiconsIcon icon={DownloadIcon} size={16} className="absolute left-3 top-1/2 text-gray-400" />
+                <HugeiconsIcon
+                  icon={DownloadIcon}
+                  size={16}
+                  className="absolute left-3 top-1/2 text-gray-400"
+                />
                 <Input
                   type="date"
                   value={filters.due_date_to || ""}
@@ -245,7 +293,11 @@ export function TaskFilters({ filters, onChange, onReset }: TaskFiltersProps) {
                     onClick={() => clearFilter("due_date_to")}
                     className="absolute right-1 top-1/2"
                   >
-                    <HugeiconsIcon icon={DownloadIcon} size={12} className="absolute right-1 top-1/2" />
+                    <HugeiconsIcon
+                      icon={DownloadIcon}
+                      size={12}
+                      className="absolute right-1 top-1/2"
+                    />
                   </Button>
                 )}
               </div>
@@ -257,8 +309,14 @@ export function TaskFilters({ filters, onChange, onReset }: TaskFiltersProps) {
         {hasActiveFilters && (
           <div className="mt-4 p-3 bg-gray-50 rounded-lg">
             <div className="flex items-center gap-2 mb-2">
-              <HugeiconsIcon icon={UploadIcon} size={16} className="text-gray-500" />
-              <span className="text-sm font-medium text-gray-700">Active Filters:</span>
+              <HugeiconsIcon
+                icon={UploadIcon}
+                size={16}
+                className="text-gray-500"
+              />
+              <span className="text-sm font-medium text-gray-700">
+                Active Filters:
+              </span>
             </div>
             <div className="flex flex-wrap gap-2">
               {filters.search && (
@@ -276,9 +334,9 @@ export function TaskFilters({ filters, onChange, onReset }: TaskFiltersProps) {
                   Priority: {filters.priority}
                 </Badge>
               )}
-              {filters.assigned_to && (
+              {filters.assigned_to_id && (
                 <Badge variant="outline" className="text-xs">
-                  Assigned: {filters.assigned_to}
+                  Assigned: {filters.assigned_to_id}
                 </Badge>
               )}
               {filters.due_date_from && (

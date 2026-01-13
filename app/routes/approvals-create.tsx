@@ -1,16 +1,22 @@
 /**
- * Create Approval Page
- * Página para crear una nueva aprobación
+ * Create Approval Flow Page
+ * Página para crear un nuevo flujo de aprobación
  */
 
 import { useNavigate } from "react-router";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 import { PageLayout } from "~/components/layout/PageLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
 import { useCreateApprovalFlow } from "~/features/approvals/hooks/useApprovals";
 import { ApprovalFlowForm } from "~/features/approvals/components/ApprovalFlowForm";
 
-export default function CreateApprovalPage() {
+export default function CreateApprovalFlowPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const createApprovalFlow = useCreateApprovalFlow();
@@ -29,7 +35,7 @@ export default function CreateApprovalPage() {
   };
 
   return (
-    <PageLayout title="Nueva Aprobación">
+    <PageLayout title="Nuevo Flujo de Aprobación">
       <div className="max-w-2xl mx-auto">
         <Card>
           <CardHeader>

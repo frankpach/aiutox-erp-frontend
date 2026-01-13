@@ -1,5 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const runAllBrowsers =
+  process.env.CI === "true" || process.env.PLAYWRIGHT_ALL_BROWSERS === "true";
+
 export default defineConfig({
   testDir: "./app/__tests__/e2e",
   fullyParallel: true, // Ejecutar tests en paralelo cuando sea posible
@@ -11,7 +14,7 @@ export default defineConfig({
   // Maximum number of test failures before stopping
   maxFailures: process.env.CI ? undefined : 10,
   reporter: [
-    ["html"],
+    ["html", { open: "never" }],
     ["list"],
     process.env.CI ? ["junit", { outputFile: "test-results/junit.xml" }] : null,
   ].filter(Boolean),
@@ -32,20 +35,22 @@ export default defineConfig({
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
     },
-    {
-      name: "firefox",
-      use: { ...devices["Desktop Firefox"] },
-    },
-    {
-      name: "webkit",
-      use: { ...devices["Desktop Safari"] },
-    },
-    // Proyecto especial para tests de PWA
+    ...(runAllBrowsers
+      ? [
+          {
+            name: "firefox",
+            use: { ...devices["Desktop Firefox"] },
+          },
+          {
+            name: "webkit",
+            use: { ...devices["Desktop Safari"] },
+          },
+        ]
+      : []),
     {
       name: "pwa",
       use: {
         ...devices["Desktop Chrome"],
-        // Permitir SW solo en tests PWA
         serviceWorkers: "allow",
       },
       testMatch: "**/pwa*.spec.ts",
@@ -53,28 +58,34 @@ export default defineConfig({
   ],
   // Configurar servidores para E2E tests
   // Si SKIP_WEBSERVER=true, Playwright asumirá que los servidores ya están corriendo
-  webServer: process.env.SKIP_WEBSERVER === "true" ? undefined : [
-    {
-      command: "cd ../backend && uv run uvicorn app.main:app --host 0.0.0.0 --port 8000",
-      url: "http://localhost:8000/healthz",
-      reuseExistingServer: !process.env.CI,
-      timeout: 120 * 1000,
-      stdout: "ignore",
-      stderr: "pipe",
-      env: {
-        ...process.env,
-        DATABASE_URL: process.env.TEST_DATABASE_URL || "postgresql://devuser:devpass@localhost:15432/aiutox_erp_test",
-        REDIS_URL: process.env.TEST_REDIS_URL || "redis://localhost:6379/1",
-      },
-    },
-    {
-      command: "npm run dev",
-      url: "http://127.0.0.1:3000",
-      reuseExistingServer: !process.env.CI,
-      timeout: 120 * 1000,
-      stdout: "ignore",
-      stderr: "pipe",
-    },
-  ],
+  webServer:
+    process.env.SKIP_WEBSERVER === "true"
+      ? undefined
+      : [
+          {
+            command:
+              "cd ../backend && uv run uvicorn app.main:app --host 0.0.0.0 --port 8000",
+            url: "http://localhost:8000/healthz",
+            reuseExistingServer: !process.env.CI,
+            timeout: 120 * 1000,
+            stdout: "ignore",
+            stderr: "pipe",
+            env: {
+              ...process.env,
+              DATABASE_URL:
+                process.env.TEST_DATABASE_URL ||
+                "postgresql://devuser:devpass@localhost:15432/aiutox_erp_test",
+              REDIS_URL:
+                process.env.TEST_REDIS_URL || "redis://localhost:6379/1",
+            },
+          },
+          {
+            command: "npm run dev",
+            url: "http://127.0.0.1:3000",
+            reuseExistingServer: !process.env.CI,
+            timeout: 120 * 1000,
+            stdout: "ignore",
+            stderr: "pipe",
+          },
+        ],
 });
-

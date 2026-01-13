@@ -85,10 +85,9 @@ export async function resetPassword(
 export async function verifyEmail(
   token: string
 ): Promise<StandardResponse<VerifyEmailResponse>> {
-  const response = await apiClient.post<
-    StandardResponse<VerifyEmailResponse>
-  >("/auth/verify-email", { token });
+  const response = await apiClient.post<StandardResponse<VerifyEmailResponse>>(
+    "/auth/verify-email",
+    { token }
+  );
   return response.data;
 }
-
-

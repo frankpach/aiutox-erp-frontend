@@ -13,7 +13,12 @@ import { Badge } from "~/components/ui/badge";
 import { Checkbox } from "~/components/ui/checkbox";
 import { DataTable } from "~/components/common/DataTable";
 import { SearchBar } from "~/components/common/SearchBar";
-import { Task, TaskStatus, TaskPriority, ChecklistItem } from "~/features/tasks/types/task.types";
+import {
+  Task,
+  TaskStatus,
+  TaskPriority,
+  ChecklistItem,
+} from "~/features/tasks/types/task.types";
 
 interface TaskListProps {
   tasks: Task[];
@@ -41,15 +46,15 @@ const priorityColors: Record<TaskPriority, string> = {
   urgent: "bg-purple-100 text-purple-800 border-purple-200",
 };
 
-export function TaskList({ 
-  tasks, 
-  loading, 
-  onRefresh, 
-  onTaskSelect, 
-  onTaskEdit, 
-  onTaskDelete, 
-  onTaskComplete, 
-  onTaskCreate 
+export function TaskList({
+  tasks,
+  loading,
+  onRefresh,
+  onTaskSelect,
+  onTaskEdit,
+  onTaskDelete,
+  onTaskComplete,
+  onTaskCreate,
 }: TaskListProps) {
   const { t } = useTranslation();
   const dateLocale = t("common.locale") === "es" ? es : en;
@@ -60,10 +65,7 @@ export function TaskList({
 
   const getStatusBadge = (status: TaskStatus) => {
     return (
-      <Badge 
-        variant="outline" 
-        className={statusColors[status]}
-      >
+      <Badge variant="outline" className={statusColors[status]}>
         {t(`tasks.status.${status}`)}
       </Badge>
     );
@@ -71,10 +73,7 @@ export function TaskList({
 
   const getPriorityBadge = (priority: TaskPriority) => {
     return (
-      <Badge 
-        variant="outline" 
-        className={priorityColors[priority]}
-      >
+      <Badge variant="outline" className={priorityColors[priority]}>
         {t(`tasks.priority.${priority}`)}
       </Badge>
     );
@@ -84,9 +83,7 @@ export function TaskList({
     {
       key: "title",
       header: t("tasks.title"),
-      cell: (task) => (
-        <div className="font-medium">{task.title}</div>
-      ),
+      cell: (task) => <div className="font-medium">{task.title}</div>,
     },
     {
       key: "status",
@@ -102,7 +99,7 @@ export function TaskList({
       key: "assigned_to",
       header: t("tasks.assignedTo"),
       cell: (task) => (
-        <span className="text-sm">{task.assigned_to}</span>
+        <span className="text-sm">{task.assigned_to_id || "-"}</span>
       ),
     },
     {
@@ -123,11 +120,15 @@ export function TaskList({
             <div key={item.id} className="flex items-center space-x-2">
               <Checkbox
                 checked={item.completed}
-                onCheckedChange={(checked) => onTaskComplete?.(task.id, item.id)}
+                onCheckedChange={(checked) =>
+                  onTaskComplete?.(task.id, item.id)
+                }
                 disabled={task.status === "done" || task.status === "cancelled"}
               />
-              <span className={`text-sm ${item.completed ? "line-through text-muted-foreground" : ""}`}>
-                {item.text}
+              <span
+                className={`text-sm ${item.completed ? "line-through text-muted-foreground" : ""}`}
+              >
+                {item.title}
               </span>
             </div>
           ))}
@@ -185,12 +186,8 @@ export function TaskList({
     return (
       <Card>
         <CardContent className="p-8 text-center">
-          <div className="text-muted-foreground">
-            {t("tasks.noTasks")}
-          </div>
-          <Button onClick={onTaskCreate}>
-            {t("tasks.createTask")}
-          </Button>
+          <div className="text-muted-foreground">{t("tasks.noTasks")}</div>
+          <Button onClick={onTaskCreate}>{t("tasks.createTask")}</Button>
         </CardContent>
       </Card>
     );
@@ -200,16 +197,12 @@ export function TaskList({
     <div className="space-y-6">
       {/* Header with actions */}
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">
-          {t("tasks.title")}
-        </h2>
+        <h2 className="text-2xl font-bold">{t("tasks.title")}</h2>
         <div className="flex space-x-2">
           <Button onClick={onRefresh} disabled={loading}>
             {t("common.refresh")}
           </Button>
-          <Button onClick={onTaskCreate}>
-            {t("tasks.createTask")}
-          </Button>
+          <Button onClick={onTaskCreate}>{t("tasks.createTask")}</Button>
         </div>
       </div>
 

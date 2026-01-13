@@ -3,7 +3,10 @@
  */
 
 import apiClient from "./client";
-import type { StandardResponse, StandardListResponse } from "./types/common.types";
+import type {
+  StandardResponse,
+  StandardListResponse,
+} from "./types/common.types";
 
 export interface File {
   id: string;
@@ -109,8 +112,10 @@ export async function listFiles(params?: {
 }): Promise<StandardListResponse<File>> {
   const queryParams = new URLSearchParams();
   if (params?.page) queryParams.append("page", params.page.toString());
-  if (params?.page_size) queryParams.append("page_size", params.page_size.toString());
-  if (params?.entity_type) queryParams.append("entity_type", params.entity_type);
+  if (params?.page_size)
+    queryParams.append("page_size", params.page_size.toString());
+  if (params?.entity_type)
+    queryParams.append("entity_type", params.entity_type);
   if (params?.entity_id) queryParams.append("entity_id", params.entity_id);
 
   const response = await apiClient.get<StandardListResponse<File>>(
@@ -124,7 +129,9 @@ export async function listFiles(params?: {
  * GET /api/v1/files/{file_id}
  */
 export async function getFile(fileId: string): Promise<StandardResponse<File>> {
-  const response = await apiClient.get<StandardResponse<File>>(`/files/${fileId}`);
+  const response = await apiClient.get<StandardResponse<File>>(
+    `/files/${fileId}`
+  );
   return response.data;
 }
 
@@ -156,9 +163,12 @@ export async function getFilePreview(
   if (options?.height) params.append("height", options.height.toString());
   if (options?.quality) params.append("quality", options.quality.toString());
 
-  const response = await apiClient.get<Blob>(`/files/${fileId}/preview?${params.toString()}`, {
-    responseType: "blob",
-  });
+  const response = await apiClient.get<Blob>(
+    `/files/${fileId}/preview?${params.toString()}`,
+    {
+      responseType: "blob",
+    }
+  );
   return response.data;
 }
 
@@ -170,7 +180,10 @@ export async function updateFile(
   fileId: string,
   data: FileUpdate
 ): Promise<StandardResponse<File>> {
-  const response = await apiClient.put<StandardResponse<File>>(`/files/${fileId}`, data);
+  const response = await apiClient.put<StandardResponse<File>>(
+    `/files/${fileId}`,
+    data
+  );
   return response.data;
 }
 
@@ -250,4 +263,3 @@ export async function updateFilePermissions(
   );
   return response.data;
 }
-

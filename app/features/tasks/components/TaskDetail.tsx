@@ -11,14 +11,18 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Separator } from "~/components/ui/separator";
-import { 
+import {
   ArrowLeftIcon,
   DownloadIcon,
   UploadIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useTask } from "~/features/tasks/hooks/useTasks";
-import type { Task, TaskStatus, TaskPriority } from "~/features/tasks/types/task.types";
+import type {
+  Task,
+  TaskStatus,
+  TaskPriority,
+} from "~/features/tasks/types/task.types";
 
 export function TaskDetail() {
   const { t } = useTranslation();
@@ -96,9 +100,7 @@ export function TaskDetail() {
       <PageLayout title="Tasks" error={error || "Task not found"}>
         <div className="text-center py-12">
           <p className="text-gray-500 mb-4">Task not found</p>
-          <Button onClick={() => navigate("/tasks")}>
-            Back
-          </Button>
+          <Button onClick={() => navigate("/tasks")}>Back</Button>
         </div>
       </PageLayout>
     );
@@ -111,13 +113,10 @@ export function TaskDetail() {
   const CheckIcon = DownloadIcon;
 
   return (
-    <PageLayout 
+    <PageLayout
       title={task.title}
       subtitle="Task Details"
-      breadcrumbs={[
-        { label: "Tasks", href: "/tasks" },
-        { label: task.title }
-      ]}
+      breadcrumbs={[{ label: "Tasks", href: "/tasks" }, { label: task.title }]}
     >
       <div className="space-y-6">
         {/* Actions */}
@@ -142,16 +141,24 @@ export function TaskDetail() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium text-gray-700">Status</label>
+                <label className="text-sm font-medium text-gray-700">
+                  Status
+                </label>
                 <div className="flex items-center gap-2 mt-1">
                   <Badge className={getStatusColor(task.status)}>
-                    <HugeiconsIcon icon={StatusIcon} size={16} className="mr-1" />
+                    <HugeiconsIcon
+                      icon={StatusIcon}
+                      size={16}
+                      className="mr-1"
+                    />
                     {task.status}
                   </Badge>
                 </div>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-700">Priority</label>
+                <label className="text-sm font-medium text-gray-700">
+                  Priority
+                </label>
                 <div className="mt-1">
                   <Badge className={getPriorityColor(task.priority)}>
                     {task.priority}
@@ -159,23 +166,41 @@ export function TaskDetail() {
                 </div>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-700">Assigned To</label>
+                <label className="text-sm font-medium text-gray-700">
+                  Assigned To
+                </label>
                 <div className="flex items-center gap-2 mt-1">
-                  <HugeiconsIcon icon={UserIcon} size={16} className="text-gray-500" />
-                  <span>{task.assigned_to}</span>
+                  <HugeiconsIcon
+                    icon={UserIcon}
+                    size={16}
+                    className="text-gray-500"
+                  />
+                  <span>{task.assigned_to_id || "-"}</span>
                 </div>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-700">Due Date</label>
+                <label className="text-sm font-medium text-gray-700">
+                  Due Date
+                </label>
                 <div className="flex items-center gap-2 mt-1">
-                  <HugeiconsIcon icon={CalendarIcon} size={16} className="text-gray-500" />
-                  <span>{task.due_date ? new Date(task.due_date).toLocaleDateString() : "No due date"}</span>
+                  <HugeiconsIcon
+                    icon={CalendarIcon}
+                    size={16}
+                    className="text-gray-500"
+                  />
+                  <span>
+                    {task.due_date
+                      ? new Date(task.due_date).toLocaleDateString()
+                      : "No due date"}
+                  </span>
                 </div>
               </div>
             </div>
             <Separator />
             <div>
-              <label className="text-sm font-medium text-gray-700">Description</label>
+              <label className="text-sm font-medium text-gray-700">
+                Description
+              </label>
               <div className="mt-1 p-3 bg-gray-50 rounded-md">
                 <p className="whitespace-pre-wrap">{task.description}</p>
               </div>
@@ -192,18 +217,25 @@ export function TaskDetail() {
             <CardContent>
               <div className="space-y-2">
                 {task.checklist.map((item) => (
-                  <div key={item.id} className="flex items-center gap-2 p-2 border rounded">
-                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
-                      item.completed 
-                        ? 'bg-green-500 border-green-500' 
-                        : 'border-gray-300'
-                    }`}>
+                  <div
+                    key={item.id}
+                    className="flex items-center gap-2 p-2 border rounded"
+                  >
+                    <div
+                      className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                        item.completed
+                          ? "bg-green-500 border-green-500"
+                          : "border-gray-300"
+                      }`}
+                    >
                       {item.completed && (
                         <div className="w-2 h-2 bg-white rounded-full"></div>
                       )}
                     </div>
-                    <span className={`flex-1 ${item.completed ? 'line-through text-gray-500' : ''}`}>
-                      {item.text}
+                    <span
+                      className={`flex-1 ${item.completed ? "line-through text-gray-500" : ""}`}
+                    >
+                      {item.title}
                     </span>
                     {item.completed_at && (
                       <span className="text-xs text-gray-500">
@@ -229,7 +261,9 @@ export function TaskDetail() {
                   <div key={key} className="flex justify-between py-2 border-b">
                     <span className="font-medium">{key}:</span>
                     <span className="text-gray-600">
-                      {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                      {typeof value === "object"
+                        ? JSON.stringify(value)
+                        : String(value)}
                     </span>
                   </div>
                 ))}
@@ -246,24 +280,42 @@ export function TaskDetail() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium text-gray-700">Created At</label>
+                <label className="text-sm font-medium text-gray-700">
+                  Created At
+                </label>
                 <div className="flex items-center gap-2 mt-1">
-                  <HugeiconsIcon icon={ClockIcon} size={16} className="text-gray-500" />
+                  <HugeiconsIcon
+                    icon={ClockIcon}
+                    size={16}
+                    className="text-gray-500"
+                  />
                   <span>{new Date(task.created_at).toLocaleString()}</span>
                 </div>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-700">Updated At</label>
+                <label className="text-sm font-medium text-gray-700">
+                  Updated At
+                </label>
                 <div className="flex items-center gap-2 mt-1">
-                  <HugeiconsIcon icon={ClockIcon} size={16} className="text-gray-500" />
+                  <HugeiconsIcon
+                    icon={ClockIcon}
+                    size={16}
+                    className="text-gray-500"
+                  />
                   <span>{new Date(task.updated_at).toLocaleString()}</span>
                 </div>
               </div>
               {task.completed_at && (
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Completed At</label>
+                  <label className="text-sm font-medium text-gray-700">
+                    Completed At
+                  </label>
                   <div className="flex items-center gap-2 mt-1">
-                    <HugeiconsIcon icon={CheckIcon} size={16} className="text-green-500" />
+                    <HugeiconsIcon
+                      icon={CheckIcon}
+                      size={16}
+                      className="text-green-500"
+                    />
                     <span>{new Date(task.completed_at).toLocaleString()}</span>
                   </div>
                 </div>

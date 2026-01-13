@@ -3,7 +3,10 @@
  */
 
 import apiClient from "./client";
-import type { StandardResponse, StandardListResponse } from "./types/common.types";
+import type {
+  StandardResponse,
+  StandardListResponse,
+} from "./types/common.types";
 
 export interface Activity {
   id: string;
@@ -41,7 +44,10 @@ export interface ActivityUpdate {
 export async function createActivity(
   data: ActivityCreate
 ): Promise<StandardResponse<Activity>> {
-  const response = await apiClient.post<StandardResponse<Activity>>("/activities", data);
+  const response = await apiClient.post<StandardResponse<Activity>>(
+    "/activities",
+    data
+  );
   return response.data;
 }
 
@@ -52,57 +58,55 @@ export async function createActivity(
 export async function listActivities(params?: {
   page?: number;
   page_size?: number;
-  activity_type?: string;
   entity_type?: string;
   entity_id?: string;
-  search?: string;
 }): Promise<StandardListResponse<Activity>> {
-  const queryParams = new URLSearchParams();
-  if (params?.page) queryParams.append("page", params.page.toString());
-  if (params?.page_size) queryParams.append("page_size", params.page_size.toString());
-  if (params?.activity_type) queryParams.append("activity_type", params.activity_type);
-  if (params?.entity_type) queryParams.append("entity_type", params.entity_type);
-  if (params?.entity_id) queryParams.append("entity_id", params.entity_id);
-  if (params?.search) queryParams.append("search", params.search);
-
   const response = await apiClient.get<StandardListResponse<Activity>>(
-    `/activities?${queryParams.toString()}`
+    "/activities",
+    { params }
   );
   return response.data;
 }
 
 /**
- * Get a specific activity
- * GET /api/v1/activities/{activity_id}
+ * Get activity by ID
+ * GET /api/v1/activities/{id}
  */
-export async function getActivity(activityId: string): Promise<StandardResponse<Activity>> {
+export async function getActivity(
+  id: string
+): Promise<StandardResponse<Activity>> {
   const response = await apiClient.get<StandardResponse<Activity>>(
-    `/activities/${activityId}`
+    `/activities/${id}`
   );
   return response.data;
 }
 
 /**
- * Update an activity
- * PUT /api/v1/activities/{activity_id}
+ * Update activity
+ * PUT /api/v1/activities/{id}
  */
 export async function updateActivity(
-  activityId: string,
+  id: string,
   data: ActivityUpdate
 ): Promise<StandardResponse<Activity>> {
   const response = await apiClient.put<StandardResponse<Activity>>(
-    `/activities/${activityId}`,
+    `/activities/${id}`,
     data
   );
   return response.data;
 }
 
 /**
- * Delete an activity
- * DELETE /api/v1/activities/{activity_id}
+ * Delete activity
+ * DELETE /api/v1/activities/{id}
  */
-export async function deleteActivity(activityId: string): Promise<void> {
-  await apiClient.delete(`/activities/${activityId}`);
+export async function deleteActivity(
+  id: string
+): Promise<StandardResponse<null>> {
+  const response = await apiClient.delete<StandardResponse<null>>(
+    `/activities/${id}`
+  );
+  return response.data;
 }
 
 /**
@@ -120,20 +124,13 @@ export async function getEntityTimeline(
 ): Promise<StandardListResponse<Activity>> {
   const queryParams = new URLSearchParams();
   if (params?.page) queryParams.append("page", params.page.toString());
-  if (params?.page_size) queryParams.append("page_size", params.page_size.toString());
-  if (params?.activity_type) queryParams.append("activity_type", params.activity_type);
+  if (params?.page_size)
+    queryParams.append("page_size", params.page_size.toString());
+  if (params?.activity_type)
+    queryParams.append("activity_type", params.activity_type);
 
   const response = await apiClient.get<StandardListResponse<Activity>>(
     `/activities/entity/${entityType}/${entityId}?${queryParams.toString()}`
   );
   return response.data;
 }
-
-
-
-
-
-
-
-
-

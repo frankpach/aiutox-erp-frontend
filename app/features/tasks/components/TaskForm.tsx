@@ -10,17 +10,31 @@ import { PageLayout } from "~/components/layout/PageLayout";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Separator } from "~/components/ui/separator";
-import { 
-  ArrowLeftIcon,
-  PlugIcon,
-} from "@hugeicons/core-free-icons";
+import { ArrowLeftIcon, PlugIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useTask, useCreateTask, useUpdateTask } from "~/features/tasks/hooks/useTasks";
-import type { Task, TaskCreate, TaskUpdate, TaskStatus, TaskPriority, ChecklistItem } from "~/features/tasks/types/task.types";
+import {
+  useTask,
+  useCreateTask,
+  useUpdateTask,
+} from "~/features/tasks/hooks/useTasks";
+import type {
+  Task,
+  TaskCreate,
+  TaskUpdate,
+  TaskStatus,
+  TaskPriority,
+  ChecklistItem,
+} from "~/features/tasks/types/task.types";
 
 interface TaskFormProps {
   taskId?: string;
@@ -38,7 +52,7 @@ export function TaskForm({ taskId }: TaskFormProps) {
   const [formData, setFormData] = useState<TaskCreate>({
     title: "",
     description: "",
-    assigned_to: "",
+    assigned_to_id: null,
     status: "todo",
     priority: "medium",
     due_date: "",
@@ -52,19 +66,19 @@ export function TaskForm({ taskId }: TaskFormProps) {
       setFormData({
         title: task.title,
         description: task.description,
-        assigned_to: task.assigned_to,
+        assigned_to_id: task.assigned_to_id,
         status: task.status,
         priority: task.priority,
         due_date: task.due_date || "",
         checklist: task.checklist || [],
       });
-      setChecklistItems(task.checklist?.map(item => item.text) || []);
+      setChecklistItems(task.checklist?.map((item) => item.title) || []);
     }
   }, [task, taskId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       const submitData = {
         ...formData,
@@ -80,7 +94,7 @@ export function TaskForm({ taskId }: TaskFormProps) {
       } else {
         await createTask.mutateAsync(submitData);
       }
-      
+
       navigate("/tasks");
     } catch (error) {
       console.error("Error saving task:", error);
@@ -102,7 +116,8 @@ export function TaskForm({ taskId }: TaskFormProps) {
     setChecklistItems(newItems);
   };
 
-  const isLoadingData = isLoading || createTask.isPending || updateTask.isPending;
+  const isLoadingData =
+    isLoading || createTask.isPending || updateTask.isPending;
 
   if (isLoadingData) {
     return (
@@ -117,11 +132,11 @@ export function TaskForm({ taskId }: TaskFormProps) {
   }
 
   return (
-    <PageLayout 
+    <PageLayout
       title={taskId ? "Edit Task" : "Create Task"}
       breadcrumbs={[
         { label: "Tasks", href: "/tasks" },
-        { label: taskId ? "Edit Task" : "Create Task" }
+        { label: taskId ? "Edit Task" : "Create Task" },
       ]}
     >
       <div className="max-w-2xl mx-auto">
@@ -134,39 +149,57 @@ export function TaskForm({ taskId }: TaskFormProps) {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="title"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     Title *
                   </label>
                   <Input
                     id="title"
                     value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, title: e.target.value })
+                    }
                     placeholder="Enter task title"
                     required
                   />
                 </div>
                 <div>
-                  <label htmlFor="assigned_to" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="assigned_to_id"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     Assigned To *
                   </label>
                   <Input
-                    id="assigned_to"
-                    value={formData.assigned_to}
-                    onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
-                    placeholder="Enter assignee"
+                    id="assigned_to_id"
+                    value={formData.assigned_to_id || ""}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        assigned_to_id: e.target.value || null,
+                      })
+                    }
+                    placeholder="Enter assignee ID"
                     required
                   />
                 </div>
               </div>
-              
+
               <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="description"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   Description *
                 </label>
                 <Textarea
                   id="description"
                   value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
                   placeholder="Enter task description"
                   rows={4}
                   required
@@ -175,10 +208,18 @@ export function TaskForm({ taskId }: TaskFormProps) {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="status"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     Status
                   </label>
-                  <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value as TaskStatus })}>
+                  <Select
+                    value={formData.status}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, status: value as TaskStatus })
+                    }
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select status" />
                     </SelectTrigger>
@@ -191,12 +232,23 @@ export function TaskForm({ taskId }: TaskFormProps) {
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div>
-                  <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="priority"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     Priority
                   </label>
-                  <Select value={formData.priority} onValueChange={(value) => setFormData({ ...formData, priority: value as TaskPriority })}>
+                  <Select
+                    value={formData.priority}
+                    onValueChange={(value) =>
+                      setFormData({
+                        ...formData,
+                        priority: value as TaskPriority,
+                      })
+                    }
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select priority" />
                     </SelectTrigger>
@@ -211,14 +263,19 @@ export function TaskForm({ taskId }: TaskFormProps) {
               </div>
 
               <div>
-                <label htmlFor="due_date" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="due_date"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   Due Date
                 </label>
                 <Input
                   id="due_date"
                   type="date"
                   value={formData.due_date}
-                  onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, due_date: e.target.value })
+                  }
                 />
               </div>
             </CardContent>
@@ -227,7 +284,11 @@ export function TaskForm({ taskId }: TaskFormProps) {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Checklist</CardTitle>
-                <Button type="button" variant="outline" onClick={addChecklistItem}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={addChecklistItem}
+                >
                   <HugeiconsIcon icon={PlugIcon} size={16} className="mr-2" />
                   Add Item
                 </Button>
@@ -239,7 +300,9 @@ export function TaskForm({ taskId }: TaskFormProps) {
                   <div key={index} className="flex items-center gap-2">
                     <Input
                       value={item}
-                      onChange={(e) => updateChecklistItem(index, e.target.value)}
+                      onChange={(e) =>
+                        updateChecklistItem(index, e.target.value)
+                      }
                       placeholder="Enter checklist item"
                       className="flex-1"
                     />
@@ -264,13 +327,21 @@ export function TaskForm({ taskId }: TaskFormProps) {
 
           {/* Actions */}
           <div className="flex gap-4 pt-6">
-            <Button type="button" variant="outline" onClick={() => navigate("/tasks")}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate("/tasks")}
+            >
               <HugeiconsIcon icon={ArrowLeftIcon} size={16} className="mr-2" />
               Cancel
             </Button>
             <Button type="submit" disabled={isLoadingData}>
               <HugeiconsIcon icon={PlugIcon} size={16} className="mr-2" />
-              {isLoadingData ? "Saving..." : (taskId ? "Update Task" : "Create Task")}
+              {isLoadingData
+                ? "Saving..."
+                : taskId
+                  ? "Update Task"
+                  : "Create Task"}
             </Button>
           </div>
         </form>

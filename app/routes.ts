@@ -31,6 +31,8 @@ export default [
   route("/approvals", "routes/approvals.tsx"),
   route("/approvals-create", "routes/approvals-create.tsx"),
   route("/approvals/:id", "routes/approvals.$id.tsx"),
+  route("/approvals/flows/:id", "routes/approflows.$id.view.tsx"),
+  route("/approvals/flows/:id/edit", "routes/approflows.$id.edit.tsx"),
   route("/automation", "routes/automation.tsx"),
   route("/automation/:id", "routes/automation.$id.tsx"),
   route("/automation/:id/edit", "routes/automation.$id.edit.tsx"),

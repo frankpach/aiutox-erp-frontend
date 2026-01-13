@@ -9,8 +9,8 @@ export interface Task {
   tenant_id: string;
   title: string;
   description: string;
-  assigned_to: string;
-  created_by: string;
+  assigned_to_id: string | null; // UUID from backend
+  created_by_id: string | null; // UUID from backend
   status: TaskStatus;
   priority: TaskPriority;
   due_date?: string;
@@ -25,7 +25,7 @@ export interface Task {
 export interface TaskCreate {
   title: string;
   description: string;
-  assigned_to: string;
+  assigned_to_id: string | null; // UUID from backend
   status: TaskStatus;
   priority: TaskPriority;
   due_date?: string;
@@ -37,7 +37,7 @@ export interface TaskCreate {
 export interface TaskUpdate {
   title?: string;
   description?: string;
-  assigned_to?: string;
+  assigned_to_id?: string | null;
   status?: TaskStatus;
   priority?: TaskPriority;
   due_date?: string;
@@ -50,8 +50,8 @@ export interface TaskListParams {
   page?: number;
   page_size?: number;
   status?: TaskStatus;
-  assigned_to?: string;
-  created_by?: string;
+  assigned_to_id?: string; // UUID from backend
+  created_by_id?: string; // UUID from backend
   priority?: TaskPriority;
   due_date_from?: string;
   due_date_to?: string;
@@ -61,7 +61,7 @@ export interface TaskListParams {
 // Checklist item
 export interface ChecklistItem {
   id: string;
-  text: string;
+  title: string; // Backend uses 'title', not 'text'
   completed: boolean;
   completed_at?: string;
 }
@@ -133,7 +133,7 @@ export interface TaskStats {
 }
 
 // Task status values
-export type TaskStatus = 
+export type TaskStatus =
   | "todo"
   | "in_progress"
   | "done"
@@ -141,8 +141,4 @@ export type TaskStatus =
   | "on_hold";
 
 // Task priority values
-export type TaskPriority = 
-  | "low"
-  | "medium"
-  | "high"
-  | "urgent";
+export type TaskPriority = "low" | "medium" | "high" | "urgent";

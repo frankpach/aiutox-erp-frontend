@@ -9,12 +9,27 @@ import { PageLayout } from "~/components/layout/PageLayout";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger, TabsValue } from "~/components/ui/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  TabsValue,
+} from "~/components/ui/tabs";
 import { TaskList } from "~/features/tasks/components/TaskList";
 import { TaskForm } from "~/features/tasks/components/TaskForm";
 import { TaskFilters } from "~/features/tasks/components/TaskFilters";
-import { useTasks, useCreateTask, useUpdateTask, useDeleteTask } from "~/features/tasks/hooks/useTasks";
-import { Task, TaskStatus, TaskPriority } from "~/features/tasks/types/task.types";
+import {
+  useTasks,
+  useCreateTask,
+  useUpdateTask,
+  useDeleteTask,
+} from "~/features/tasks/hooks/useTasks";
+import {
+  Task,
+  TaskStatus,
+  TaskPriority,
+} from "~/features/tasks/types/task.types";
 
 export default function TasksPage() {
   const { t } = useTranslation();
@@ -24,12 +39,17 @@ export default function TasksPage() {
   const [filters, setFilters] = useState({
     status: undefined,
     priority: undefined,
-    assigned_to: undefined,
+    assigned_to_id: undefined,
     search: "",
   });
 
   // Query hooks
-  const { data: tasksData, loading, error, refetch } = useTasks({
+  const {
+    data: tasksData,
+    loading,
+    error,
+    refetch,
+  } = useTasks({
     ...filters,
     page: 1,
     page_size: 20,
@@ -50,7 +70,7 @@ export default function TasksPage() {
 
   const handleUpdateTask = (data: any) => {
     if (!editingTask) return;
-    
+
     updateTaskMutation.mutate(
       { id: editingTask.id, payload: data },
       {
@@ -64,7 +84,7 @@ export default function TasksPage() {
 
   const handleDeleteTask = (task: Task) => {
     if (!confirm(t("tasks.deleteConfirm"))) return;
-    
+
     deleteTaskMutation.mutate(task.id, {
       onSuccess: () => {
         refetch();
@@ -125,15 +145,9 @@ export default function TasksPage() {
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="list">
-              {t("tasks.list.title")}
-            </TabsTrigger>
-            <TabsTrigger value="form">
-              {t("tasks.form.title")}
-            </TabsTrigger>
-            <TabsTrigger value="stats">
-              {t("tasks.stats.title")}
-            </TabsTrigger>
+            <TabsTrigger value="list">{t("tasks.list.title")}</TabsTrigger>
+            <TabsTrigger value="form">{t("tasks.form.title")}</TabsTrigger>
+            <TabsTrigger value="stats">{t("tasks.stats.title")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="list" className="mt-6">
@@ -159,7 +173,9 @@ export default function TasksPage() {
                   setShowCreateForm(false);
                   setEditingTask(null);
                 }}
-                loading={createTaskMutation.isPending || updateTaskMutation.isPending}
+                loading={
+                  createTaskMutation.isPending || updateTaskMutation.isPending
+                }
               />
             </div>
           </TabsContent>
@@ -167,9 +183,7 @@ export default function TasksPage() {
           <TabsContent value="stats" className="mt-6">
             <Card>
               <CardHeader>
-                <CardTitle>
-                  {t("tasks.stats.title")}
-                </CardTitle>
+                <CardTitle>{t("tasks.stats.title")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -187,14 +201,23 @@ export default function TasksPage() {
                     </div>
                     <div className="space-y-2">
                       {Object.entries({
-                        todo: tasks.filter(t => t.status === "todo").length,
-                        in_progress: tasks.filter(t => t.status === "in_progress").length,
-                        done: tasks.filter(t => t.status === "done").length,
-                        cancelled: tasks.filter(t => t.status === "cancelled").length,
-                        on_hold: tasks.filter(t => t.status === "on_hold").length,
+                        todo: tasks.filter((t) => t.status === "todo").length,
+                        in_progress: tasks.filter(
+                          (t) => t.status === "in_progress"
+                        ).length,
+                        done: tasks.filter((t) => t.status === "done").length,
+                        cancelled: tasks.filter((t) => t.status === "cancelled")
+                          .length,
+                        on_hold: tasks.filter((t) => t.status === "on_hold")
+                          .length,
                       }).map(([status, count]) => (
-                        <div key={status} className="flex justify-between items-center">
-                          <span className="text-sm">{t(`tasks.status.${status}`)}</span>
+                        <div
+                          key={status}
+                          className="flex justify-between items-center"
+                        >
+                          <span className="text-sm">
+                            {t(`tasks.status.${status}`)}
+                          </span>
                           <span className="text-2xl font-bold">{count}</span>
                         </div>
                       ))}
@@ -206,13 +229,20 @@ export default function TasksPage() {
                     </div>
                     <div className="space-y-2">
                       {Object.entries({
-                        low: tasks.filter(t => t.priority === "low").length,
-                        medium: tasks.filter(t => t.priority === "medium").length,
-                        high: tasks.filter(t => t.priority === "high").length,
-                        urgent: tasks.filter(t => t.priority === "urgent").length,
+                        low: tasks.filter((t) => t.priority === "low").length,
+                        medium: tasks.filter((t) => t.priority === "medium")
+                          .length,
+                        high: tasks.filter((t) => t.priority === "high").length,
+                        urgent: tasks.filter((t) => t.priority === "urgent")
+                          .length,
                       }).map(([priority, count]) => (
-                        <div key={priority} className="flex justify-between items-center">
-                          <span className="text-sm">{t(`tasks.priority.${priority}`)}</span>
+                        <div
+                          key={priority}
+                          className="flex justify-between items-center"
+                        >
+                          <span className="text-sm">
+                            {t(`tasks.priority.${priority}`)}
+                          </span>
                           <span className="text-2xl font-bold">{count}</span>
                         </div>
                       ))}
