@@ -9,6 +9,14 @@ export default defineConfig({
     host: "127.0.0.1", // Use IPv4 only to avoid ::1 issues
     port: 3000, // Changed port to avoid permission issues
     strictPort: false, // Allow fallback to next available port
+    proxy: {
+      // Proxy file requests to backend
+      "/files": {
+        target: "http://localhost:8000",
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
   define: {
     // Polyfill process for browser compatibility (needed for some packages)
@@ -48,9 +56,9 @@ export default defineConfig({
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [
           // NO aplicar fallback a:
-          /^\/api\//,           // Llamadas a API
-          /^\/auth\//,          // Rutas de auth del backend
-          /\.[^/]+$/,          // Archivos con extensión (assets)
+          /^\/api\//, // Llamadas a API
+          /^\/auth\//, // Rutas de auth del backend
+          /\.[^/]+$/, // Archivos con extensión (assets)
         ],
 
         // Estrategias de runtime caching
@@ -151,7 +159,8 @@ export default defineConfig({
       manifest: {
         name: "AiutoX ERP",
         short_name: "AiutoX",
-        description: "Sistema ERP modular y extensible para gestión empresarial",
+        description:
+          "Sistema ERP modular y extensible para gestión empresarial",
         theme_color: "#3C3A47", // Color primario AiutoX
         background_color: "#ffffff",
         display: "standalone",

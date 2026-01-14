@@ -23,7 +23,8 @@ export const translations = {
     sharedByTeam: "Shared by team",
     deleteOnlyAdmins: "Delete (admins only)",
     confirmDelete: "Delete filter?",
-    confirmDeleteDescription: "This action cannot be undone. The filter will be permanently deleted.",
+    confirmDeleteDescription:
+      "This action cannot be undone. The filter will be permanently deleted.",
     cancel: "Cancel",
     close: "Close",
     applying: "Applying filter...",
@@ -121,9 +122,11 @@ export const translations = {
     confirmBulkActivateTitle: "Activate Users",
     confirmBulkActivate: "Are you sure you want to activate {count} user(s)?",
     confirmBulkDeactivateTitle: "Deactivate Users",
-    confirmBulkDeactivate: "Are you sure you want to deactivate {count} user(s)? Users will be inactive but not deleted.",
+    confirmBulkDeactivate:
+      "Are you sure you want to deactivate {count} user(s)? Users will be inactive but not deleted.",
     confirmBulkDeleteTitle: "Delete Users",
-    confirmBulkDelete: "Are you sure you want to PERMANENTLY DELETE {count} user(s)? This action CANNOT be undone and will delete all related data (cascade).",
+    confirmBulkDelete:
+      "Are you sure you want to PERMANENTLY DELETE {count} user(s)? This action CANNOT be undone and will delete all related data (cascade).",
     bulkActivateSuccess: "users activated successfully",
     bulkDeactivateSuccess: "users deactivated successfully",
     bulkDeleteSuccess: "users deleted successfully",
@@ -142,7 +145,8 @@ export const translations = {
     permissionsTitle: "User Permissions",
     permissionsDescription: "Manage user permissions",
     userPermissionsTitle: "User Permissions",
-    userPermissionsDescription: "User effective permissions (from roles and delegations)",
+    userPermissionsDescription:
+      "User effective permissions (from roles and delegations)",
     filterByTenant: "Filter by Tenant",
     fromGlobalRoles: "From Global Roles",
     fromModuleRoles: "From Module Roles",
@@ -197,11 +201,11 @@ export const translations = {
     delegationsPending: "Active delegations component (pending implementation)",
     // Form placeholders and options
     selectGender: "Select gender",
+    timezonePlaceholder: "America/New_York",
     genderMale: "Male",
     genderFemale: "Female",
     genderOther: "Other",
     genderPreferNotToSay: "Prefer not to say",
-    timezonePlaceholder: "America/New_York",
     required: "required",
     // Form validation messages
     invalidEmail: "Invalid email",
@@ -216,7 +220,8 @@ export const translations = {
     contactMethodDeleteSuccess: "Contact method deleted successfully",
     contactMethodDeleteError: "Error deleting contact method",
     deleteContactMethodTitle: "Delete Contact Method",
-    deleteContactMethodDescription: "Are you sure you want to delete this contact method?",
+    deleteContactMethodDescription:
+      "Are you sure you want to delete this contact method?",
     // Contact Methods - Loading and States
     loadingContactMethods: "Loading contact methods...",
     addContactMethod: "Add Method",
@@ -239,11 +244,13 @@ export const translations = {
     assignedOn: "Assigned on",
     // Custom Roles Manager
     customRolesTitle: "Custom Roles",
-    customRolesDescription: "Create and manage custom roles with granular permissions",
+    customRolesDescription:
+      "Create and manage custom roles with granular permissions",
     createRole: "Create Role",
     noCustomRoles: "No custom roles. Create one to get started.",
     deleteCustomRoleTitle: "Delete Custom Role",
-    deleteCustomRoleDescription: "Are you sure you want to delete this role? This action cannot be undone.",
+    deleteCustomRoleDescription:
+      "Are you sure you want to delete this role? This action cannot be undone.",
     roleDeletedSuccess: "Role deleted successfully",
     roleDeletedError: "Error deleting role",
     roleUpdatedSuccess: "Role updated successfully",
@@ -302,7 +309,7 @@ export const translations = {
     close: "Close",
     emptyTitle: "No data",
     emptyDescription: "No items found to display.",
-    missingTranslation: "Text not available",
+    refresh: "Refresh",
   },
   // Layout
   layout: {
@@ -387,7 +394,8 @@ export const translations = {
       language: "Language",
       languageRequired: "Language is required",
       localization: "Localization",
-      localizationDescription: "Configure timezone, date and time formats, currency and language",
+      localizationDescription:
+        "Configure timezone, date and time formats, currency and language",
       timeFormat12h: "12 hours (AM/PM)",
       timeFormat24h: "24 hours",
       dateFormatDDMMYYYY: "DD/MM/YYYY (31/12/2025)",
@@ -470,17 +478,23 @@ export const translations = {
       infoSystemRoles: "System roles (Owner, Administrator) cannot be modified",
       infoPermissions: "Permissions are organized by system modules",
       infoMultipleRoles: "A user can have multiple roles assigned",
-      infoEffectivePermissions: "A user's effective permissions are the union of all their roles",
+      infoEffectivePermissions:
+        "A user's effective permissions are the union of all their roles",
       roleOwner: "Owner",
-      roleOwnerDesc: "Full system access. Complete control over the organization.",
+      roleOwnerDesc:
+        "Full system access. Complete control over the organization.",
       roleAdmin: "Administrator",
-      roleAdminDesc: "System administrator with near-complete access. Can manage users, roles, and configurations.",
+      roleAdminDesc:
+        "System administrator with near-complete access. Can manage users, roles, and configurations.",
       roleManager: "Manager",
-      roleManagerDesc: "Manager with access to assigned modules. Can manage business operations.",
+      roleManagerDesc:
+        "Manager with access to assigned modules. Can manage business operations.",
       roleStaff: "Staff",
-      roleStaffDesc: "Operational staff with limited access to specific functions.",
+      roleStaffDesc:
+        "Operational staff with limited access to specific functions.",
       roleViewer: "Viewer",
-      roleViewerDesc: "Read-only. Can view information but cannot make changes.",
+      roleViewerDesc:
+        "Read-only. Can view information but cannot make changes.",
       roleSystem: "System",
       roleSystemDesc: "System role",
       permissionsCount: "permissions",
@@ -538,7 +552,8 @@ export const translations = {
       templatesDesc: "Manage email and message templates for the system",
       templatesComingSoon: "View Templates (Coming Soon)",
       preferencesTitle: "User Preferences",
-      preferencesDesc: "Users can configure their individual notification preferences",
+      preferencesDesc:
+        "Users can configure their individual notification preferences",
     },
     integrations: {
       title: "Integrations",
@@ -625,7 +640,8 @@ export const translations = {
       importSuccess: "Import job created successfully",
       exportSuccess: "Export job created successfully",
       templatesTitle: "Import Templates",
-      templatesDesc: "Download pre-formatted templates to facilitate data import",
+      templatesDesc:
+        "Download pre-formatted templates to facilitate data import",
       noTemplates: "No templates available",
       historyTitle: "Operation History",
       loadingHistory: "Loading history...",
@@ -734,7 +750,8 @@ export const translations = {
     loading: "Loading files...",
     error: "Error loading files",
     deleteConfirm: "Delete file?",
-    deleteConfirmDesc: "This action cannot be undone. The file will be permanently deleted.",
+    deleteConfirmDesc:
+      "This action cannot be undone. The file will be permanently deleted.",
     deleteSuccess: "File deleted successfully",
     deleteError: "Error deleting file",
     uploadSuccess: "File uploaded successfully",
@@ -815,7 +832,8 @@ export const translations = {
     selectTarget: "Select target",
     close: "Close",
     restoreVersionConfirm: "Restore version?",
-    restoreVersionConfirmDesc: "Are you sure you want to restore version {version}? A new version will be created with this content.",
+    restoreVersionConfirmDesc:
+      "Are you sure you want to restore version {version}? A new version will be created with this content.",
     versionRestored: "Version restored successfully",
     versionRestoreError: "Error restoring version",
     restoredFromVersion: "Restored from version {version}",
@@ -860,7 +878,8 @@ export const translations = {
   // Tags module (reusable across modules)
   tags: {
     manage: "Manage Tags",
-    manageDescription: "Create, edit, and delete tags. Tags can be used across different modules.",
+    manageDescription:
+      "Create, edit, and delete tags. Tags can be used across different modules.",
     create: "Create Tag",
     edit: "Edit Tag",
     update: "Update",
@@ -883,7 +902,8 @@ export const translations = {
     deleteSuccess: "Tag deleted successfully",
     deleteError: "Error deleting tag",
     deleteConfirm: "Delete Tag",
-    deleteConfirmDescription: "Are you sure you want to delete this tag? This action cannot be undone.",
+    deleteConfirmDescription:
+      "Are you sure you want to delete this tag? This action cannot be undone.",
   },
   // Notifications module
   notifications: {
@@ -949,8 +969,9 @@ export const translations = {
     resultsFor: "Results for",
     noResults: "No results found",
     noResultsTitle: "No results",
-    noResultsDescription: "No results found for your search. Try with other terms.",
-    resultsCount: "{{count}} results for \"{{query}}\"",
+    noResultsDescription:
+      "No results found for your search. Try with other terms.",
+    resultsCount: '{{count}} results for "{{query}}"',
     loadingMore: "Loading more results...",
     error: {
       title: "Search error",
@@ -1021,21 +1042,52 @@ export const translations = {
   // Tasks module
   tasks: {
     title: "Tasks",
+    description: "Manage your tasks efficiently.",
     list: "Task List",
     create: "Create Task",
-    edit: "Edit Task",
+    createTask: "Create Task",
+    editTask: "Edit Task",
+    editTaskDescription: "Edit the details of the existing task",
+    updateTask: "Update Task",
+    titlePlaceholder: "Task title",
+    descriptionPlaceholder: "Describe the task details...",
     delete: "Delete Task",
+    deleteConfirm: "Are you sure you want to delete this task?",
     details: "Task Details",
-    status: "Status",
-    priority: "Priority",
+    status: {
+      title: "Status",
+    },
+    priority: {
+      title: "Priority",
+    },
     assignedTo: "Assigned to",
     dueDate: "Due Date",
-    description: "Description",
-    checklist: "Checklist",
+    checklist: {
+      title: "Checklist",
+      noItems: "No items",
+    },
+    assigned: {
+      singular: "assigned",
+      plural: "assigned",
+    },
     addItem: "Add Item",
-    removeItem: "Remove Item",
     markComplete: "Mark Complete",
     markIncomplete: "Mark Incomplete",
+    advancedFilters: "Advanced Filters",
+    clearFilters: "Clear Filters",
+    all: "All",
+    filterAllStatuses: "All statuses",
+    filterAllPriorities: "All priorities",
+    filterAllModules: "All modules",
+    sourceModule: "Source Module",
+    dueDateRange: "Date Range",
+    from: "From",
+    to: "To",
+    filterAssignedToPlaceholder: "Search by assigned to...",
+    modules: {
+      projects: "Projects",
+      workflows: "Workflows",
+    },
     filters: "Task Filters",
     searchPlaceholder: "Search tasks...",
     noTasks: "No tasks",
@@ -1045,16 +1097,74 @@ export const translations = {
     error: "Error loading tasks",
     statuses: {
       todo: "To Do",
+      in_progress: "In Progress",
       inProgress: "In Progress",
+      on_hold: "On Hold",
+      onHold: "On Hold",
+      blocked: "Blocked",
+      review: "Review",
       done: "Done",
       cancelled: "Cancelled",
-      onHold: "On Hold",
     },
     priorities: {
       low: "Low",
       medium: "Medium",
       high: "High",
       urgent: "Urgent",
+    },
+    quickAdd: "New Task",
+    quickAddDescription: "Create a new task quickly",
+    quickAddPlaceholder: "Enter task title...",
+    filtersTitle: "Filters",
+    filtersReset: "Reset",
+    filtersActive: "active",
+    filtersActiveSummary: "Active Filters:",
+    filtersSearch: "Search",
+    filtersSearchPlaceholder: "Search tasks...",
+    filtersAllStatuses: "All statuses",
+    filtersAllPriorities: "All priorities",
+    filtersAssignedTo: "Assigned To",
+    filtersAssignedToPlaceholder: "Filter by assignee ID...",
+    filtersDueDateRange: "Due Date Range",
+    filtersFrom: "From",
+    filtersTo: "To",
+    filtersSearchLabel: "Search",
+    filtersStatusLabel: "Status",
+    filtersPriorityLabel: "Priority",
+    filtersAssignedLabel: "Assigned",
+    filtersFromLabel: "From",
+    filtersToLabel: "To",
+    inbox: {
+      title: "Quick Capture",
+      placeholder: "Type a quick task and press Enter...",
+      description:
+        "Capture ideas and tasks quickly. Use Enter to create, Shift+Enter for new line.",
+      triage: "Task Triage",
+      pending: "pending",
+      selected: "tasks selected",
+      bulkAction: "Bulk action...",
+      assignMe: "Assign to me",
+      noTasks: "No tasks pending triage",
+      allProcessed: "All tasks are processed",
+      needingTriage: "Needing triage",
+      completedToday: "Completed today",
+    },
+    tabs: {
+      inbox: "Inbox",
+      list: "List",
+      board: "Board",
+      calendar: "Calendar",
+      stats: "Statistics",
+    },
+    stats: {
+      title: "Statistics",
+      total: "Total",
+      byStatus: {
+        title: "By Status",
+      },
+      byPriority: {
+        title: "By Priority",
+      },
     },
   },
   // Approvals module

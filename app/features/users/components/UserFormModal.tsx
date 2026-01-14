@@ -21,6 +21,7 @@ interface UserFormModalProps {
   user?: User | null;
   onSubmit: (data: UserCreate | UserUpdate) => Promise<void>;
   loading?: boolean;
+  isSelfEdit?: boolean; // Nuevo prop para modo edición propia
 }
 
 /**
@@ -32,6 +33,7 @@ export function UserFormModal({
   user,
   onSubmit,
   loading = false,
+  isSelfEdit = false,
 }: UserFormModalProps) {
   const { t } = useTranslation();
 
@@ -45,12 +47,16 @@ export function UserFormModal({
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {user ? t("users.editUser") || "Editar Usuario" : t("users.createUser") || "Crear Nuevo Usuario"}
+            {user
+              ? t("users.editUser") || "Editar Usuario"
+              : t("users.createUser") || "Crear Nuevo Usuario"}
           </DialogTitle>
           <DialogDescription>
             {user
-              ? t("users.editUserDescription") || "Actualiza la información del usuario"
-              : t("users.createUserDescription") || "Completa el formulario para crear un nuevo usuario"}
+              ? t("users.editUserDescription") ||
+                "Actualiza la información del usuario"
+              : t("users.createUserDescription") ||
+                "Completa el formulario para crear un nuevo usuario"}
           </DialogDescription>
         </DialogHeader>
 
@@ -59,16 +65,9 @@ export function UserFormModal({
           onSubmit={handleSubmit}
           onCancel={onClose}
           loading={loading}
+          isSelfEdit={isSelfEdit}
         />
       </DialogContent>
     </Dialog>
   );
 }
-
-
-
-
-
-
-
-

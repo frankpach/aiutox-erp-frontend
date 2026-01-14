@@ -19,7 +19,7 @@ import { Switch } from "~/components/ui/switch";
 import { Card } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { ScrollArea } from "~/components/ui/scroll-area";
-import { SaveIcon, PlusIcon, TrashIcon } from "@hugeicons/core-free-icons";
+import { Add01Icon, Delete01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import type {
   ApprovalFlowResponse,
@@ -152,7 +152,6 @@ export function ApprovalFlowConfigPanel({
 
           {editable && (
             <Button onClick={handleSave} className="w-full mt-4">
-              <HugeiconsIcon icon={SaveIcon} size={16} className="mr-2" />
               Guardar Cambios
             </Button>
           )}
@@ -164,7 +163,7 @@ export function ApprovalFlowConfigPanel({
             <h3 className="text-lg font-semibold">Pasos del Flujo</h3>
             {editable && (
               <Button onClick={onAddStep} size="sm" variant="outline">
-                <HugeiconsIcon icon={PlusIcon} size={16} className="mr-2" />
+                <HugeiconsIcon icon={Add01Icon} size={16} className="mr-2" />
                 Agregar Paso
               </Button>
             )}
@@ -232,7 +231,7 @@ export function ApprovalFlowConfigPanel({
                           variant="ghost"
                           onClick={() => onDeleteStep?.(step.id)}
                         >
-                          <HugeiconsIcon icon={TrashIcon} size={16} />
+                          <HugeiconsIcon icon={Delete01Icon} size={16} />
                         </Button>
                       </div>
                     )}

@@ -15,6 +15,8 @@ export default [
   route("/users/:id/edit", "routes/users.$id.edit.tsx"),
   route("/users/:id/roles", "routes/users.$id.roles.tsx"),
   route("/users/:id/permissions", "routes/users.$id.permissions.tsx"),
+  route("/profile", "routes/profile.tsx"),
+  route("/settings", "routes/settings.tsx"),
   route("/files", "routes/files.tsx"),
   route("/tags-create", "routes/tags-create.tsx"),
   route("/calendar-create", "routes/calendar-create.tsx"),

@@ -11,6 +11,7 @@ import {
   getUser,
   createUser,
   updateUser,
+  updateOwnProfile,
   deleteUser,
   bulkUsersAction,
   type BulkUsersActionRequest,
@@ -158,10 +159,9 @@ export function useUpdateUser() {
 
       // Optimistically update cache
       if (previousUser) {
-        queryClient.setQueryData(
-          userKeys.detail(userId),
-          { data: { ...previousUser, ...data } }
-        );
+        queryClient.setQueryData(userKeys.detail(userId), {
+          data: { ...previousUser, ...data },
+        });
         console.log("[useUpdateUser] Cache updated optimistically");
       }
 
@@ -201,6 +201,87 @@ export function useUpdateUser() {
       }
     },
     // Keep loading as alias for isPending for backward compatibility
+    loading: mutation.isPending,
+    error: mutation.error as Error | null,
+  };
+}
+
+/**
+ * Hook to update own profile
+ * Uses React Query mutation with optimistic updates and cache invalidation
+ * Uses the /me endpoint which doesn't require auth.manage_users permission
+ */
+export function useUpdateOwnProfile() {
+  const queryClient = useQueryClient();
+  const { user: authUser, updateUser } = useAuthStore();
+
+  const mutation = useMutation({
+    mutationFn: (data: UserUpdate) => {
+      console.log("[useUpdateOwnProfile] Calling updateOwnProfile API:", {
+        data,
+      });
+      return updateOwnProfile(data);
+    },
+    onMutate: async (data) => {
+      console.log("[useUpdateOwnProfile] Optimistic update starting");
+      // Cancel outgoing refetches
+      if (authUser?.id) {
+        await queryClient.cancelQueries({
+          queryKey: userKeys.detail(authUser.id),
+        });
+
+        // Snapshot previous value for rollback
+        const previousUserResponse = queryClient.getQueryData<{ data: User }>(
+          userKeys.detail(authUser.id)
+        );
+        const previousUser = previousUserResponse?.data;
+
+        // Optimistically update cache
+        if (previousUser) {
+          queryClient.setQueryData(userKeys.detail(authUser.id), {
+            data: { ...previousUser, ...data },
+          });
+          console.log("[useUpdateOwnProfile] Cache updated optimistically");
+        }
+
+        return { previousUser };
+      }
+    },
+    onError: (err, _data, context) => {
+      console.error("[useUpdateOwnProfile] Error updating own profile:", err);
+      // Rollback on error
+      if (authUser?.id && context?.previousUser) {
+        queryClient.setQueryData(userKeys.detail(authUser.id), {
+          data: context.previousUser,
+        });
+        console.log("[useUpdateOwnProfile] Cache rolled back due to error");
+      }
+    },
+    onSuccess: (data) => {
+      console.log("[useUpdateOwnProfile] Profile update successful:", { data });
+      // Update authStore with new user data (including avatar)
+      if (data?.data && authUser) {
+        updateUser(data.data);
+        console.log(
+          "[useUpdateOwnProfile] AuthStore updated with new user data"
+        );
+      }
+      // Invalidate to refetch fresh data
+      if (authUser?.id) {
+        queryClient.invalidateQueries({
+          queryKey: userKeys.detail(authUser.id),
+        });
+        queryClient.invalidateQueries({ queryKey: userKeys.lists() });
+        console.log("[useUpdateOwnProfile] Cache invalidated for refresh");
+      }
+    },
+  });
+
+  return {
+    // Expose mutateAsync directly for flexibility
+    mutateAsync: mutation.mutateAsync,
+    // Expose isPending for consistency with React Query naming
+    isPending: mutation.isPending,
     loading: mutation.isPending,
     error: mutation.error as Error | null,
   };
@@ -271,11 +352,3 @@ export function useBulkUsersAction() {
     error: mutation.error as Error | null,
   };
 }
-
-
-
-
-
-
-
-

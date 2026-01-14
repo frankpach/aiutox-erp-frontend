@@ -9,7 +9,7 @@ export interface Task {
   tenant_id: string;
   title: string;
   description: string;
-  assigned_to_id: string | null; // UUID from backend
+  assigned_to_id: string | null; // UUID from backend (legacy, use assignments)
   created_by_id: string | null; // UUID from backend
   status: TaskStatus;
   priority: TaskPriority;
@@ -17,6 +17,13 @@ export interface Task {
   completed_at?: string;
   checklist: ChecklistItem[];
   metadata?: Record<string, any>;
+  // Multi-module integration
+  source_module?: string; // e.g., 'projects', 'workflows'
+  source_id?: string; // ID of source entity
+  source_context?: Record<string, any>; // Additional context from source module
+  // Legacy fields (kept for backward compatibility)
+  related_entity_type?: string;
+  related_entity_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -25,12 +32,19 @@ export interface Task {
 export interface TaskCreate {
   title: string;
   description: string;
-  assigned_to_id: string | null; // UUID from backend
+  assigned_to_id: string | null; // UUID from backend (legacy)
   status: TaskStatus;
   priority: TaskPriority;
   due_date?: string;
   checklist?: ChecklistItem[];
   metadata?: Record<string, any>;
+  // Multi-module integration
+  source_module?: string;
+  source_id?: string;
+  source_context?: Record<string, any>;
+  // Legacy fields
+  related_entity_type?: string;
+  related_entity_id?: string;
 }
 
 // Task update payload
@@ -43,6 +57,10 @@ export interface TaskUpdate {
   due_date?: string;
   checklist?: ChecklistItem[];
   metadata?: Record<string, any>;
+  // Multi-module integration
+  source_module?: string;
+  source_id?: string;
+  source_context?: Record<string, any>;
 }
 
 // Task list parameters
@@ -51,11 +69,33 @@ export interface TaskListParams {
   page_size?: number;
   status?: TaskStatus;
   assigned_to_id?: string; // UUID from backend
-  created_by_id?: string; // UUID from backend
   priority?: TaskPriority;
-  due_date_from?: string;
-  due_date_to?: string;
-  search?: string;
+}
+
+// Task assignment types
+export interface TaskAssignment {
+  id: string;
+  task_id: string;
+  assigned_to_id?: string;
+  assigned_to_group_id?: string;
+  assigned_by_id?: string;
+  assigned_at?: string;
+  created_by_id: string;
+  updated_by_id?: string;
+  role?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TaskAssignmentCreate {
+  task_id: string;
+  assigned_to_id?: string;
+  assigned_to_group_id?: string;
+  role?: string;
+  notes?: string;
+  created_by_id: string; // Added for backend compatibility
+  updated_by_id?: string;
 }
 
 // Checklist item
@@ -136,9 +176,11 @@ export interface TaskStats {
 export type TaskStatus =
   | "todo"
   | "in_progress"
+  | "on_hold"
+  | "blocked"
+  | "review"
   | "done"
-  | "cancelled"
-  | "on_hold";
+  | "cancelled";
 
 // Task priority values
 export type TaskPriority = "low" | "medium" | "high" | "urgent";

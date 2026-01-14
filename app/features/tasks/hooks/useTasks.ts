@@ -5,25 +5,31 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { 
-  listTasks, 
-  getTask, 
-  createTask, 
-  updateTask, 
-  deleteTask, 
-  createChecklistItem, 
-  updateChecklistItem, 
+import React from "react";
+import {
+  listTasks,
+  listMyTasks,
+  getTask,
+  createTask,
+  updateTask,
+  deleteTask,
+  createChecklistItem,
+  updateChecklistItem,
   deleteChecklistItem,
-  createWorkflow,
-  executeWorkflow,
+  listChecklistItems,
+  createAssignment,
+  listAssignments,
+  deleteAssignment,
 } from "~/features/tasks/api/tasks.api";
-import type { 
-  TaskCreate, 
-  TaskUpdate, 
-  TaskListParams, 
-  ChecklistItem, 
-  WorkflowCreate, 
-  WorkflowExecute 
+import { useUsers } from "~/features/users/hooks/useUsers";
+import type {
+  TaskCreate,
+  TaskUpdate,
+  TaskListParams,
+  ChecklistItem,
+  TaskAssignmentCreate,
+  Task,
+  TaskAssignment,
 } from "~/features/tasks/types/task.types";
 
 // Query hooks
@@ -31,6 +37,15 @@ export function useTasks(params?: TaskListParams) {
   return useQuery({
     queryKey: ["tasks", params],
     queryFn: () => listTasks(params),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: 2,
+  });
+}
+
+export function useMyTasks(params?: TaskListParams) {
+  return useQuery({
+    queryKey: ["tasks", "my", params],
+    queryFn: () => listMyTasks(params),
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: 2,
   });
@@ -46,10 +61,30 @@ export function useTask(id: string) {
   });
 }
 
+export function useChecklistItems(taskId: string) {
+  return useQuery({
+    queryKey: ["tasks", taskId, "checklist"],
+    queryFn: () => listChecklistItems(taskId),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: 2,
+    enabled: !!taskId,
+  });
+}
+
+export function useAssignments(taskId: string) {
+  return useQuery({
+    queryKey: ["tasks", taskId, "assignments"],
+    queryFn: () => listAssignments(taskId),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: 2,
+    enabled: !!taskId,
+  });
+}
+
 // Mutation hooks
 export function useCreateTask() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: createTask,
     onSuccess: () => {
@@ -64,7 +99,7 @@ export function useCreateTask() {
 
 export function useUpdateTask() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: TaskUpdate }) =>
       updateTask(id, payload),
@@ -81,7 +116,7 @@ export function useUpdateTask() {
 
 export function useDeleteTask() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: deleteTask,
     onSuccess: () => {
@@ -96,13 +131,21 @@ export function useDeleteTask() {
 
 export function useChecklistMutations() {
   const queryClient = useQueryClient();
-  
+
   const createItem = useMutation({
-    mutationFn: ({ taskId, payload }: { taskId: string; payload: Omit<ChecklistItem, "id" | "completed_at"> }) =>
-      createChecklistItem(taskId, payload),
+    mutationFn: ({
+      taskId,
+      payload,
+    }: {
+      taskId: string;
+      payload: Omit<ChecklistItem, "id" | "completed_at">;
+    }) => createChecklistItem(taskId, payload),
     onSuccess: (_, variables) => {
       // Invalidate specific task and list queries
       queryClient.invalidateQueries({ queryKey: ["tasks", variables.taskId] });
+      queryClient.invalidateQueries({
+        queryKey: ["tasks", variables.taskId, "checklist"],
+      });
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
     onError: (error) => {
@@ -111,11 +154,15 @@ export function useChecklistMutations() {
   });
 
   const updateItem = useMutation({
-    mutationFn: ({ taskId, itemId, payload }: { taskId: string; itemId: string; payload: Partial<ChecklistItem> }) =>
-      updateChecklistItem(taskId, itemId, payload),
-    onSuccess: (_, variables) => {
-      // Invalidate specific task and list queries
-      queryClient.invalidateQueries({ queryKey: ["tasks", variables.taskId] });
+    mutationFn: ({
+      itemId,
+      payload,
+    }: {
+      itemId: string;
+      payload: Partial<ChecklistItem>;
+    }) => updateChecklistItem(itemId, payload),
+    onSuccess: () => {
+      // Invalidate all checklist queries
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
     onError: (error) => {
@@ -124,11 +171,9 @@ export function useChecklistMutations() {
   });
 
   const deleteItem = useMutation({
-    mutationFn: ({ taskId, itemId }: { taskId: string; itemId: string }) =>
-      deleteChecklistItem(taskId, itemId),
-    onSuccess: (_, variables) => {
-      // Invalidate specific task and list queries
-      queryClient.invalidateQueries({ queryKey: ["tasks", variables.taskId] });
+    mutationFn: (itemId: string) => deleteChecklistItem(itemId),
+    onSuccess: () => {
+      // Invalidate all checklist queries
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
     onError: (error) => {
@@ -143,35 +188,108 @@ export function useChecklistMutations() {
   };
 }
 
-export function useWorkflowMutations() {
+export function useAssignmentMutations() {
   const queryClient = useQueryClient();
-  
-  const createWorkflow = useMutation({
-    mutationFn: createWorkflow,
-    onSuccess: () => {
-      // Invalidate workflows list queries
-      queryClient.invalidateQueries({ queryKey: ["workflows"] });
-    },
-    onError: (error) => {
-      console.error("Failed to create workflow:", error);
-    },
-  });
 
-  const executeWorkflow = useMutation({
-    mutationFn: ({ workflowId, payload }: { workflowId: string; payload: WorkflowExecute }) =>
-      executeWorkflow(workflowId, payload),
-    onSuccess: () => {
-      // Invalidate workflows and tasks queries
-      queryClient.invalidateQueries({ queryKey: ["workflows"] });
+  const createAssignment = useMutation({
+    mutationFn: ({
+      taskId,
+      payload,
+    }: {
+      taskId: string;
+      payload: TaskAssignmentCreate;
+    }) => createAssignment(taskId, payload),
+    onSuccess: (_, variables) => {
+      // Invalidate specific task and list queries
+      queryClient.invalidateQueries({ queryKey: ["tasks", variables.taskId] });
+      queryClient.invalidateQueries({
+        queryKey: ["tasks", variables.taskId, "assignments"],
+      });
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
     onError: (error) => {
-      console.error("Failed to execute workflow:", error);
+      console.error("Failed to create assignment:", error);
+    },
+  });
+
+  const deleteAssignment = useMutation({
+    mutationFn: (assignmentId: string) => deleteAssignment(assignmentId),
+    onSuccess: () => {
+      // Invalidate all assignment queries
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    },
+    onError: (error) => {
+      console.error("Failed to delete assignment:", error);
     },
   });
 
   return {
-    createWorkflow,
-    executeWorkflow,
+    createAssignment,
+    deleteAssignment,
+  };
+}
+
+// Hook para obtener asignaciones con nombres de usuarios
+export function useTaskAssignments(taskIds: string[]) {
+  const usersQuery = useUsers({ page_size: 100 });
+
+  const assignmentsQuery = useQuery({
+    queryKey: ["assignments", taskIds],
+    queryFn: async () => {
+      if (taskIds.length === 0) return {};
+
+      const assignmentsPromises = taskIds.map(async (taskId) => {
+        try {
+          const response = await listAssignments(taskId);
+          return { taskId, assignments: response.data };
+        } catch (error) {
+          // Si la tarea no existe o no hay permisos, devolver array vacío
+          console.warn(`Failed to load assignments for task ${taskId}:`, error);
+          return { taskId, assignments: [] };
+        }
+      });
+
+      const results = await Promise.all(assignmentsPromises);
+      const assignmentsMap: Record<string, TaskAssignment[]> = {};
+
+      results.forEach(({ taskId, assignments }) => {
+        assignmentsMap[taskId] = assignments;
+      });
+
+      return assignmentsMap;
+    },
+    enabled: taskIds.length > 0,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  // Combinar asignaciones con nombres de usuarios
+  const assignmentsWithUsers = React.useMemo(() => {
+    if (!assignmentsQuery.data || !usersQuery.users) return {};
+
+    const userMap = new Map(usersQuery.users.map((user) => [user.id, user]));
+    const result: Record<string, (TaskAssignment & { userName: string })[]> =
+      {};
+
+    Object.entries(assignmentsQuery.data).forEach(([taskId, assignments]) => {
+      result[taskId] = assignments.map((assignment) => {
+        const userName = assignment.assigned_to_id
+          ? `${userMap.get(assignment.assigned_to_id)?.first_name || ""} ${userMap.get(assignment.assigned_to_id)?.last_name || ""}`.trim() ||
+            userMap.get(assignment.assigned_to_id)?.email ||
+            "Usuario desconocido"
+          : "Sin asignar";
+        return {
+          ...assignment,
+          userName,
+        };
+      });
+    });
+
+    return result;
+  }, [assignmentsQuery.data, usersQuery.users]);
+
+  return {
+    assignments: assignmentsWithUsers,
+    loading: assignmentsQuery.isLoading || usersQuery.loading,
+    error: assignmentsQuery.error || usersQuery.error,
   };
 }

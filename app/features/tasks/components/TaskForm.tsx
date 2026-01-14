@@ -26,6 +26,8 @@ import {
   useTask,
   useCreateTask,
   useUpdateTask,
+  useAssignments,
+  useAssignmentMutations,
 } from "~/features/tasks/hooks/useTasks";
 import type {
   Task,
@@ -34,6 +36,7 @@ import type {
   TaskStatus,
   TaskPriority,
   ChecklistItem,
+  TaskAssignment,
 } from "~/features/tasks/types/task.types";
 
 interface TaskFormProps {
@@ -44,10 +47,13 @@ export function TaskForm({ taskId }: TaskFormProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: taskResponse, isLoading, error } = useTask(taskId);
+  const { data: assignmentsResponse } = useAssignments(taskId || "");
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
+  const { createAssignment: createTaskAssignment } = useAssignmentMutations();
 
   const task = taskResponse?.data;
+  const assignments = assignmentsResponse?.data || [];
 
   const [formData, setFormData] = useState<TaskCreate>({
     title: "",
@@ -60,6 +66,8 @@ export function TaskForm({ taskId }: TaskFormProps) {
   });
 
   const [checklistItems, setChecklistItems] = useState<string[]>([""]);
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (task && taskId) {
@@ -73,8 +81,19 @@ export function TaskForm({ taskId }: TaskFormProps) {
         checklist: task.checklist || [],
       });
       setChecklistItems(task.checklist?.map((item) => item.title) || []);
+
+      // Cargar asignaciones existentes
+      const userIds = assignments
+        .filter((a) => a.assigned_to_id)
+        .map((a) => a.assigned_to_id!);
+      const groupIds = assignments
+        .filter((a) => a.assigned_to_group_id)
+        .map((a) => a.assigned_to_group_id!);
+
+      setSelectedUserIds(userIds);
+      setSelectedGroupIds(groupIds);
     }
-  }, [task, taskId]);
+  }, [task, taskId, assignments]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,22 +101,22 @@ export function TaskForm({ taskId }: TaskFormProps) {
     try {
       const submitData = {
         ...formData,
-        checklist: checklistItems.map((text, index) => ({
+        checklist: checklistItems.map((title, index) => ({
           id: task?.checklist?.[index]?.id || `new-${index}`,
-          text,
+          title,
           completed: false,
         })),
       };
 
       if (taskId) {
-        await updateTask.mutateAsync({ taskId, data: submitData });
+        await updateTask.mutateAsync({ id: taskId, payload: submitData });
       } else {
         await createTask.mutateAsync(submitData);
       }
 
       navigate("/tasks");
     } catch (error) {
-      console.error("Error saving task:", error);
+      console.error("Error al guardar tarea:", error);
     }
   };
 
@@ -205,7 +224,127 @@ export function TaskForm({ taskId }: TaskFormProps) {
                   required
                 />
               </div>
+            </CardContent>
+          </Card>
 
+          {/* Assignments - Multiple Users/Teams */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Assignments</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Assign Users
+                </label>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Enter user ID"
+                      value={selectedUserIds.join(", ")}
+                      readOnly
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        const userId = prompt("Enter user ID:");
+                        if (userId && !selectedUserIds.includes(userId)) {
+                          setSelectedUserIds([...selectedUserIds, userId]);
+                        }
+                      }}
+                    >
+                      Add User
+                    </Button>
+                  </div>
+                  {selectedUserIds.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {selectedUserIds.map((userId) => (
+                        <Badge
+                          key={userId}
+                          variant="secondary"
+                          className="flex items-center gap-1"
+                        >
+                          {userId}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setSelectedUserIds(
+                                selectedUserIds.filter((id) => id !== userId)
+                              )
+                            }
+                            className="ml-1 hover:text-destructive"
+                          >
+                            ×
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Assign Teams
+                </label>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Enter team ID"
+                      value={selectedGroupIds.join(", ")}
+                      readOnly
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        const groupId = prompt("Enter team ID:");
+                        if (groupId && !selectedGroupIds.includes(groupId)) {
+                          setSelectedGroupIds([...selectedGroupIds, groupId]);
+                        }
+                      }}
+                    >
+                      Add Team
+                    </Button>
+                  </div>
+                  {selectedGroupIds.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {selectedGroupIds.map((groupId) => (
+                        <Badge
+                          key={groupId}
+                          variant="secondary"
+                          className="flex items-center gap-1"
+                        >
+                          {groupId}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setSelectedGroupIds(
+                                selectedGroupIds.filter((id) => id !== groupId)
+                              )
+                            }
+                            className="ml-1 hover:text-destructive"
+                          >
+                            ×
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Status & Priority */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Status & Priority</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label
@@ -280,6 +419,7 @@ export function TaskForm({ taskId }: TaskFormProps) {
               </div>
             </CardContent>
           </Card>
+
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">

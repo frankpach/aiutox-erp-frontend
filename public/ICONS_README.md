@@ -66,3 +66,4 @@ convert logo.png -resize 180x180 apple-touch-icon.png
 
 
 
+

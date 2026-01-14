@@ -9,6 +9,23 @@ import { useAuthStore } from "../../stores/authStore";
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
+/**
+ * Convert relative file URLs to absolute URLs
+ * @param url - The URL to convert (can be relative or absolute)
+ * @returns Absolute URL
+ */
+export const getAbsoluteUrl = (
+  url: string | null | undefined
+): string | null => {
+  if (!url) return null;
+  // If already absolute (starts with http:// or https://), return as is
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
+  }
+  // Otherwise, prepend API_BASE_URL
+  return `${API_BASE_URL}${url}`;
+};
+
 // Create axios instance
 const apiClient: AxiosInstance = axios.create({
   baseURL: `${API_BASE_URL}/api/v1`,

@@ -15,11 +15,8 @@ import type {
   TaskUpdate,
   TaskListParams,
   ChecklistItem,
-  Workflow,
-  WorkflowCreate,
-  WorkflowUpdate,
-  WorkflowExecute,
-  TaskWorkflowListParams,
+  TaskAssignment,
+  TaskAssignmentCreate,
 } from "~/features/tasks/types/task.types";
 
 /**
@@ -37,13 +34,32 @@ export async function listTasks(
       page_size: params?.page_size || 20,
       status: params?.status,
       assigned_to_id: params?.assigned_to_id,
-      created_by_id: params?.created_by_id,
       priority: params?.priority,
-      due_date_from: params?.due_date_from,
-      due_date_to: params?.due_date_to,
-      search: params?.search,
     },
   });
+  return response.data;
+}
+
+/**
+ * List my tasks (visible to current user)
+ * GET /api/v1/tasks/my-tasks
+ *
+ * Requires: tasks.view permission
+ */
+export async function listMyTasks(
+  params?: TaskListParams
+): Promise<StandardListResponse<Task>> {
+  const response = await apiClient.get<StandardListResponse<Task>>(
+    "/tasks/my-tasks",
+    {
+      params: {
+        page: params?.page || 1,
+        page_size: params?.page_size || 20,
+        status: params?.status,
+        priority: params?.priority,
+      },
+    }
+  );
   return response.data;
 }
 
@@ -62,7 +78,7 @@ export async function getTask(id: string): Promise<StandardResponse<Task>> {
  * Create new task
  * POST /api/v1/tasks
  *
- * Requires: tasks.create permission
+ * Requires: tasks.manage permission
  */
 export async function createTask(
   payload: TaskCreate
@@ -78,7 +94,7 @@ export async function createTask(
  * Update existing task
  * PUT /api/v1/tasks/{id}
  *
- * Requires: tasks.edit permission
+ * Requires: tasks.manage permission
  */
 export async function updateTask(
   id: string,
@@ -95,7 +111,7 @@ export async function updateTask(
  * Delete task
  * DELETE /api/v1/tasks/{id}
  *
- * Requires: tasks.delete permission
+ * Requires: tasks.manage permission
  */
 export async function deleteTask(id: string): Promise<StandardResponse<null>> {
   const response = await apiClient.delete<StandardResponse<null>>(
@@ -108,7 +124,7 @@ export async function deleteTask(id: string): Promise<StandardResponse<null>> {
  * Add checklist item to task
  * POST /api/v1/tasks/{id}/checklist
  *
- * Requires: tasks.edit permission
+ * Requires: tasks.manage permission
  */
 export async function createChecklistItem(
   taskId: string,
@@ -123,17 +139,16 @@ export async function createChecklistItem(
 
 /**
  * Update checklist item
- * PUT /api/v1/tasks/{id}/checklist/{item_id}
+ * PUT /api/v1/tasks/checklist/{item_id}
  *
- * Requires: tasks.edit permission
+ * Requires: tasks.manage permission
  */
 export async function updateChecklistItem(
-  taskId: string,
   itemId: string,
   payload: Partial<ChecklistItem>
 ): Promise<StandardResponse<ChecklistItem>> {
   const response = await apiClient.put<StandardResponse<ChecklistItem>>(
-    `/tasks/${taskId}/checklist/${itemId}`,
+    `/tasks/checklist/${itemId}`,
     payload
   );
   return response.data;
@@ -141,49 +156,163 @@ export async function updateChecklistItem(
 
 /**
  * Delete checklist item
- * DELETE /api/v1/tasks/{id}/checklist/{item_id}
+ * DELETE /api/v1/tasks/checklist/{item_id}
  *
- * Requires: tasks.edit permission
+ * Requires: tasks.manage permission
  */
 export async function deleteChecklistItem(
-  taskId: string,
   itemId: string
 ): Promise<StandardResponse<null>> {
   const response = await apiClient.delete<StandardResponse<null>>(
-    `/tasks/${taskId}/checklist/${itemId}`
+    `/tasks/checklist/${itemId}`
   );
   return response.data;
 }
 
 /**
- * Create workflow
- * POST /api/v1/tasks/workflows
+ * List checklist items for a task
+ * GET /api/v1/tasks/{id}/checklist
  *
- * Requires: workflows.manage permission
+ * Requires: tasks.view permission
  */
-export async function createWorkflow(
-  payload: WorkflowCreate
-): Promise<StandardResponse<Workflow>> {
-  const response = await apiClient.post<StandardResponse<Workflow>>(
-    "/tasks/workflows",
-    payload
+export async function listChecklistItems(
+  taskId: string
+): Promise<StandardListResponse<ChecklistItem>> {
+  const response = await apiClient.get<StandardListResponse<ChecklistItem>>(
+    `/tasks/${taskId}/checklist`
   );
   return response.data;
 }
 
 /**
- * Execute workflow
- * POST /api/v1/tasks/workflows/{workflow_id}/execute
+ * Create task assignment
+ * POST /api/v1/tasks/{task_id}/assignments
  *
- * Requires: workflows.manage permission
+ * Requires: tasks.assign permission
  */
-export async function executeWorkflow(
-  workflowId: string,
-  payload: WorkflowExecute
-): Promise<StandardResponse<any>> {
-  const response = await apiClient.post<StandardResponse<any>>(
-    `/tasks/workflows/${workflowId}/execute`,
-    payload
+export async function createAssignment(
+  taskId: string,
+  assignment: TaskAssignmentCreate
+): Promise<StandardResponse<TaskAssignment>> {
+  const response = await apiClient.post<StandardResponse<TaskAssignment>>(
+    `/tasks/${taskId}/assignments`,
+    assignment
+  );
+  return response.data;
+}
+
+/**
+ * List task assignments
+ * GET /api/v1/tasks/{task_id}/assignments
+ *
+ * Requires: tasks.view permission
+ */
+export async function listAssignments(
+  taskId: string
+): Promise<StandardListResponse<TaskAssignment>> {
+  const response = await apiClient.get<StandardListResponse<TaskAssignment>>(
+    `/tasks/${taskId}/assignments`
+  );
+  return response.data;
+}
+
+/**
+ * Delete task assignment
+ * DELETE /api/v1/tasks/assignments/{assignment_id}
+ *
+ * Requires: tasks.assign permission
+ */
+export async function deleteAssignment(
+  assignmentId: string
+): Promise<StandardResponse<null>> {
+  const response = await apiClient.delete<StandardResponse<null>>(
+    `/tasks/assignments/${assignmentId}`
+  );
+  return response.data;
+}
+
+/**
+ * Get agenda items
+ * GET /api/v1/tasks/agenda
+ *
+ * Requires: tasks.agenda.view permission
+ */
+export async function getAgenda(params?: {
+  start_date?: string;
+  end_date?: string;
+  sources?: string;
+}): Promise<StandardListResponse<Record<string, any>>> {
+  const response = await apiClient.get<
+    StandardListResponse<Record<string, any>>
+  >("/tasks/agenda", {
+    params: {
+      start_date: params?.start_date,
+      end_date: params?.end_date,
+      sources: params?.sources,
+    },
+  });
+  return response.data;
+}
+
+/**
+ * Get calendar sources
+ * GET /api/v1/tasks/calendar-sources
+ *
+ * Requires: tasks.agenda.view permission
+ */
+export async function getCalendarSources(): Promise<
+  StandardResponse<Record<string, any>>
+> {
+  const response = await apiClient.get<StandardResponse<Record<string, any>>>(
+    "/tasks/calendar-sources"
+  );
+  return response.data;
+}
+
+/**
+ * Update calendar sources preferences
+ * PUT /api/v1/tasks/calendar-sources
+ *
+ * Requires: tasks.agenda.manage permission
+ */
+export async function updateCalendarSources(
+  preferences: Record<string, any>
+): Promise<StandardResponse<Record<string, any>>> {
+  const response = await apiClient.put<StandardResponse<Record<string, any>>>(
+    "/tasks/calendar-sources",
+    preferences
+  );
+  return response.data;
+}
+
+/**
+ * Get saved views
+ * GET /api/v1/tasks/views
+ *
+ * Requires: tasks.agenda.view permission
+ */
+export async function getViews(): Promise<
+  StandardListResponse<Record<string, any>>
+> {
+  const response =
+    await apiClient.get<StandardListResponse<Record<string, any>>>(
+      "/tasks/views"
+    );
+  return response.data;
+}
+
+/**
+ * Create saved view
+ * POST /api/v1/tasks/views
+ *
+ * Requires: tasks.agenda.manage permission
+ */
+export async function createView(
+  viewData: Record<string, any>
+): Promise<StandardResponse<Record<string, any>>> {
+  const response = await apiClient.post<StandardResponse<Record<string, any>>>(
+    "/tasks/views",
+    viewData
   );
   return response.data;
 }

@@ -8,8 +8,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "~/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { useTranslation } from "~/lib/i18n/useTranslation";
+import { getAbsoluteUrl } from "~/lib/api/client";
 
 /**
  * UserMenu - Menú dropdown del usuario
@@ -30,7 +31,9 @@ export function UserMenu() {
       const first = parts[0]?.[0] ?? "";
       const last = parts[parts.length - 1]?.[0] ?? "";
       const initials = `${first}${last}`.trim();
-      return (initials.length > 0 ? initials : name.substring(0, 2)).toUpperCase();
+      return (
+        initials.length > 0 ? initials : name.substring(0, 2)
+      ).toUpperCase();
     }
     return name.substring(0, 2).toUpperCase();
   };
@@ -40,7 +43,15 @@ export function UserMenu() {
     navigate("/login");
   };
 
-  const displayName = user?.full_name || user?.email || t("layout.userMenu.fallbackName");
+  const displayName =
+    user?.full_name || user?.email || t("layout.userMenu.fallbackName");
+
+  // STATUS: ✅ Configurado para usar getAbsoluteUrl (2026-01-13)
+  // NOTA: Convierte URLs relativas (/files/...) a absolutas (http://localhost:8000/files/...)
+  // PROBLEMA CONOCIDO: Avatar no se muestra - pendiente de prueba
+  // Todo: the avatar do not load pictures from the backend
+
+  const avatarUrl = getAbsoluteUrl(user?.avatar_url);
 
   return (
     <DropdownMenu>
@@ -50,6 +61,7 @@ export function UserMenu() {
           aria-label={t("layout.userMenu.label")}
         >
           <Avatar>
+            {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
             <AvatarFallback className="bg-[hsl(var(--primary))] text-[hsl(var(--secondary))]">
               {getInitials(user?.full_name)}
             </AvatarFallback>
@@ -94,27 +106,4 @@ export function UserMenu() {
     </DropdownMenu>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

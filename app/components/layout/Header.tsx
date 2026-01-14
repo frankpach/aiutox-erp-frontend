@@ -11,12 +11,17 @@ import { useTheme } from "~/providers";
 import { cn } from "~/lib/utils";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 import { useQuickActions } from "~/hooks/useQuickActions";
-import { initializeQuickActions, quickActionsRegistry } from "~/lib/quickActions/registry";
+import {
+  initializeQuickActions,
+  quickActionsRegistry,
+} from "~/lib/quickActions/registry";
 import { useQuickActionsStore } from "~/stores/quickActionsStore";
+import { TaskQuickAdd } from "~/features/tasks/components/TaskQuickAdd";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 
@@ -35,17 +40,22 @@ interface HeaderProps {
   isSidebarCollapsed?: boolean;
 }
 
-export const Header = memo(function Header({ onSidebarToggle, isSidebarOpen, isSidebarCollapsed }: HeaderProps) {
+export const Header = memo(function Header({
+  onSidebarToggle,
+  isSidebarOpen,
+  isSidebarCollapsed,
+}: HeaderProps) {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const quickActions = useQuickActions();
+  const [isTaskQuickAddOpen, setIsTaskQuickAddOpen] = useState(false);
 
   // Inicializar acciones rápidas del sistema (solo una vez)
   useEffect(() => {
     initializeQuickActions();
-    
+
     // También inicializar en el store de Zustand
     const { initializeActions } = useQuickActionsStore.getState();
     const allActions = quickActionsRegistry.getAll();
@@ -72,9 +82,17 @@ export const Header = memo(function Header({ onSidebarToggle, isSidebarOpen, isS
     }
   };
 
+  const handleQuickActionClick = (action: any) => {
+    if (action.id === "new-task") {
+      setIsTaskQuickAddOpen(true);
+    } else {
+      navigate(action.route);
+    }
+  };
+
   return (
     <header
-        style={{ ["--foreground" as any]: "var(--navbar-text)" }}
+      style={{ ["--foreground" as any]: "var(--navbar-text)" }}
       className="h-16 flex-shrink-0 bg-[hsl(var(--navbar-bg))] text-[hsl(var(--navbar-text))] px-6 flex items-center justify-between shadow-[0_1px_3px_rgba(0,0,0,0.05)]"
       role="banner"
     >
@@ -137,43 +155,71 @@ export const Header = memo(function Header({ onSidebarToggle, isSidebarOpen, isS
 
       {/* Sección derecha: Quick Actions, Theme Toggle, Notifications y UserMenu */}
       <div className="flex items-center gap-4">
-        {/* Quick Actions Button */}
+        {/* Quick Actions Button (Desktop) */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="hidden md:flex hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--accent-foreground))]" aria-label={t("layout.header.quickActions")}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="hidden md:flex hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--accent-foreground))]"
+              aria-label={t("layout.header.quickActions")}
+            >
               <HugeiconsIcon icon={Add01Icon} size={20} />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            {/* Other Quick Actions */}
             {quickActions.map((action) => (
-              <DropdownMenuItem 
-                key={action.id} 
-                onClick={() => navigate(action.route)}
+              <DropdownMenuItem
+                key={action.id}
+                onClick={() => handleQuickActionClick(action)}
               >
-                {action.icon && typeof action.icon === 'function' && action.icon() !== null ? (
-                  <HugeiconsIcon icon={action.icon()} size={16} className="mr-2" />
+                {action.icon &&
+                typeof action.icon === "function" &&
+                action.icon() !== null ? (
+                  <HugeiconsIcon
+                    icon={action.icon()}
+                    size={16}
+                    className="mr-2"
+                  />
                 ) : (
                   <div className="w-4 h-4 mr-2 flex items-center justify-center">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full" />
                   </div>
                 )}
                 {t(action.label as any)}
               </DropdownMenuItem>
             ))}
             {quickActions.length === 0 && (
-              <div style={{ padding: '8px', fontSize: '12px', color: '#999' }}>
+              <div style={{ padding: "8px", fontSize: "12px", color: "#999" }}>
                 No hay acciones disponibles
               </div>
             )}
           </DropdownMenuContent>
         </DropdownMenu>
 
+        {/* TaskQuickAdd Modal (controlled) */}
+        <TaskQuickAdd
+          open={isTaskQuickAddOpen}
+          onOpenChange={setIsTaskQuickAddOpen}
+          onTaskCreated={() => setIsTaskQuickAddOpen(false)}
+        />
+
+        {/* Quick Add Task Button (Mobile - Floating) */}
+        <div className="md:hidden">
+          <TaskQuickAdd onTaskCreated={() => {}} />
+        </div>
+
         {/* Theme Toggle */}
         <Button
           variant="ghost"
           size="icon"
           onClick={toggleTheme}
-          aria-label={resolvedTheme === "dark" ? t("layout.header.themeToLight") : t("layout.header.themeToDark")}
+          aria-label={
+            resolvedTheme === "dark"
+              ? t("layout.header.themeToLight")
+              : t("layout.header.themeToDark")
+          }
           className="hidden md:flex hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--accent-foreground))]"
         >
           {resolvedTheme === "dark" ? (
@@ -193,12 +239,3 @@ export const Header = memo(function Header({ onSidebarToggle, isSidebarOpen, isS
     </header>
   );
 });
-
-
-
-
-
-
-
-
-

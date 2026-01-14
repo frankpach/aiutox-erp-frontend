@@ -71,7 +71,7 @@ export function DataTable<T = unknown>({
     return (
       <div className="flex items-center justify-between px-2 py-4">
         <div className="text-sm text-muted-foreground">
-          Mostrando {((pagination.page - 1) * pagination.pageSize) + 1} a{" "}
+          Mostrando {(pagination.page - 1) * pagination.pageSize + 1} a{" "}
           {Math.min(pagination.page * pagination.pageSize, pagination.total)} de{" "}
           {pagination.total} resultados
         </div>
@@ -104,7 +104,9 @@ export function DataTable<T = unknown>({
 
   const tableContent = (
     <div className={cn("space-y-4", className)}>
-      {actions && <div className="flex items-center justify-end">{actions}</div>}
+      {actions && (
+        <div className="flex items-center justify-end">{actions}</div>
+      )}
 
       {loading ? (
         <div className="space-y-2">
@@ -142,10 +144,7 @@ export function DataTable<T = unknown>({
                     className="hover:bg-muted/50 transition-colors"
                   >
                     {columns.map((column) => (
-                      <td
-                        key={column.key}
-                        className="px-4 py-3 text-sm"
-                      >
+                      <td key={column.key} className="px-4 py-3 text-sm">
                         {column.cell(row)}
                       </td>
                     ))}
@@ -164,7 +163,9 @@ export function DataTable<T = unknown>({
     return (
       <Card>
         <CardHeader className={actions ? "pb-4" : "hidden"}>
-          {actions && <div className="flex items-center justify-end">{actions}</div>}
+          {actions && (
+            <div className="flex items-center justify-end">{actions}</div>
+          )}
         </CardHeader>
         <CardContent>{tableContent}</CardContent>
       </Card>
@@ -173,4 +174,3 @@ export function DataTable<T = unknown>({
 
   return tableContent;
 }
-

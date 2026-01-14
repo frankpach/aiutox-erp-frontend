@@ -1,14 +1,14 @@
 /**
  * User Edit Page
  *
- * Form for editing user information
- * Uses PageLayout for consistent visual structure
+ * Form for editing user information using modal
  */
 
 import type { Route } from "./+types/users.$id.edit";
 import { useParams, useNavigate } from "react-router";
+import { useState } from "react";
 import { PageLayout } from "~/components/layout/PageLayout";
-import { UserForm } from "~/features/users/components/UserForm";
+import { UserFormModal } from "~/features/users/components/UserFormModal";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 import { LoadingState } from "~/components/common/LoadingState";
 import { ErrorState } from "~/components/common/ErrorState";
@@ -29,42 +29,52 @@ export default function UserEditPage() {
   const { t } = useTranslation();
   const { user, loading, error } = useUser(id || null);
   const { mutateAsync: updateUserAsync, isPending: updating } = useUpdateUser();
+  const [isModalOpen, setIsModalOpen] = useState(true);
 
   const handleSubmit = async (data: UserUpdate) => {
     if (!id) return;
     try {
       await updateUserAsync({ userId: id, data });
-      showToast(t("users.updateSuccess") || "Usuario actualizado exitosamente", "success");
+      showToast("Usuario actualizado exitosamente", "success");
+      setIsModalOpen(false);
       navigate(`/users/${id}`);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : t("users.updateError") || "Error al actualizar el usuario";
+      const errorMessage =
+        err instanceof Error ? err.message : "Error al actualizar el usuario";
       showToast(errorMessage, "error");
+      throw err;
     }
   };
 
-  const handleCancel = () => {
+  const handleClose = () => {
+    setIsModalOpen(false);
     navigate(`/users/${id}`);
   };
 
   return (
     <PageLayout
-      title={t("users.editTitle") || "Editar Usuario"}
-      description={user?.email || t("users.editDescription") || "Modifica la información del usuario"}
+      title="Editar Usuario"
+      description={user?.email || "Modifica la información del usuario"}
       breadcrumb={[
-        { label: t("users.title") || "Usuarios", href: "/users" },
+        { label: "Usuarios", href: "/users" },
         { label: user?.email || id || "", href: `/users/${id}` },
-        { label: t("common.edit") || "Editar" },
+        { label: "Editar" },
       ]}
       loading={loading}
       error={error}
     >
       {loading && <LoadingState />}
-      {error && <ErrorState message={error instanceof Error ? error.message : t("users.error") || "Error"} />}
+      {error && (
+        <ErrorState
+          message={error instanceof Error ? error.message : "Error"}
+        />
+      )}
       {user && (
-        <UserForm
+        <UserFormModal
+          open={isModalOpen}
+          onClose={handleClose}
           user={user}
           onSubmit={handleSubmit}
-          onCancel={handleCancel}
           loading={updating}
         />
       )}

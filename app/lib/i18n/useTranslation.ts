@@ -32,13 +32,19 @@ type TranslationPath = NestedKeyOf<typeof translations.es>;
 /**
  * Get nested value from object by dot-notation path
  */
-function getNestedValue(obj: Record<string, unknown>, path: string): string | undefined {
-  return path.split(".").reduce((current, key) => {
-    if (current && typeof current === "object" && key in current) {
-      return current[key] as Record<string, unknown> | string | undefined;
-    }
-    return undefined;
-  }, obj as Record<string, unknown> | string | undefined) as string | undefined;
+function getNestedValue(
+  obj: Record<string, unknown>,
+  path: string
+): string | undefined {
+  return path.split(".").reduce(
+    (current, key) => {
+      if (current && typeof current === "object" && key in current) {
+        return current[key] as Record<string, unknown> | string | undefined;
+      }
+      return undefined;
+    },
+    obj as Record<string, unknown> | string | undefined
+  ) as string | undefined;
 }
 
 /**
@@ -66,16 +72,18 @@ function getInitialLanguage(): SupportedLanguage {
  * When the language is changed in /config/general, it will update automatically.
  */
 export function useTranslation() {
-  const [language, setLanguageState] = useState<SupportedLanguage>(getInitialLanguage);
+  const [language, setLanguageState] =
+    useState<SupportedLanguage>(getInitialLanguage);
 
   // Fetch general config to get language preference from backend
   const { data: generalConfig } = useQuery({
     queryKey: ["config", "general"],
     queryFn: async () => {
       try {
-        const response = await apiClient.get<StandardResponse<GeneralSettings>>(
-          "/config/general"
-        );
+        const response =
+          await apiClient.get<StandardResponse<GeneralSettings>>(
+            "/config/general"
+          );
         return response.data.data;
       } catch (error) {
         // If backend is not available or user not authenticated, return null
@@ -119,26 +127,24 @@ export function useTranslation() {
   }, []);
 
   // Translation function with fallback
-  const t = useCallback((key: TranslationPath): string => {
-    const activeTranslations = getTranslations();
-    const value = getNestedValue(activeTranslations, key);
+  const t = useCallback(
+    (key: TranslationPath): string => {
+      const activeTranslations = getTranslations();
+      const value = getNestedValue(activeTranslations, key);
 
-    // If translation not found, try Spanish as fallback
-    if (!value && language !== "es") {
-      const fallbackValue = getNestedValue(translations.es, key);
-      if (fallbackValue) {
-        return fallbackValue;
+      // If translation not found, try Spanish as fallback
+      if (!value && language !== "es") {
+        const fallbackValue = getNestedValue(translations.es, key);
+        if (fallbackValue) {
+          return fallbackValue;
+        }
       }
-    }
 
-    const missingTranslation =
-      getNestedValue(activeTranslations, "common.missingTranslation") ||
-      getNestedValue(translations.es, "common.missingTranslation") ||
-      "Texto no disponible";
-
-    // If still not found, return safe fallback instead of the key
-    return value || missingTranslation;
-  }, [language, getTranslations]);
+      // If still not found, return the key for debugging
+      return value || key;
+    },
+    [language, getTranslations]
+  );
 
   // Sync with localStorage changes (for multi-tab support)
   useEffect(() => {

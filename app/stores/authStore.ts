@@ -1,18 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { RefreshTokenResponse } from "../lib/api/types/auth.types";
+import type { User } from "../features/users/types/user.types";
 import apiClient from "../lib/api/client";
-
-interface User {
-  id: string;
-  email: string;
-  full_name: string | null;
-  is_active: boolean;
-  tenant_id?: string;
-  tenant_name?: string;
-  roles?: string[];
-  permissions?: string[];
-}
 
 interface AuthState {
   user: User | null;
@@ -22,6 +12,7 @@ interface AuthState {
   _hasHydrated: boolean; // Track if Zustand persist has hydrated
   setAuth: (user: User, token: string, refreshToken: string) => void;
   setRefreshToken: (refreshToken: string) => void;
+  updateUser: (userData: Partial<User>) => void;
   refreshAccessToken: () => Promise<string | null>;
   clearAuth: () => void;
   _syncFromLocalStorage: () => boolean; // Internal method for syncing from localStorage
@@ -81,16 +72,24 @@ export const useAuthStore = create<AuthState>()(
             refreshToken: refreshToken || currentState.refreshToken,
             isAuthenticated: true,
           });
-          console.debug("[AuthStore] Token found, setting isAuthenticated=true");
+          console.debug(
+            "[AuthStore] Token found, setting isAuthenticated=true"
+          );
           return true;
         }
 
         return false;
       },
-      setRefreshToken: (refreshToken) => {
+      setRefreshToken: (refreshToken: string) => {
         // Refresh token is now in cookie, not localStorage
         // Keep in state for backward compatibility
         set({ refreshToken });
+      },
+      updateUser: (userData: Partial<User>) => {
+        const currentUser = get().user;
+        if (currentUser) {
+          set({ user: { ...currentUser, ...userData } });
+        }
       },
       refreshAccessToken: async () => {
         const { refreshToken } = get();
@@ -105,8 +104,8 @@ export const useAuthStore = create<AuthState>()(
           );
 
           const accessToken =
-            (response.data as { data?: RefreshTokenResponse }).data?.access_token ??
-            response.data.access_token;
+            (response.data as { data?: RefreshTokenResponse }).data
+              ?.access_token ?? response.data.access_token;
           if (!accessToken) {
             throw new Error("Refresh token response missing access token");
           }
@@ -123,13 +122,18 @@ export const useAuthStore = create<AuthState>()(
         localStorage.removeItem("auth_token");
         // Refresh token is in httpOnly cookie, cannot be deleted from JS
         // Cookie will be deleted by backend on logout or will expire
-        set({ user: null, token: null, refreshToken: null, isAuthenticated: false });
+        set({
+          user: null,
+          token: null,
+          refreshToken: null,
+          isAuthenticated: false,
+        });
 
         // Limpiar cache del Service Worker
         if (
-          typeof navigator !== 'undefined' &&
-          'serviceWorker' in navigator &&
-          navigator.serviceWorker &&  // ⚠️ CRÍTICO: Verificar que no sea null/undefined
+          typeof navigator !== "undefined" &&
+          "serviceWorker" in navigator &&
+          navigator.serviceWorker && // ⚠️ CRÍTICO: Verificar que no sea null/undefined
           navigator.serviceWorker.controller
         ) {
           try {
@@ -137,26 +141,28 @@ export const useAuthStore = create<AuthState>()(
 
             messageChannel.port1.onmessage = (event) => {
               if (event.data.success) {
-                console.log('[Auth] Service Worker cache cleared');
+                console.log("[Auth] Service Worker cache cleared");
               }
             };
 
             navigator.serviceWorker.controller.postMessage(
-              { type: 'CLEAR_AUTH_CACHE' },
+              { type: "CLEAR_AUTH_CACHE" },
               [messageChannel.port2]
             );
           } catch (error) {
             // Silently fail if SW communication fails
-            console.warn('[Auth] Failed to clear SW cache:', error);
+            console.warn("[Auth] Failed to clear SW cache:", error);
           }
         }
 
         // Clear encryption secret on logout
-        import("~/stores/encryptionStore").then(({ useEncryptionStore }) => {
-          useEncryptionStore.getState().clearSecret();
-        }).catch(() => {
-          // Ignore errors if store not available
-        });
+        import("~/stores/encryptionStore")
+          .then(({ useEncryptionStore }) => {
+            useEncryptionStore.getState().clearSecret();
+          })
+          .catch(() => {
+            // Ignore errors if store not available
+          });
       },
     }),
     {
@@ -188,11 +194,13 @@ export const useAuthStore = create<AuthState>()(
                   const parsed = JSON.parse(storedState);
                   if (parsed.state?.user && parsed.state?.isAuthenticated) {
                     // Use stored state if available - update via store method
-                    useAuthStore.getState().setAuth(
-                      parsed.state.user,
-                      token,
-                      parsed.state.refreshToken || refreshToken || ""
-                    );
+                    useAuthStore
+                      .getState()
+                      .setAuth(
+                        parsed.state.user,
+                        token,
+                        parsed.state.refreshToken || refreshToken || ""
+                      );
                     console.debug("[AuthStore] Synced from stored state");
                     return;
                   }
@@ -210,7 +218,9 @@ export const useAuthStore = create<AuthState>()(
                 refreshToken: refreshToken || currentState.refreshToken,
                 isAuthenticated: true,
               });
-              console.debug("[AuthStore] Token found, setting isAuthenticated=true");
+              console.debug(
+                "[AuthStore] Token found, setting isAuthenticated=true"
+              );
             }
 
             // Set up storage event listener to sync when localStorage changes externally

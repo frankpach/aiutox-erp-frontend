@@ -171,3 +171,4 @@ describe("Sidebar", () => {
     expect(backdrop).toBeTruthy();
   });
 });
+

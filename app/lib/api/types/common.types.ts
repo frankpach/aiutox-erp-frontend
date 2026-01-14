@@ -74,3 +74,4 @@ export type UUID = string;
  * JSON object type
  */
 export type JSONObject = Record<string, unknown>;
+

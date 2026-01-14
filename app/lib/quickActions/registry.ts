@@ -1,6 +1,6 @@
 /**
  * Quick Actions Registry System
- * 
+ *
  * Sistema centralizado para registrar y gestionar acciones rápidas del topbar.
  * Combina registro por módulo, filtrado por permisos y contextualización.
  */
@@ -65,9 +65,12 @@ class QuickActionsRegistry {
     maxResults: number = 5
   ): QuickAction[] {
     return this.getAll()
-      .filter(action => {
+      .filter((action) => {
         // Verificar permisos
-        if (!userPermissions.includes('*') && !userPermissions.includes(action.permission)) {
+        if (
+          !userPermissions.includes("*") &&
+          !userPermissions.includes(action.permission)
+        ) {
           return false;
         }
 
@@ -78,7 +81,7 @@ class QuickActionsRegistry {
 
         // Verificar contexto
         if (action.context && action.context.length > 0) {
-          return action.context.some(contextPath => 
+          return action.context.some((contextPath) =>
             currentPath.includes(contextPath)
           );
         }
@@ -106,105 +109,105 @@ export const quickActionsRegistry = new QuickActionsRegistry();
  */
 export const systemQuickActions: QuickAction[] = [
   {
-    id: 'new-task',
-    label: 'layout.header.newTask',
+    id: "new-task",
+    label: "layout.header.newTask",
     icon: () => null, // Se asignará después de importar el icono
-    route: '/tasks-create',
-    permission: 'tasks.create',
+    route: "/tasks-create",
+    permission: "tasks.create",
     priority: 1,
     global: true,
-    module: 'tasks'
+    module: "tasks",
   },
   {
-    id: 'new-product',
-    label: 'layout.header.newProduct',
+    id: "new-product",
+    label: "layout.header.newProduct",
     icon: () => null, // Se asignará después de importar el icono
-    route: '/products-create',
-    permission: 'products.create',
+    route: "/products-create",
+    permission: "products.create",
     priority: 2,
-    context: ['products', 'inventory'],
-    module: 'products'
+    context: ["products", "inventory"],
+    module: "products",
   },
   {
-    id: 'upload-file',
-    label: 'layout.header.uploadFile',
+    id: "upload-file",
+    label: "layout.header.uploadFile",
     icon: () => null, // Se asignará después de importar el icono
-    route: '/files',
-    permission: 'files.create',
+    route: "/files",
+    permission: "files.create",
     priority: 3,
     global: true,
-    module: 'files'
+    module: "files",
   },
   {
-    id: 'new-approval',
-    label: 'layout.header.newApproval',
+    id: "new-approval",
+    label: "layout.header.newApproval",
     icon: () => null, // Se asignará después de importar el icono
-    route: '/approvals-create',
-    permission: 'approvals.create',
+    route: "/approvals-create",
+    permission: "approvals.create",
     priority: 4,
     global: true,
-    module: 'approvals'
+    module: "approvals",
   },
   {
-    id: 'new-tag',
-    label: 'layout.header.newTag',
+    id: "new-tag",
+    label: "layout.header.newTag",
     icon: () => null, // Se asignará después de importar el icono
-    route: '/tags-create',
-    permission: 'tags.create',
+    route: "/tags-create",
+    permission: "tags.create",
     priority: 5,
-    context: ['files', 'products', 'tasks'],
-    module: 'tags'
+    context: ["files", "products", "tasks"],
+    module: "tags",
   },
   {
-    id: 'new-user',
-    label: 'layout.header.newUser',
+    id: "new-user",
+    label: "layout.header.newUser",
     icon: () => null, // Se asignará después de importar el icono
-    route: '/users-create',
-    permission: 'users.create',
+    route: "/users-create",
+    permission: "users.create",
     priority: 6,
     global: true,
-    module: 'users'
+    module: "users",
   },
   {
-    id: 'new-event',
-    label: 'layout.header.newEvent',
+    id: "new-event",
+    label: "layout.header.newEvent",
     icon: () => null, // Se asignará después de importar el icono
-    route: '/calendar-create',
-    permission: 'calendar.create',
+    route: "/calendar-create",
+    permission: "calendar.create",
     priority: 7,
-    context: ['calendar'],
-    module: 'calendar'
+    context: ["calendar"],
+    module: "calendar",
   },
   {
-    id: 'new-template',
-    label: 'layout.header.newTemplate',
+    id: "new-template",
+    label: "layout.header.newTemplate",
     icon: () => null, // Se asignará después de importar el icono
-    route: '/templates-create',
-    permission: 'templates.create',
+    route: "/templates-create",
+    permission: "templates.create",
     priority: 8,
-    context: ['reporting', 'automation'],
-    module: 'templates'
+    context: ["reporting", "automation"],
+    module: "templates",
   },
   {
-    id: 'new-integration',
-    label: 'layout.header.newIntegration',
+    id: "new-integration",
+    label: "layout.header.newIntegration",
     icon: () => null, // Se asignará después de importar el icono
-    route: '/integrations-create',
-    permission: 'integrations.create',
+    route: "/integrations-create",
+    permission: "integrations.create",
     priority: 9,
-    context: ['config.integrations'],
-    module: 'integrations'
+    context: ["config.integrations"],
+    module: "integrations",
   },
   {
-    id: 'new-automation',
-    label: 'layout.header.newAutomation',
+    id: "new-automation",
+    label: "layout.header.newAutomation",
     icon: () => null, // Se asignará después de importar el icono
-    route: '/automation-create',
-    permission: 'automation.create',
+    route: "/automation-create",
+    permission: "automation.create",
     priority: 10,
-    context: ['automation'],
-    module: 'automation'
-  }
+    context: ["automation"],
+    module: "automation",
+  },
 ];
 
 /**
@@ -212,17 +215,19 @@ export const systemQuickActions: QuickAction[] = [
  */
 export function initializeQuickActions(): void {
   // Registrar acciones del sistema inmediatamente (sin esperar iconos)
-  systemQuickActions.forEach(action => {
+  systemQuickActions.forEach((action) => {
     quickActionsRegistry.register(action);
   });
-  
+
   // Importar iconos dinámicamente después de registrar
-  import('@hugeicons/core-free-icons').then(({ Add01Icon, Package01Icon, FileUploadIcon }) => {
-    if (systemQuickActions[0]) systemQuickActions[0].icon = Add01Icon;
-    if (systemQuickActions[1]) systemQuickActions[1].icon = Package01Icon;
-    if (systemQuickActions[2]) systemQuickActions[2].icon = FileUploadIcon;
-    // Icons assigned successfully
-  }).catch(() => {
-    // Error loading icons - continue without icons
-  });
+  import("@hugeicons/core-free-icons")
+    .then(({ Add01Icon, Package01Icon, FileUploadIcon }) => {
+      if (systemQuickActions[0]) systemQuickActions[0].icon = Add01Icon;
+      if (systemQuickActions[1]) systemQuickActions[1].icon = Package01Icon;
+      if (systemQuickActions[2]) systemQuickActions[2].icon = FileUploadIcon;
+      // Icons assigned successfully
+    })
+    .catch(() => {
+      // Error loading icons - continue without icons
+    });
 }

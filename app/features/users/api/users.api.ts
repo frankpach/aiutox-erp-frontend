@@ -9,11 +9,7 @@ import type {
   StandardResponse,
   StandardListResponse,
 } from "~/lib/api/types/common.types";
-import type {
-  User,
-  UserCreate,
-  UserUpdate,
-} from "../types/user.types";
+import type { User, UserCreate, UserUpdate } from "../types/user.types";
 
 export interface UsersListParams {
   page?: number;
@@ -50,9 +46,7 @@ export async function listUsers(
  *
  * Requires: auth.manage_users permission
  */
-export async function getUser(
-  userId: string
-): Promise<StandardResponse<User>> {
+export async function getUser(userId: string): Promise<StandardResponse<User>> {
   const response = await apiClient.get<StandardResponse<User>>(
     `/users/${userId}`
   );
@@ -68,10 +62,7 @@ export async function getUser(
 export async function createUser(
   data: UserCreate
 ): Promise<StandardResponse<User>> {
-  const response = await apiClient.post<StandardResponse<User>>(
-    "/users",
-    data
-  );
+  const response = await apiClient.post<StandardResponse<User>>("/users", data);
   return response.data;
 }
 
@@ -85,19 +76,61 @@ export async function updateUser(
   userId: string,
   data: UserUpdate
 ): Promise<StandardResponse<User>> {
-  console.log("[updateUser API] Calling PATCH /users/{userId}:", { userId, data });
+  console.log("[updateUser API] Calling PATCH /users/{userId}:", {
+    userId,
+    data,
+  });
   try {
     const response = await apiClient.patch<StandardResponse<User>>(
       `/users/${userId}`,
       data
     );
-    console.log("[updateUser API] Response received:", { status: response.status, data: response.data });
+    console.log("[updateUser API] Response received:", {
+      status: response.status,
+      data: response.data,
+    });
     return response.data;
   } catch (error: any) {
     console.error("[updateUser API] Error:", error);
     // Log detailed error information
     if (error.response) {
       console.error("[updateUser API] Error response:", {
+        status: error.response.status,
+        statusText: error.response.statusText,
+        data: error.response.data,
+        headers: error.response.headers,
+      });
+    }
+    throw error;
+  }
+}
+
+/**
+ * Update own profile
+ * PATCH /api/v1/users/me
+ *
+ * Allows users to edit their own profile without auth.manage_users permission.
+ * Forbidden fields are automatically removed by the backend.
+ */
+export async function updateOwnProfile(
+  data: UserUpdate
+): Promise<StandardResponse<User>> {
+  console.log("[updateOwnProfile API] Calling PATCH /users/me:", { data });
+  try {
+    const response = await apiClient.patch<StandardResponse<User>>(
+      "/users/me",
+      data
+    );
+    console.log("[updateOwnProfile API] Response received:", {
+      status: response.status,
+      data: response.data,
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error("[updateOwnProfile API] Error:", error);
+    // Log detailed error information
+    if (error.response) {
+      console.error("[updateOwnProfile API] Error response:", {
         status: error.response.status,
         statusText: error.response.statusText,
         data: error.response.data,
@@ -117,9 +150,9 @@ export async function updateUser(
 export async function deleteUser(
   userId: string
 ): Promise<StandardResponse<{ message: string }>> {
-  const response = await apiClient.delete<StandardResponse<{ message: string }>>(
-    `/users/${userId}`
-  );
+  const response = await apiClient.delete<
+    StandardResponse<{ message: string }>
+  >(`/users/${userId}`);
   return response.data;
 }
 
@@ -153,7 +186,3 @@ export async function bulkUsersAction(
 
 // Legacy function names for backward compatibility
 export const getUsers = listUsers;
-
-
-
-
