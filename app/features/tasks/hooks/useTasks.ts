@@ -17,9 +17,9 @@ import {
   updateChecklistItem,
   deleteChecklistItem,
   listChecklistItems,
-  createAssignment,
+  createAssignment as createAssignmentApi,
   listAssignments,
-  deleteAssignment,
+  deleteAssignment as deleteAssignmentApi,
 } from "~/features/tasks/api/tasks.api";
 import { useUsers } from "~/features/users/hooks/useUsers";
 import type {
@@ -194,13 +194,13 @@ export function useAssignmentMutations() {
   const createAssignment = useMutation({
     mutationFn: ({
       taskId,
-      payload,
+      assignment,
     }: {
       taskId: string;
-      payload: TaskAssignmentCreate;
-    }) => createAssignment(taskId, payload),
+      assignment: TaskAssignmentCreate;
+    }) => createAssignmentApi(taskId, assignment),
     onSuccess: (_, variables) => {
-      // Invalidate specific task and list queries
+      // Invalidate task and assignments queries
       queryClient.invalidateQueries({ queryKey: ["tasks", variables.taskId] });
       queryClient.invalidateQueries({
         queryKey: ["tasks", variables.taskId, "assignments"],
@@ -213,7 +213,13 @@ export function useAssignmentMutations() {
   });
 
   const deleteAssignment = useMutation({
-    mutationFn: (assignmentId: string) => deleteAssignment(assignmentId),
+    mutationFn: ({
+      taskId,
+      assignmentId,
+    }: {
+      taskId: string;
+      assignmentId: string;
+    }) => deleteAssignmentApi(taskId, assignmentId),
     onSuccess: () => {
       // Invalidate all assignment queries
       queryClient.invalidateQueries({ queryKey: ["tasks"] });

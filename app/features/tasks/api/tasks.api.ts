@@ -218,15 +218,16 @@ export async function listAssignments(
 
 /**
  * Delete task assignment
- * DELETE /api/v1/tasks/assignments/{assignment_id}
+ * DELETE /api/v1/tasks/{task_id}/assignments/{assignment_id}
  *
  * Requires: tasks.assign permission
  */
 export async function deleteAssignment(
+  taskId: string,
   assignmentId: string
 ): Promise<StandardResponse<null>> {
   const response = await apiClient.delete<StandardResponse<null>>(
-    `/tasks/assignments/${assignmentId}`
+    `/tasks/${taskId}/assignments/${assignmentId}`
   );
   return response.data;
 }

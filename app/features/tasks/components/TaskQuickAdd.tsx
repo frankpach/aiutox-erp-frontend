@@ -31,6 +31,7 @@ import { X } from "lucide-react";
 import { useCreateTask } from "../hooks/useTasks";
 import { useUsers } from "~/features/users/hooks/useUsers";
 import { createAssignment, createChecklistItem } from "../api/tasks.api";
+import { useAuthStore } from "~/stores/authStore";
 import { MultiSelect } from "~/components/ui/multi-select";
 import type { TaskCreate, TaskStatus, TaskPriority } from "../types/task.types";
 
@@ -48,6 +49,7 @@ export function TaskQuickAdd({
   const { t } = useTranslation();
   const [internalOpen, setInternalOpen] = useState(false);
   const createTask = useCreateTask();
+  const { user } = useAuthStore();
   const { users } = useUsers({ page_size: 100 }); // Obtener usuarios para el MultiSelect
 
   console.log("Users loaded in TaskQuickAdd:", users);
@@ -103,12 +105,13 @@ export function TaskQuickAdd({
       const taskId = response.data.id;
 
       // Crear asignaciones de usuarios si se seleccionaron
-      if (assignedUserIds.length > 0) {
+      if (assignedUserIds.length > 0 && user?.id) {
         await Promise.all(
           assignedUserIds.map((userId) =>
             createAssignment(taskId, {
               task_id: taskId,
               assigned_to_id: userId,
+              created_by_id: user.id,
             })
           )
         );

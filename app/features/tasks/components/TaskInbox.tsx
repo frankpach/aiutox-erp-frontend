@@ -20,7 +20,7 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   InboxIcon,
-  Plus01Icon,
+  PlusSignIcon,
   CheckmarkBadge01Icon,
 } from "@hugeicons/core-free-icons";
 import { useMyTasks, useCreateTask, useUpdateTask } from "../hooks/useTasks";
@@ -162,7 +162,7 @@ export function TaskInbox({ onTaskProcessed }: TaskInboxProps) {
               onClick={handleQuickCapture}
               disabled={!quickCaptureText.trim() || createTask.isPending}
             >
-              <HugeiconsIcon icon={Plus01Icon} size={16} />
+              <HugeiconsIcon icon={PlusSignIcon} size={16} />
             </Button>
           </div>
           <p className="text-sm text-muted-foreground">

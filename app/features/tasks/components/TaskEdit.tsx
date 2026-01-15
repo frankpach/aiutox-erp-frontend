@@ -27,6 +27,7 @@ import { Edit01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useUpdateTask } from "../hooks/useTasks";
 import { useUsers } from "~/features/users/hooks/useUsers";
+import { useAuthStore } from "~/stores/authStore";
 import {
   createAssignment,
   deleteAssignment,
@@ -56,6 +57,7 @@ export function TaskEdit({
   const { t } = useTranslation();
   const updateTask = useUpdateTask();
   const { users } = useUsers({ page_size: 100 });
+  const { user } = useAuthStore();
 
   const [formData, setFormData] = useState<Partial<TaskUpdate>>({
     title: "",
@@ -129,13 +131,13 @@ export function TaskEdit({
           assignment.assigned_to_id &&
           !assignedUserIds.includes(assignment.assigned_to_id)
         ) {
-          await deleteAssignment(assignment.id);
+          await deleteAssignment(task.id, assignment.id);
         }
         if (
           assignment.assigned_to_group_id &&
           !assignedGroupIds.includes(assignment.assigned_to_group_id)
         ) {
-          await deleteAssignment(assignment.id);
+          await deleteAssignment(task.id, assignment.id);
         }
       }
 
@@ -145,6 +147,7 @@ export function TaskEdit({
           await createAssignment(task.id, {
             task_id: task.id,
             assigned_to_id: userId,
+            created_by_id: user?.id || "",
           });
         }
       }
@@ -155,6 +158,7 @@ export function TaskEdit({
           await createAssignment(task.id, {
             task_id: task.id,
             assigned_to_group_id: groupId,
+            created_by_id: user?.id || "",
           });
         }
       }
