@@ -20,21 +20,16 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import {
   addDays,
-  addHours,
   addMonths,
   addWeeks,
+  differenceInCalendarDays,
   eachDayOfInterval,
   endOfDay,
   endOfMonth,
   endOfWeek,
   format,
-  isAfter,
-  isBefore,
   isSameDay,
   isSameMonth,
-  isWithinInterval,
-  setHours,
-  setMinutes,
   startOfDay,
   startOfMonth,
   startOfWeek,
@@ -91,6 +86,33 @@ const SURFACE_GRADIENT =
 const SURFACE_MUTED_BG = "hsl(var(--color-surface, var(--surface)))";
 const MUTED_BORDER_COLOR = "hsl(var(--border))";
 const EVENT_SHADOW = "0 8px 20px rgba(2, 62, 135, 0.14)";
+
+// Constantes para barras multi-día
+const MULTI_DAY_BAR_HEIGHT = 28;
+const MULTI_DAY_BAR_GAP = 4;
+const MAX_VISIBLE_BARS = 3;
+
+const EVENT_STATUS_VISUALS: Record<
+  string,
+  { icon: string; className: string }
+> = {
+  todo: { icon: "•", className: "text-white/70" },
+  pending: { icon: "•", className: "text-white/70" },
+  in_progress: { icon: "↻", className: "text-white" },
+  done: { icon: "✓", className: "text-white" },
+  completed: { icon: "✓", className: "text-white" },
+  canceled: { icon: "✕", className: "text-white" },
+  blocked: { icon: "!", className: "text-white" },
+};
+
+const getStatusIconProps = (status?: string) => {
+  if (!status) {
+    return { icon: "•", className: "text-white/70" };
+  }
+  return (
+    EVENT_STATUS_VISUALS[status] ?? { icon: "•", className: "text-white/70" }
+  );
+};
 
 const normalizeHexColor = (color?: string | null): string | null => {
   if (!color) {
@@ -189,7 +211,7 @@ function MonthDayCell({
     <div
       ref={setNodeRef}
       className={cn(
-        "group border-border/60 bg-[hsl(var(--surface))] border-r border-b last:border-r-0",
+        "group border-border/60 bg-[hsl(var(--surface))] border-r last:border-r-0 relative",
         !isCurrentMonth
           ? "bg-muted/30 text-muted-foreground"
           : "bg-[hsl(var(--surface))]",
@@ -208,7 +230,7 @@ function MonthDayCell({
         onEventCreate?.(day);
       }}
     >
-      <div className="data-dragging:bg-accent flex h-full flex-col overflow-hidden px-1.5 py-2 gap-1">
+      <div className="data-dragging:bg-accent flex h-full flex-col overflow-hidden px-1.5 py-2 gap-1 min-h-[80px]">
         <div
           className={cn(
             "inline-flex h-6 w-6 items-center justify-center self-start rounded-full text-[11px] font-medium",
@@ -219,7 +241,7 @@ function MonthDayCell({
         >
           {format(day, "d")}
         </div>
-        <div className="flex-1 space-y-(--event-gap) min-h-[calc((var(--event-height)+var(--event-gap))*2)]">
+        <div className="flex-1 space-y-1">
           {visibleEvents.map((event, index) => (
             <div key={`${event.id}-${index}`}>{renderEvent(event)}</div>
           ))}
@@ -395,6 +417,64 @@ export function CalendarView({
 
     const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
+    // Separar eventos single-day vs multi-day
+    const isMultiDayEvent = (event: CalendarEvent) => {
+      const start = startOfDay(new Date(event.start_time));
+      const end = startOfDay(new Date(event.end_time ?? event.start_time));
+      return event.all_day || differenceInCalendarDays(end, start) >= 1;
+    };
+
+    const multiDayEvents = events.filter(isMultiDayEvent);
+    const singleDayEvents = events.filter((e) => !isMultiDayEvent(e));
+
+    // Calcular placements de barras multi-día por semana
+    type BarPlacement = {
+      event: CalendarEvent;
+      startCol: number;
+      spanDays: number;
+      laneIndex: number;
+    };
+
+    const calculateWeekBars = (
+      weekStart: Date,
+      weekEnd: Date
+    ): BarPlacement[] => {
+      const weekMultiDayEvents = multiDayEvents.filter((event) => {
+        const eventStart = new Date(event.start_time);
+        const eventEnd = new Date(event.end_time ?? event.start_time);
+        return eventStart <= weekEnd && eventEnd >= weekStart;
+      });
+
+      const placements: BarPlacement[] = [];
+      const lanes: number[] = []; // Track end column of each lane
+
+      weekMultiDayEvents.forEach((event) => {
+        const eventStart = startOfDay(new Date(event.start_time));
+        const eventEnd = startOfDay(
+          new Date(event.end_time ?? event.start_time)
+        );
+
+        const clampedStart = eventStart < weekStart ? weekStart : eventStart;
+        const clampedEnd = eventEnd > weekEnd ? weekEnd : eventEnd;
+
+        const startCol = differenceInCalendarDays(clampedStart, weekStart) + 1;
+        const spanDays = differenceInCalendarDays(clampedEnd, clampedStart) + 1;
+
+        // Find available lane
+        let laneIndex = lanes.findIndex((endCol) => endCol < startCol);
+        if (laneIndex === -1) {
+          laneIndex = lanes.length;
+          lanes.push(startCol + spanDays - 1);
+        } else {
+          lanes[laneIndex] = startCol + spanDays - 1;
+        }
+
+        placements.push({ event, startCol, spanDays, laneIndex });
+      });
+
+      return placements;
+    };
+
     return (
       <div data-slot="month-view" className="contents">
         <div
@@ -418,74 +498,192 @@ export function CalendarView({
             </div>
           ))}
         </div>
-        <div className="grid flex-1 auto-rows-fr bg-[hsl(var(--surface))]">
+        <div className="flex flex-col bg-[hsl(var(--surface))]">
           {Array.from(
             { length: Math.ceil(days.length / 7) },
             (_, weekIndex) => {
               const weekDays = days.slice(weekIndex * 7, weekIndex * 7 + 7);
+              const weekStart = startOfDay(weekDays[0]!);
+              const weekEnd = endOfDay(weekDays[weekDays.length - 1]!);
+              const weekBars = calculateWeekBars(weekStart, weekEnd);
+
+              // Agrupar barras por lane
+              const lanes: BarPlacement[][] = [];
+              weekBars.forEach((bar) => {
+                if (!lanes[bar.laneIndex]) {
+                  lanes[bar.laneIndex] = [];
+                }
+                lanes[bar.laneIndex]!.push(bar);
+              });
+
+              const visibleLanes = lanes.slice(0, MAX_VISIBLE_BARS);
+              const hiddenCount = Math.max(0, lanes.length - MAX_VISIBLE_BARS);
+
               return (
-                <div key={`week-${weekIndex}`} className="grid grid-cols-7">
-                  {weekDays.map((day) => {
-                    const dayStart = startOfDay(day);
-                    const dayEnd = endOfDay(day);
-                    const dayEvents = events.filter((event) => {
-                      const eventStart = new Date(event.start_time);
-                      const eventEnd = new Date(
-                        event.end_time ?? event.start_time
+                <div
+                  key={`week-${weekIndex}`}
+                  className="flex flex-col border-b border-border/60 last:border-b-0"
+                >
+                  {/* Fila de celdas de días */}
+                  <div className="grid grid-cols-7">
+                    {weekDays.map((day) => {
+                      const dayStart = startOfDay(day);
+                      const dayEnd = endOfDay(day);
+                      const dayEvents = singleDayEvents.filter((event) => {
+                        const eventStart = new Date(event.start_time);
+                        const eventEnd = new Date(
+                          event.end_time ?? event.start_time
+                        );
+                        return eventStart <= dayEnd && eventEnd >= dayStart;
+                      });
+                      return (
+                        <MonthDayCell
+                          key={day.toISOString()}
+                          day={day}
+                          isCurrentMonth={isSameMonth(day, currentDate)}
+                          isToday={isSameDay(day, new Date())}
+                          events={dayEvents}
+                          onEventCreate={onEventCreate}
+                          onEventClick={onEventClick}
+                          renderEvent={(event) => {
+                            const statusIcon = getStatusIconProps(event.status);
+                            return (
+                              <div className="group/event flex w-full min-w-0 items-center gap-1 pr-2">
+                                <DraggableEvent event={event} action="move">
+                                  <button
+                                    type="button"
+                                    data-calendar-event="true"
+                                    title={event.title}
+                                    className="box-border flex w-full min-w-0 max-w-full items-center overflow-hidden rounded-full px-3 py-1.5 text-left text-xs font-medium shadow-sm transition hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 data-[dragging=true]:cursor-grabbing"
+                                    style={{
+                                      backgroundColor: resolveEventColor(event),
+                                      color: getEventTextColor(
+                                        resolveEventColor(event)
+                                      ),
+                                    }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onEventClick?.(event);
+                                    }}
+                                  >
+                                    <span
+                                      className={cn(
+                                        "mr-1.5 text-[10px]",
+                                        statusIcon.className
+                                      )}
+                                    >
+                                      {statusIcon.icon}
+                                    </span>
+                                    <span className="truncate min-w-0">
+                                      {(() => {
+                                        const timeLabel = getEventTimeLabel(
+                                          event,
+                                          "month"
+                                        );
+                                        return timeLabel ? `${timeLabel} ` : "";
+                                      })()}
+                                      {event.title}
+                                    </span>
+                                  </button>
+                                </DraggableEvent>
+                                <DraggableEvent event={event} action="resize">
+                                  <span className="cursor-ew-resize text-[10px] opacity-0 transition group-hover/event:opacity-60">
+                                    ↔
+                                  </span>
+                                </DraggableEvent>
+                              </div>
+                            );
+                          }}
+                        />
                       );
-                      return eventStart <= dayEnd && eventEnd >= dayStart;
-                    });
-                    return (
-                      <MonthDayCell
-                        key={day.toISOString()}
-                        day={day}
-                        isCurrentMonth={isSameMonth(day, currentDate)}
-                        isToday={isSameDay(day, new Date())}
-                        events={dayEvents}
-                        onEventCreate={onEventCreate}
-                        onEventClick={onEventClick}
-                        renderEvent={(event) => (
-                          <div className="group/event flex items-center gap-1">
-                            <DraggableEvent event={event} action="move">
-                              <button
-                                type="button"
-                                data-calendar-event="true"
-                                className="focus-visible:border-ring focus-visible:ring-ring/50 flex h-(--event-height) w-full items-center overflow-hidden rounded-sm px-2 text-left text-[11px] font-medium leading-none transition outline-none select-none focus-visible:ring-[3px] data-[dragging=true]:cursor-grabbing"
-                                style={getEventStyles(
-                                  resolveEventColor(event),
-                                  {
-                                    variant: "soft",
-                                    borderColor: BRAND_ACCENT_COLOR,
-                                    enableShadow: false,
-                                  }
-                                )}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onEventClick?.(event);
+                    })}
+                  </div>
+
+                  {/* Barras multi-día */}
+                  {visibleLanes.length > 0 && (
+                    <div
+                      className="relative px-1 pb-1"
+                      style={{ paddingTop: MULTI_DAY_BAR_GAP }}
+                    >
+                      {/* Líneas de separación verticales */}
+                      <div className="absolute inset-0 grid grid-cols-7 pointer-events-none">
+                        {Array.from({ length: 7 }).map((_, i) => (
+                          <div
+                            key={i}
+                            className="border-r border-border/20 last:border-r-0"
+                          />
+                        ))}
+                      </div>
+
+                      {visibleLanes.map((laneBars, laneIndex) => (
+                        <div
+                          key={`lane-${laneIndex}`}
+                          className="relative grid grid-cols-7 gap-0"
+                          style={{
+                            height: MULTI_DAY_BAR_HEIGHT,
+                            marginTop: laneIndex > 0 ? MULTI_DAY_BAR_GAP : 0,
+                          }}
+                        >
+                          {laneBars.map((bar) => {
+                            const statusIcon = getStatusIconProps(
+                              bar.event.status
+                            );
+                            return (
+                              <div
+                                key={bar.event.id}
+                                className="relative z-10 px-0.5"
+                                style={{
+                                  gridColumn: `${bar.startCol} / span ${bar.spanDays}`,
                                 }}
                               >
-                                <span className="truncate">
-                                  {(() => {
-                                    const timeLabel = getEventTimeLabel(
-                                      event,
-                                      "month"
-                                    );
-                                    return timeLabel ? `${timeLabel} ` : "";
-                                  })()}
-                                  {event.title}
-                                </span>
-                              </button>
-                            </DraggableEvent>
-                            <DraggableEvent event={event} action="resize">
-                              <span className="cursor-ew-resize text-[10px] opacity-0 transition group-hover/event:opacity-60">
-                                ↔
-                              </span>
-                            </DraggableEvent>
-                          </div>
-                        )}
-                      />
-                    );
-                  })}
+                                <DraggableEvent event={bar.event} action="move">
+                                  <button
+                                    type="button"
+                                    data-calendar-event="true"
+                                    title={bar.event.title}
+                                    className="box-border flex h-full w-full min-w-0 max-w-full items-center overflow-hidden rounded-full px-3 py-1.5 text-left text-xs font-medium shadow-sm transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                                    style={{
+                                      backgroundColor: resolveEventColor(
+                                        bar.event
+                                      ),
+                                      color: getEventTextColor(
+                                        resolveEventColor(bar.event)
+                                      ),
+                                    }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onEventClick?.(bar.event);
+                                    }}
+                                  >
+                                    <span
+                                      className={cn(
+                                        "mr-1.5 text-[10px]",
+                                        statusIcon.className
+                                      )}
+                                    >
+                                      {statusIcon.icon}
+                                    </span>
+                                    <span className="truncate min-w-0">
+                                      {bar.event.title}
+                                    </span>
+                                  </button>
+                                </DraggableEvent>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {/* Indicador de eventos ocultos */}
+                  {hiddenCount > 0 && (
+                    <div className="px-2 pb-1 text-right">
+                      <span className="text-[10px] text-muted-foreground">
+                        +{hiddenCount}{" "}
+                        {hiddenCount === 1 ? "evento" : "eventos"}
+                      </span>
+                    </div>
+                  )}
                 </div>
               );
             }

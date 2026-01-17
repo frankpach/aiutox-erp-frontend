@@ -394,7 +394,7 @@ export function TaskCalendar({
 
   const events = useMemo<CalendarEvent[]>(
     () =>
-      eventTasks.flatMap((task) => {
+      [...eventTasks, ...dueOnlyTasks].flatMap((task) => {
         const times = resolveTaskTimes(task);
         if (!times) {
           return [];
@@ -432,7 +432,7 @@ export function TaskCalendar({
           },
         ];
       }),
-    [eventTasks]
+    [eventTasks, dueOnlyTasks]
   );
 
   const highlightDates = useMemo(() => {
@@ -991,13 +991,13 @@ export function TaskCalendar({
             />
           ) : (
             <div
-              className="rounded-2xl border border-border bg-[hsl(var(--card))] dark:bg-[hsl(var(--surface))] dark:border-border/40 flex flex-col min-h-[640px] overflow-hidden shadow-[0_12px_40px_rgba(15,23,42,0.08)]"
+              className="rounded-2xl border border-border bg-[hsl(var(--card))] dark:bg-[hsl(var(--surface))] dark:border-border/40 flex flex-col overflow-hidden shadow-[0_12px_40px_rgba(15,23,42,0.08)]"
               style={{
                 ["--event-height" as string]: "26px",
                 ["--event-gap" as string]: "6px",
               }}
             >
-              <div className="flex flex-1 flex-col">
+              <div className="flex flex-col">
                 <CalendarView
                   events={events}
                   calendars={calendars}
