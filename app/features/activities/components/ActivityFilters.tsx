@@ -3,15 +3,16 @@
  * Filters for activities list
  */
 
-import { useState } from "react";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 import { Badge } from "~/components/ui/badge";
-import { ActivityType, ActivityFilters } from "~/features/activities/types/activity.types";
+import type {
+  ActivityType,
+  ActivityFilters,
+} from "~/features/activities/types/activity.types";
 
 interface ActivityFiltersProps {
   filters: ActivityFilters;
@@ -33,21 +34,27 @@ const activityTypeOptions: { value: ActivityType; label: string }[] = [
   { value: "custom", label: "activities.types.custom" },
 ];
 
-export function ActivityFilters({ filters, onFiltersChange, onApply, onReset, loading }: ActivityFiltersProps) {
+export function ActivityFilters({
+  filters,
+  onFiltersChange,
+  onApply,
+  onReset,
+  loading,
+}: ActivityFiltersProps) {
   const { t } = useTranslation();
 
   const handleActivityTypeToggle = (type: ActivityType) => {
     const newTypes = filters.activity_types.includes(type)
-      ? filters.activity_types.filter(t => t !== type)
+      ? filters.activity_types.filter((t) => t !== type)
       : [...filters.activity_types, type];
-    
+
     onFiltersChange({
       ...filters,
       activity_types: newTypes,
     });
   };
 
-  const handleDateChange = (field: 'date_from' | 'date_to', value: string) => {
+  const handleDateChange = (field: "date_from" | "date_to", value: string) => {
     onFiltersChange({
       ...filters,
       [field]: value,
@@ -61,11 +68,15 @@ export function ActivityFilters({ filters, onFiltersChange, onApply, onReset, lo
     });
   };
 
-  const hasActiveFilters = 
+  const activeFiltersCount =
     filters.activity_types.length > 0 ||
     !!filters.date_from ||
     !!filters.date_to ||
-    !!filters.search;
+    !!filters.search
+      ? 1
+      : 0;
+
+  const hasActiveFilters = activeFiltersCount > 0;
 
   return (
     <Card>
@@ -77,9 +88,7 @@ export function ActivityFilters({ filters, onFiltersChange, onApply, onReset, lo
       <CardContent className="space-y-4">
         {/* Search */}
         <div className="space-y-2">
-          <Label htmlFor="search">
-            {t("activities.filters.search")}
-          </Label>
+          <Label htmlFor="search">{t("activities.filters.search")}</Label>
           <Input
             id="search"
             value={filters.search || ""}
@@ -90,9 +99,7 @@ export function ActivityFilters({ filters, onFiltersChange, onApply, onReset, lo
 
         {/* Activity Types */}
         <div className="space-y-2">
-          <Label>
-            {t("activities.filters.types")}
-          </Label>
+          <Label>{t("activities.filters.types")}</Label>
           <div className="flex flex-wrap gap-2">
             {activityTypeOptions.map((type) => {
               const isSelected = filters.activity_types.includes(type.value);
@@ -125,9 +132,7 @@ export function ActivityFilters({ filters, onFiltersChange, onApply, onReset, lo
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="date_to">
-              {t("activities.filters.dateTo")}
-            </Label>
+            <Label htmlFor="date_to">{t("activities.filters.dateTo")}</Label>
             <Input
               id="date_to"
               type="date"
@@ -142,13 +147,13 @@ export function ActivityFilters({ filters, onFiltersChange, onApply, onReset, lo
           <div className="text-sm text-muted-foreground">
             {hasActiveFilters ? (
               <span>
-                {t("activities.filters.active", { count: 1 })}
+                {t("activities.filters.active")} ({activeFiltersCount})
               </span>
             ) : (
               <span>{t("activities.filters.noActive")}</span>
             )}
           </div>
-          
+
           <div className="flex space-x-2">
             <Button variant="outline" onClick={onReset} disabled={loading}>
               {t("activities.filters.reset")}

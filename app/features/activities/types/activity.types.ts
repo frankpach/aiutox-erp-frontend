@@ -13,7 +13,7 @@ export interface Activity {
   title: string;
   description?: string;
   user_id: string;
-  metadata?: Record<string, any>;
+  metadata?: ActivityMetadata;
   created_at: string;
   updated_at: string;
 }
@@ -25,18 +25,18 @@ export interface ActivityCreate {
   activity_type: ActivityType;
   title: string;
   description?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 // Activity update payload
 export interface ActivityUpdate {
   title?: string;
   description?: string;
-  metadata?: Record<string, any>;
+  metadata?: ActivityMetadata;
 }
 
 // Activity types
-export type ActivityType = 
+export type ActivityType =
   | "comment"
   | "call"
   | "email"
@@ -79,7 +79,7 @@ export interface EntityActivitiesParams {
 export interface ActivityMetadata {
   priority?: "low" | "medium" | "high";
   assigned_to?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 // Activity filters
@@ -89,6 +89,7 @@ export interface ActivityFilters {
   date_from?: string;
   date_to?: string;
   user_ids?: string[];
+  search?: string;
 }
 
 // Activity statistics

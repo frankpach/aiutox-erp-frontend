@@ -29,6 +29,13 @@ type NestedKeyOf<ObjectType extends object> = {
 
 type TranslationPath = NestedKeyOf<typeof translations.es>;
 
+export type { TranslationPath };
+
+type TFunction = {
+  (key: TranslationPath): string;
+  (key: string): string;
+};
+
 /**
  * Get nested value from object by dot-notation path
  */
@@ -128,7 +135,7 @@ export function useTranslation() {
 
   // Translation function with fallback
   const t = useCallback(
-    (key: TranslationPath): string => {
+    ((key: string): string => {
       const activeTranslations = getTranslations();
       const value = getNestedValue(activeTranslations, key);
 
@@ -142,7 +149,7 @@ export function useTranslation() {
 
       // If still not found, return the key for debugging
       return value || key;
-    },
+    }) as TFunction,
     [language, getTranslations]
   );
 

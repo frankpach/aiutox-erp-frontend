@@ -43,6 +43,8 @@ export function TaskBoard({
     in_progress: "bg-blue-100 text-blue-800 border-blue-200",
     done: "bg-green-100 text-green-800 border-green-200",
     on_hold: "bg-orange-100 text-orange-800 border-orange-200",
+    blocked: "bg-red-100 text-red-900 border-red-200",
+    review: "bg-purple-100 text-purple-800 border-purple-200",
     cancelled: "bg-gray-300 text-gray-800 border-gray-400",
   };
 
@@ -95,6 +97,7 @@ export function TaskBoard({
       <TaskQuickAdd
         open={isQuickAddOpen}
         onOpenChange={setIsQuickAddOpen}
+        defaultMode="task"
         onTaskCreated={() => {
           setIsQuickAddOpen(false);
           onTaskCreate?.();
@@ -108,7 +111,7 @@ export function TaskBoard({
             return (
               <div
                 key={status}
-                className="w-80 flex-shrink-0 bg-muted/30 rounded-lg p-4"
+                className="w-80 shrink-0 bg-muted/30 rounded-lg p-4"
                 onDragOver={handleDragOver}
                 onDrop={() => handleDrop(status)}
               >

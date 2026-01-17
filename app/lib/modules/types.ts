@@ -9,6 +9,8 @@
  * Aligned with backend module metadata structure in `rules/module-meta.md`
  */
 
+import type { IconSvgElement } from "@hugeicons/react";
+
 /**
  * Module type: core (infrastructure) or business
  */
@@ -25,7 +27,7 @@ export interface NavigationItem {
   /** Route path */
   to: string;
   /** Icon component from Hugeicons */
-  icon?: unknown; // IconType from @hugeicons/core-free-icons
+  icon?: IconSvgElement;
   /** Required permission to show this item (granular permission) */
   permission?: string;
   /** Optional badge/counter */
@@ -34,6 +36,12 @@ export interface NavigationItem {
   order?: number;
   /** Whether this item is active */
   isActive?: boolean;
+  /** Optional module setting requirement to show item */
+  requiresModuleSetting?: {
+    module: string;
+    key: string;
+    value?: boolean;
+  };
 }
 
 /**
@@ -128,6 +136,8 @@ export interface CategoryNode {
   order: number;
   /** Modules in this category */
   modules: Map<string, ModuleNode>;
+  /** Optional permission requirement - user needs at least one of these permissions */
+  requiresAnyPermission?: string[];
 }
 
 /**
@@ -227,26 +237,3 @@ export interface ModuleInfoResponse {
   has_router?: boolean;
   model_count?: number;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

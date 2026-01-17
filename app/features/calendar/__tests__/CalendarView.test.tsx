@@ -15,11 +15,15 @@ import type { CalendarEvent, Calendar, CalendarViewType, RecurrenceType, Reminde
 const mockCalendar: Calendar = {
   id: "1",
   tenant_id: "tenant-1",
-  user_id: "user-1",
+  owner_id: "user-1",
   name: "Work Calendar",
   color: "#023E87",
   description: "Main work calendar",
-  is_shared: false,
+  calendar_type: "user",
+  organization_id: null,
+  is_public: false,
+  is_default: true,
+  metadata: null,
   created_at: "2025-01-01T00:00:00Z",
   updated_at: "2025-01-01T00:00:00Z",
 };
@@ -33,21 +37,18 @@ const mockEvent: CalendarEvent = {
   start_time: "2025-01-15T10:00:00Z",
   end_time: "2025-01-15T11:00:00Z",
   location: "Conference Room A",
-  is_all_day: false,
-  recurrence: null,
-  reminders: [
-    {
-      minutes_before: 15,
-      type: "notification" as ReminderType,
-    },
-  ],
-  attendees: [
-    {
-      user_id: "user-2",
-      status: "accepted" as AttendeeStatus,
-    },
-  ],
-  created_by: "user-1",
+  all_day: false,
+  status: "scheduled",
+  recurrence_type: "none",
+  recurrence_end_date: null,
+  recurrence_count: null,
+  recurrence_interval: 1,
+  recurrence_days_of_week: null,
+  recurrence_day_of_month: null,
+  recurrence_month_of_year: null,
+  organizer_id: "user-1",
+  read_only: false,
+  metadata: null,
   created_at: "2025-01-01T00:00:00Z",
   updated_at: "2025-01-01T00:00:00Z",
 };
@@ -68,6 +69,7 @@ describe("Calendar Module", () => {
   beforeEach(() => {
     queryClient = createQueryClient();
     vi.clearAllMocks();
+    localStorage.setItem("i18n_language", "es");
   });
 
   describe("CalendarView", () => {
@@ -193,10 +195,10 @@ describe("Calendar Module", () => {
       );
 
       expect(screen.getByText("Calendario")).toBeInTheDocument();
-      expect(screen.getByLabelText("Título del Evento")).toBeInTheDocument();
+      expect(screen.getByLabelText("Título")).toBeInTheDocument();
       expect(screen.getByLabelText("Descripción")).toBeInTheDocument();
-      expect(screen.getByLabelText("Hora de Inicio")).toBeInTheDocument();
-      expect(screen.getByLabelText("Hora de Fin")).toBeInTheDocument();
+      expect(screen.getByLabelText("Inicio")).toBeInTheDocument();
+      expect(screen.getByLabelText("Fin")).toBeInTheDocument();
       expect(screen.getByLabelText("Ubicación")).toBeInTheDocument();
     });
 
@@ -211,7 +213,7 @@ describe("Calendar Module", () => {
         </QueryClientProvider>
       );
 
-      expect(screen.getByText("Todo el Día")).toBeInTheDocument();
+      expect(screen.getByText("Todo el día")).toBeInTheDocument();
       expect(screen.getByText("Recordatorios")).toBeInTheDocument();
     });
 
@@ -228,13 +230,13 @@ describe("Calendar Module", () => {
         </QueryClientProvider>
       );
 
-      const titleInput = screen.getByLabelText("Título del Evento");
+      const titleInput = screen.getByLabelText("Título");
       fireEvent.change(titleInput, { target: { value: "New Event" } });
 
-      const startTimeInput = screen.getByLabelText("Hora de Inicio");
+      const startTimeInput = screen.getByLabelText("Inicio");
       fireEvent.change(startTimeInput, { target: { value: "2025-01-15T10:00" } });
 
-      const endTimeInput = screen.getByLabelText("Hora de Fin");
+      const endTimeInput = screen.getByLabelText("Fin");
       fireEvent.change(endTimeInput, { target: { value: "2025-01-15T11:00" } });
 
       const submitButton = screen.getByText("Guardar");
@@ -242,16 +244,18 @@ describe("Calendar Module", () => {
 
       await waitFor(() => {
         expect(onSubmit).toHaveBeenCalledWith({
-          calendar_id: "1",
-          title: "New Event",
-          description: "",
-          start_time: "2025-01-15T10:00",
-          end_time: "2025-01-15T11:00",
-          location: "",
-          is_all_day: false,
-          recurrence: null,
+          event: {
+            calendar_id: "1",
+            title: "New Event",
+            description: "",
+            start_time: "2025-01-15T10:00",
+            end_time: "2025-01-15T11:00",
+            location: "",
+            all_day: false,
+            recurrence_type: "none",
+            recurrence_interval: 1,
+          },
           reminders: [],
-          attendees: [],
         });
       });
     });
@@ -288,7 +292,7 @@ describe("Calendar Module", () => {
         </QueryClientProvider>
       );
 
-      const allDaySwitch = screen.getByText("Todo el Día");
+      const allDaySwitch = screen.getByText("Todo el día");
       fireEvent.click(allDaySwitch);
 
       // Just verify the switch exists and is clickable
@@ -421,7 +425,7 @@ describe("Calendar Module", () => {
     it("shows all-day badge for all-day events", () => {
       const allDayEvent = {
         ...mockEvent,
-        is_all_day: true,
+        all_day: true,
       };
 
       render(
@@ -440,11 +444,9 @@ describe("Calendar Module", () => {
     it("shows recurrence information for recurring events", () => {
       const recurringEvent = {
         ...mockEvent,
-        recurrence: {
-          type: "weekly" as RecurrenceType,
-          interval: 1,
-          end_date: "2025-02-15T00:00:00Z",
-        },
+        recurrence_type: "weekly" as RecurrenceType,
+        recurrence_interval: 1,
+        recurrence_end_date: "2025-02-15T00:00:00Z",
       };
 
       render(
@@ -467,11 +469,13 @@ describe("Calendar Module", () => {
 
       expect(calendar).toHaveProperty("id");
       expect(calendar).toHaveProperty("tenant_id");
-      expect(calendar).toHaveProperty("user_id");
+      expect(calendar).toHaveProperty("owner_id");
       expect(calendar).toHaveProperty("name");
       expect(calendar).toHaveProperty("color");
       expect(calendar).toHaveProperty("description");
-      expect(calendar).toHaveProperty("is_shared");
+      expect(calendar).toHaveProperty("calendar_type");
+      expect(calendar).toHaveProperty("is_public");
+      expect(calendar).toHaveProperty("is_default");
       expect(calendar).toHaveProperty("created_at");
       expect(calendar).toHaveProperty("updated_at");
     });
@@ -487,11 +491,10 @@ describe("Calendar Module", () => {
       expect(event).toHaveProperty("start_time");
       expect(event).toHaveProperty("end_time");
       expect(event).toHaveProperty("location");
-      expect(event).toHaveProperty("is_all_day");
-      expect(event).toHaveProperty("recurrence");
-      expect(event).toHaveProperty("reminders");
-      expect(event).toHaveProperty("attendees");
-      expect(event).toHaveProperty("created_by");
+      expect(event).toHaveProperty("all_day");
+      expect(event).toHaveProperty("recurrence_type");
+      expect(event).toHaveProperty("recurrence_interval");
+      expect(event).toHaveProperty("organizer_id");
       expect(event).toHaveProperty("created_at");
       expect(event).toHaveProperty("updated_at");
     });
@@ -506,8 +509,9 @@ describe("Calendar Module", () => {
     });
 
     it("has correct recurrence types", () => {
-      const recurrenceTypes: RecurrenceType[] = ["daily", "weekly", "monthly", "yearly"];
-      expect(recurrenceTypes).toHaveLength(4);
+      const recurrenceTypes: RecurrenceType[] = ["none", "daily", "weekly", "monthly", "yearly"];
+      expect(recurrenceTypes).toHaveLength(5);
+      expect(recurrenceTypes).toContain("none");
       expect(recurrenceTypes).toContain("daily");
       expect(recurrenceTypes).toContain("weekly");
       expect(recurrenceTypes).toContain("monthly");
@@ -515,11 +519,11 @@ describe("Calendar Module", () => {
     });
 
     it("has correct reminder types", () => {
-      const reminderTypes: ReminderType[] = ["notification", "email", "sms"];
+      const reminderTypes: ReminderType[] = ["email", "in_app", "push"];
       expect(reminderTypes).toHaveLength(3);
-      expect(reminderTypes).toContain("notification");
       expect(reminderTypes).toContain("email");
-      expect(reminderTypes).toContain("sms");
+      expect(reminderTypes).toContain("in_app");
+      expect(reminderTypes).toContain("push");
     });
 
     it("has correct attendee status types", () => {

@@ -10,8 +10,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { Label } from "~/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
-import { Activity, ActivityCreate, ActivityUpdate, ActivityType } from "~/features/activities/types/activity.types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import type {
+  Activity,
+  ActivityCreate,
+  ActivityUpdate,
+  ActivityMetadata,
+  ActivityType,
+} from "~/features/activities/types/activity.types";
 
 interface ActivityFormProps {
   activity?: Activity;
@@ -34,35 +46,72 @@ const activityTypes: { value: ActivityType; label: string }[] = [
   { value: "custom", label: "activities.types.custom" },
 ];
 
-export function ActivityForm({ activity, onSubmit, onCancel, loading, entityType, entityId }: ActivityFormProps) {
-  const { t } = useTranslation();
-  const [formData, setFormData] = useState<ActivityCreate | ActivityUpdate>({
-    title: activity?.title || "",
-    description: activity?.description || "",
-    activity_type: activity?.activity_type || "comment",
-    metadata: activity?.metadata || {},
-  });
+type ActivityFormState = {
+  title: string;
+  description: string;
+  activity_type: ActivityType;
+  metadata: ActivityMetadata;
+};
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    const submitData = {
-      ...formData,
-      ...(entityType && entityId && { entity_type: entityType, entity_id: entityId }),
-    };
-    
-    onSubmit(submitData);
+export function ActivityForm({
+  activity,
+  onSubmit,
+  onCancel,
+  loading,
+  entityType,
+  entityId,
+}: ActivityFormProps) {
+  const { t } = useTranslation();
+
+  const initialMetadata: ActivityMetadata = {
+    priority: activity?.metadata?.priority ?? "medium",
+    assigned_to: activity?.metadata?.assigned_to ?? "",
+    ...activity?.metadata,
   };
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
+  const [formData, setFormData] = useState<ActivityFormState>({
+    title: activity?.title ?? "",
+    description: activity?.description ?? "",
+    activity_type: activity?.activity_type ?? "comment",
+    metadata: initialMetadata,
+  });
+
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (activity) {
+      onSubmit({
+        title: formData.title,
+        description: formData.description,
+        metadata: formData.metadata,
+      });
+      return;
+    }
+
+    const resolvedEntityType = entityType ?? "general";
+    const resolvedEntityId = entityId ?? "general";
+
+    const createPayload: ActivityCreate = {
+      entity_type: resolvedEntityType,
+      entity_id: resolvedEntityId,
+      activity_type: formData.activity_type,
+      title: formData.title,
+      description: formData.description,
+      metadata: formData.metadata,
+    };
+
+    onSubmit(createPayload);
+  };
+
+  const handleInputChange = (field: keyof ActivityFormState, value: string) => {
+    setFormData((prev) => ({
       ...prev,
       [field]: value,
     }));
   };
 
   const handleMetadataChange = (key: string, value: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       metadata: {
         ...prev.metadata,
@@ -75,7 +124,9 @@ export function ActivityForm({ activity, onSubmit, onCancel, loading, entityType
     <Card>
       <CardHeader>
         <CardTitle>
-          {activity ? t("activities.editActivity") : t("activities.createActivity")}
+          {activity
+            ? t("activities.editActivity")
+            : t("activities.createActivity")}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -87,7 +138,9 @@ export function ActivityForm({ activity, onSubmit, onCancel, loading, entityType
               </Label>
               <Select
                 value={formData.activity_type}
-                onValueChange={(value) => handleInputChange("activity_type", value)}
+                onValueChange={(value) =>
+                  handleInputChange("activity_type", value)
+                }
                 disabled={!!activity}
               >
                 <SelectTrigger>
@@ -104,9 +157,7 @@ export function ActivityForm({ activity, onSubmit, onCancel, loading, entityType
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="title">
-                {t("activities.title")}
-              </Label>
+              <Label htmlFor="title">{t("activities.title")}</Label>
               <Input
                 id="title"
                 value={formData.title}
@@ -118,9 +169,7 @@ export function ActivityForm({ activity, onSubmit, onCancel, loading, entityType
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">
-              {t("activities.description")}
-            </Label>
+            <Label htmlFor="description">{t("activities.description")}</Label>
             <Textarea
               id="description"
               value={formData.description}
@@ -132,26 +181,32 @@ export function ActivityForm({ activity, onSubmit, onCancel, loading, entityType
 
           {/* Metadata fields */}
           <div className="space-y-4">
-            <h4 className="text-sm font-medium">
-              {t("activities.metadata")}
-            </h4>
-            
+            <h4 className="text-sm font-medium">{t("activities.metadata")}</h4>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="priority">
                   {t("activities.metadata.priority")}
                 </Label>
                 <Select
-                  value={formData.metadata?.priority || "medium"}
-                  onValueChange={(value) => handleMetadataChange("priority", value)}
+                  value={formData.metadata?.priority ?? "medium"}
+                  onValueChange={(value) =>
+                    handleMetadataChange("priority", value)
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="low">{t("activities.priority.low")}</SelectItem>
-                    <SelectItem value="medium">{t("activities.priority.medium")}</SelectItem>
-                    <SelectItem value="high">{t("activities.priority.high")}</SelectItem>
+                    <SelectItem value="low">
+                      {t("activities.priority.low")}
+                    </SelectItem>
+                    <SelectItem value="medium">
+                      {t("activities.priority.medium")}
+                    </SelectItem>
+                    <SelectItem value="high">
+                      {t("activities.priority.high")}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -162,8 +217,10 @@ export function ActivityForm({ activity, onSubmit, onCancel, loading, entityType
                 </Label>
                 <Input
                   id="assigned_to"
-                  value={formData.metadata?.assigned_to || ""}
-                  onChange={(e) => handleMetadataChange("assigned_to", e.target.value)}
+                  value={formData.metadata?.assigned_to ?? ""}
+                  onChange={(e) =>
+                    handleMetadataChange("assigned_to", e.target.value)
+                  }
                   placeholder={t("activities.metadata.assignedTo.placeholder")}
                 />
               </div>
@@ -171,7 +228,12 @@ export function ActivityForm({ activity, onSubmit, onCancel, loading, entityType
           </div>
 
           <div className="flex justify-end space-x-2 pt-4">
-            <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              disabled={loading}
+            >
               {t("common.cancel")}
             </Button>
             <Button type="submit" disabled={loading}>

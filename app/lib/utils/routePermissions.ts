@@ -16,9 +16,12 @@ export const ROUTE_PERMISSIONS: Record<string, string | null> = {
   "/users/:id/roles": "auth.manage_roles",
   "/users/:id/permissions": "auth.manage_permissions",
   "/files": "files.view",
+  "/calendar": "calendar.view",
+  "/calendar-create": "calendar.events.manage",
   "/tasks": "tasks.view",
   "/tasks/:id": "tasks.view",
   "/tasks/:id/edit": "tasks.edit",
+  "/tasks/settings": "tasks.manage",
   "/approvals": "approvals.view",
   "/approvals/:id": "approvals.view",
   "/automation": "automation.view",
@@ -54,22 +57,23 @@ export const ROUTE_PERMISSIONS: Record<string, string | null> = {
  */
 export function getRoutePermission(route: string): string | null {
   // Remove query params and hash
-  const cleanRoute = route.split("?")[0].split("#")[0];
+  const cleanRoute = route?.split("?")[0]?.split("#")[0] || route;
 
   // Check exact match first
-  if (ROUTE_PERMISSIONS[cleanRoute]) {
-    return ROUTE_PERMISSIONS[cleanRoute];
+  const permission = ROUTE_PERMISSIONS[cleanRoute];
+  if (permission) {
+    return permission;
   }
 
   // Check pattern matches (e.g., "/users/:id" matches "/users/123")
   for (const [pattern, permission] of Object.entries(ROUTE_PERMISSIONS)) {
-    if (pattern.includes(":")) {
+    if (pattern?.includes(":") && permission) {
       // Convert pattern to regex
       const regexPattern = pattern
         .replace(/:[^/]+/g, "[^/]+") // Replace :id with [^/]+
         .replace(/\//g, "\\/"); // Escape slashes
       const regex = new RegExp(`^${regexPattern}$`);
-      if (regex.test(cleanRoute)) {
+      if (regex.test(cleanRoute || "")) {
         return permission;
       }
     }
@@ -138,7 +142,3 @@ export function checkRoutePermission(
 
   return hasExactMatch || hasWildcard || hasWildcardMatch;
 }
-
-
-
-

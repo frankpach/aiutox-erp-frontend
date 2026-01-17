@@ -9,7 +9,10 @@ import { useTranslation } from "~/lib/i18n/useTranslation";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
-import { Activity, ActivityType } from "~/features/activities/types/activity.types";
+import type {
+  Activity,
+  ActivityType,
+} from "~/features/activities/types/activity.types";
 import { cn } from "~/lib/utils";
 
 interface ActivityTimelineProps {
@@ -44,7 +47,11 @@ const activityTypeColors: Record<ActivityType, string> = {
   custom: "bg-pink-100 text-pink-800 border-pink-200",
 };
 
-export function ActivityTimeline({ activities, loading, onRefresh }: ActivityTimelineProps) {
+export function ActivityTimeline({
+  activities,
+  loading,
+  onRefresh,
+}: ActivityTimelineProps) {
   const { t } = useTranslation();
   const dateLocale = t("common.locale") === "es" ? es : enUS;
 
@@ -104,9 +111,12 @@ export function ActivityTimeline({ activities, loading, onRefresh }: ActivityTim
       <div className="relative">
         {/* Timeline line */}
         <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-border" />
-        
-        {activities.map((activity, index) => (
-          <div key={activity.id} className="relative flex items-start space-x-4 pb-8">
+
+        {activities.map((activity) => (
+          <div
+            key={activity.id}
+            className="relative flex items-start space-x-4 pb-8"
+          >
             {/* Timeline dot */}
             <div className="relative z-10">
               <div
@@ -115,7 +125,9 @@ export function ActivityTimeline({ activities, loading, onRefresh }: ActivityTim
                   activityTypeColors[activity.activity_type]
                 )}
               >
-                <span className="text-xs">{activityTypeIcons[activity.activity_type]}</span>
+                <span className="text-xs">
+                  {activityTypeIcons[activity.activity_type]}
+                </span>
               </div>
             </div>
 
@@ -128,7 +140,9 @@ export function ActivityTimeline({ activities, loading, onRefresh }: ActivityTim
                       {activity.title}
                     </CardTitle>
                     <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                      <span>{getActivityTypeLabel(activity.activity_type)}</span>
+                      <span>
+                        {getActivityTypeLabel(activity.activity_type)}
+                      </span>
                       <span>•</span>
                       <span>{formatActivityDate(activity.created_at)}</span>
                     </div>
@@ -144,20 +158,24 @@ export function ActivityTimeline({ activities, loading, onRefresh }: ActivityTim
                     {activity.description}
                   </p>
                 )}
-                
+
                 {/* Activity metadata */}
-                {activity.metadata && Object.keys(activity.metadata).length > 0 && (
-                  <div className="space-y-2">
-                    {Object.entries(activity.metadata).map(([key, value]) => (
-                      <div key={key} className="flex items-center space-x-2 text-xs">
-                        <span className="font-medium text-muted-foreground">
-                          {t(`activities.metadata.${key}`) || key}:
-                        </span>
-                        <span>{String(value)}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                {activity.metadata &&
+                  Object.keys(activity.metadata).length > 0 && (
+                    <div className="space-y-2">
+                      {Object.entries(activity.metadata).map(([key, value]) => (
+                        <div
+                          key={key}
+                          className="flex items-center space-x-2 text-xs"
+                        >
+                          <span className="font-medium text-muted-foreground">
+                            {t(`activities.metadata.${key}`) || key}:
+                          </span>
+                          <span>{String(value)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
               </CardContent>
             </Card>
           </div>

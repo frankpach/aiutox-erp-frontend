@@ -1,12 +1,10 @@
 @import "tailwindcss";
 
-@theme {
-  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-}
-
 @layer base {
   :root {
+    --font-sans:
+      "Manrope", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
+      "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     --color-primary: 214 97% 27%;
     --color-secondary: 210 40% 96.1%;
     --color-accent: 210 40% 96.1%;
@@ -149,4 +147,89 @@ body {
   .dark [data-sidebar] nav::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--muted-foreground));
   }
+}
+
+/* React Big Calendar styles */
+@import "react-big-calendar/lib/css/react-big-calendar.css";
+
+/* Custom calendar overrides */
+.rbc-calendar {
+  font-family: inherit;
+  height: 100%;
+}
+
+.rbc-event {
+  border-radius: 4px;
+  padding: 2px 5px;
+  border: none;
+  font-size: 12px;
+}
+
+.rbc-today {
+  background-color: hsl(var(--accent) / 0.1);
+}
+
+.rbc-selected {
+  background-color: hsl(var(--primary));
+}
+
+.rbc-off-range-bg {
+  background: transparent;
+}
+
+.rbc-month-view,
+.rbc-time-view,
+.rbc-agenda-view {
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+}
+
+.rbc-toolbar {
+  border-bottom: 1px solid hsl(var(--border));
+  padding: 8px 16px;
+}
+
+.rbc-toolbar .rbc-btn-group button {
+  background: transparent;
+  border: 1px solid hsl(var(--border));
+  color: hsl(var(--foreground));
+  padding: 4px 12px;
+  border-radius: 4px;
+}
+
+.rbc-toolbar .rbc-btn-group button:hover {
+  background: hsl(var(--accent));
+}
+
+.rbc-toolbar .rbc-active {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+.rbc-header {
+  padding: 8px 4px;
+  font-weight: 600;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.rbc-time-slot {
+  border-top: 1px solid hsl(var(--border) / 0.3);
+}
+
+.rbc-day-slot .rbc-time-slot {
+  border-top: 1px solid hsl(var(--border) / 0.2);
+}
+
+.rbc-current-time-indicator {
+  background-color: hsl(var(--primary));
+  height: 2px;
+}
+
+.calendar-container {
+  height: calc(100vh - 200px);
+  min-height: 600px;
+}
+
+.calendar-grid {
+  height: 100%;
 }

@@ -9,7 +9,10 @@ import { useTranslation } from "~/lib/i18n/useTranslation";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
-import { CalendarEvent, Calendar } from "~/features/calendar/types/calendar.types";
+import type {
+  CalendarEvent,
+  Calendar,
+} from "~/features/calendar/types/calendar.types";
 
 interface EventDetailsProps {
   event: CalendarEvent;
@@ -26,8 +29,8 @@ export function EventDetails({
   onDelete, 
   onClose 
 }: EventDetailsProps) {
-  const { t } = useTranslation();
-  const dateLocale = es;
+  const { t, language } = useTranslation();
+  const dateLocale = language === "en" ? enUS : es;
 
   const getCalendarColor = (calendarId: string) => {
     const calendar = calendars.find(c => c.id === calendarId);
@@ -36,7 +39,7 @@ export function EventDetails({
 
   const getCalendarName = (calendarId: string) => {
     const calendar = calendars.find(c => c.id === calendarId);
-    return calendar?.name || "Unknown";
+    return calendar?.name || t("common.unknown");
   };
 
   const formatDate = (dateString: string) => {
@@ -49,31 +52,6 @@ export function EventDetails({
 
   const formatDateTime = (dateString: string) => {
     return format(new Date(dateString), "PPP p", { locale: dateLocale });
-  };
-
-  const getReminderText = (minutesBefore: number) => {
-    if (minutesBefore < 60) {
-      return `${minutesBefore} min before`;
-    } else if (minutesBefore < 1440) {
-      const hours = Math.floor(minutesBefore / 60);
-      return `${hours} hour${hours > 1 ? 's' : ''} before`;
-    } else {
-      const days = Math.floor(minutesBefore / 1440);
-      return `${days} day${days > 1 ? 's' : ''} before`;
-    }
-  };
-
-  const getAttendeeStatusColor = (status: string) => {
-    switch (status) {
-      case "accepted":
-        return "bg-green-100 text-green-800 border-green-200";
-      case "declined":
-        return "bg-red-100 text-red-800 border-red-200";
-      case "tentative":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
-    }
   };
 
   return (
@@ -94,7 +72,7 @@ export function EventDetails({
             </Button>
           )}
           {onDelete && (
-            <Button variant="outline" onClick={() => onDelete(event)} className="text-red-600 hover:text-red-700">
+            <Button variant="outline" onClick={() => onDelete(event)} className="text-destructive hover:text-destructive">
               {t("common.delete")}
             </Button>
           )}
@@ -129,13 +107,13 @@ export function EventDetails({
             <div className="flex items-center space-x-2">
               <span className="font-medium">{t("calendar.events.date")}:</span>
               <span>
-                {event.is_all_day 
+                {event.all_day 
                   ? formatDate(event.start_time)
                   : formatDateTime(event.start_time)
                 }
               </span>
             </div>
-            {!event.is_all_day && (
+            {!event.all_day && (
               <div className="flex items-center space-x-2">
                 <span className="font-medium">{t("calendar.events.time")}:</span>
                 <span>
@@ -143,7 +121,7 @@ export function EventDetails({
                 </span>
               </div>
             )}
-            {event.is_all_day && (
+            {event.all_day && (
               <Badge variant="outline">
                 {t("calendar.events.allDay")}
               </Badge>
@@ -170,53 +148,8 @@ export function EventDetails({
         </CardContent>
       </Card>
 
-      {/* Reminders */}
-      {event.reminders && event.reminders.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("calendar.events.reminders")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {event.reminders.map((reminder, index) => (
-                <div key={index} className="flex items-center space-x-2">
-                  <Badge variant="outline">
-                    {reminder.type}
-                  </Badge>
-                  <span>{getReminderText(reminder.minutes_before)}</span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Attendees */}
-      {event.attendees && event.attendees.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("calendar.events.attendees")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {event.attendees.map((attendee, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <span>{attendee.user_id}</span>
-                  <Badge 
-                    variant="outline" 
-                    className={getAttendeeStatusColor(attendee.status)}
-                  >
-                    {attendee.status}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Recurrence */}
-      {event.recurrence && (
+      {event.recurrence_type !== "none" && (
         <Card>
           <CardHeader>
             <CardTitle>{t("calendar.events.recurrence")}</CardTitle>
@@ -224,23 +157,25 @@ export function EventDetails({
           <CardContent>
             <div className="space-y-2">
               <div className="flex items-center space-x-2">
-                <span className="font-medium">Type:</span>
-                <span className="capitalize">{event.recurrence.type}</span>
+                <span className="font-medium">{t("calendar.recurrence.type")}:</span>
+                <span className="capitalize">{event.recurrence_type}</span>
               </div>
               <div className="flex items-center space-x-2">
-                <span className="font-medium">Interval:</span>
-                <span>Every {event.recurrence.interval} {event.recurrence.type}</span>
+                <span className="font-medium">{t("calendar.recurrence.interval")}:</span>
+                <span>
+                  {t("calendar.recurrence.every")} {event.recurrence_interval} {event.recurrence_type}
+                </span>
               </div>
-              {event.recurrence.end_date && (
+              {event.recurrence_end_date && (
                 <div className="flex items-center space-x-2">
-                  <span className="font-medium">End Date:</span>
-                  <span>{formatDate(event.recurrence.end_date)}</span>
+                  <span className="font-medium">{t("calendar.recurrence.endDate")}:</span>
+                  <span>{formatDate(event.recurrence_end_date)}</span>
                 </div>
               )}
-              {event.recurrence.count && (
+              {event.recurrence_count && (
                 <div className="flex items-center space-x-2">
-                  <span className="font-medium">Count:</span>
-                  <span>{event.recurrence.count} occurrences</span>
+                  <span className="font-medium">{t("calendar.recurrence.count")}:</span>
+                  <span>{event.recurrence_count} {t("calendar.recurrence.occurrences")}</span>
                 </div>
               )}
             </div>

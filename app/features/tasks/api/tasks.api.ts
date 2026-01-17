@@ -17,6 +17,14 @@ import type {
   ChecklistItem,
   TaskAssignment,
   TaskAssignmentCreate,
+  TaskModuleSettings,
+  TaskModuleSettingsUpdate,
+  AgendaItem,
+  AgendaListParams,
+  CalendarSource,
+  CalendarSourcePreferences,
+  SavedView,
+  ViewCreate,
 } from "~/features/tasks/types/task.types";
 
 /**
@@ -233,25 +241,56 @@ export async function deleteAssignment(
 }
 
 /**
+ * Get tasks module settings
+ * GET /api/v1/tasks/settings
+ *
+ * Requires: tasks.view permission
+ */
+export async function getTaskModuleSettings(): Promise<
+  StandardResponse<TaskModuleSettings>
+> {
+  const response =
+    await apiClient.get<StandardResponse<TaskModuleSettings>>(
+      "/tasks/settings"
+    );
+  return response.data;
+}
+
+/**
+ * Update tasks module settings
+ * PUT /api/v1/tasks/settings
+ *
+ * Requires: tasks.manage permission
+ */
+export async function updateTaskModuleSettings(
+  payload: TaskModuleSettingsUpdate
+): Promise<StandardResponse<TaskModuleSettings>> {
+  const response = await apiClient.put<StandardResponse<TaskModuleSettings>>(
+    "/tasks/settings",
+    payload
+  );
+  return response.data;
+}
+
+/**
  * Get agenda items
  * GET /api/v1/tasks/agenda
  *
  * Requires: tasks.agenda.view permission
  */
-export async function getAgenda(params?: {
-  start_date?: string;
-  end_date?: string;
-  sources?: string;
-}): Promise<StandardListResponse<Record<string, any>>> {
-  const response = await apiClient.get<
-    StandardListResponse<Record<string, any>>
-  >("/tasks/agenda", {
-    params: {
-      start_date: params?.start_date,
-      end_date: params?.end_date,
-      sources: params?.sources,
-    },
-  });
+export async function getAgenda(
+  params?: AgendaListParams
+): Promise<StandardListResponse<AgendaItem>> {
+  const response = await apiClient.get<StandardListResponse<AgendaItem>>(
+    "/tasks/agenda",
+    {
+      params: {
+        start_date: params?.start_date,
+        end_date: params?.end_date,
+        sources: params?.sources,
+      },
+    }
+  );
   return response.data;
 }
 
@@ -262,9 +301,9 @@ export async function getAgenda(params?: {
  * Requires: tasks.agenda.view permission
  */
 export async function getCalendarSources(): Promise<
-  StandardResponse<Record<string, any>>
+  StandardListResponse<CalendarSource>
 > {
-  const response = await apiClient.get<StandardResponse<Record<string, any>>>(
+  const response = await apiClient.get<StandardListResponse<CalendarSource>>(
     "/tasks/calendar-sources"
   );
   return response.data;
@@ -277,9 +316,9 @@ export async function getCalendarSources(): Promise<
  * Requires: tasks.agenda.manage permission
  */
 export async function updateCalendarSources(
-  preferences: Record<string, any>
-): Promise<StandardResponse<Record<string, any>>> {
-  const response = await apiClient.put<StandardResponse<Record<string, any>>>(
+  preferences: CalendarSourcePreferences
+): Promise<StandardListResponse<CalendarSource>> {
+  const response = await apiClient.put<StandardListResponse<CalendarSource>>(
     "/tasks/calendar-sources",
     preferences
   );
@@ -292,13 +331,9 @@ export async function updateCalendarSources(
  *
  * Requires: tasks.agenda.view permission
  */
-export async function getViews(): Promise<
-  StandardListResponse<Record<string, any>>
-> {
+export async function getViews(): Promise<StandardListResponse<SavedView>> {
   const response =
-    await apiClient.get<StandardListResponse<Record<string, any>>>(
-      "/tasks/views"
-    );
+    await apiClient.get<StandardListResponse<SavedView>>("/tasks/views");
   return response.data;
 }
 
@@ -309,9 +344,9 @@ export async function getViews(): Promise<
  * Requires: tasks.agenda.manage permission
  */
 export async function createView(
-  viewData: Record<string, any>
-): Promise<StandardResponse<Record<string, any>>> {
-  const response = await apiClient.post<StandardResponse<Record<string, any>>>(
+  viewData: ViewCreate
+): Promise<StandardResponse<SavedView>> {
+  const response = await apiClient.post<StandardResponse<SavedView>>(
     "/tasks/views",
     viewData
   );

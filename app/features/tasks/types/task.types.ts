@@ -14,13 +14,18 @@ export interface Task {
   status: TaskStatus;
   priority: TaskPriority;
   due_date?: string;
+  start_at?: string | null;
+  end_at?: string | null;
+  all_day?: boolean;
+  tag_ids?: string[] | null;
+  color_override?: string | null;
   completed_at?: string;
   checklist: ChecklistItem[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   // Multi-module integration
   source_module?: string; // e.g., 'projects', 'workflows'
   source_id?: string; // ID of source entity
-  source_context?: Record<string, any>; // Additional context from source module
+  source_context?: Record<string, unknown>; // Additional context from source module
   // Legacy fields (kept for backward compatibility)
   related_entity_type?: string;
   related_entity_id?: string;
@@ -36,12 +41,17 @@ export interface TaskCreate {
   status: TaskStatus;
   priority: TaskPriority;
   due_date?: string;
+  start_at?: string | null;
+  end_at?: string | null;
+  all_day?: boolean;
+  tag_ids?: string[] | null;
+  color_override?: string | null;
   checklist?: ChecklistItem[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   // Multi-module integration
   source_module?: string;
   source_id?: string;
-  source_context?: Record<string, any>;
+  source_context?: Record<string, unknown>;
   // Legacy fields
   related_entity_type?: string;
   related_entity_id?: string;
@@ -55,12 +65,17 @@ export interface TaskUpdate {
   status?: TaskStatus;
   priority?: TaskPriority;
   due_date?: string;
+  start_at?: string | null;
+  end_at?: string | null;
+  all_day?: boolean;
+  tag_ids?: string[] | null;
+  color_override?: string | null;
   checklist?: ChecklistItem[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   // Multi-module integration
   source_module?: string;
   source_id?: string;
-  source_context?: Record<string, any>;
+  source_context?: Record<string, unknown>;
 }
 
 // Task list parameters
@@ -145,7 +160,7 @@ export interface WorkflowStep {
   name: string;
   status: string;
   transitions: string[];
-  conditions?: Record<string, any>;
+  conditions?: Record<string, unknown>;
 }
 
 // Workflow execution payload
@@ -153,7 +168,7 @@ export interface WorkflowExecute {
   workflow_id: string;
   entity_type?: string;
   entity_id?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 // Task and workflow list parameters
@@ -172,6 +187,23 @@ export interface TaskStats {
   completed_today: number;
 }
 
+// Task module settings (tenant-level)
+export interface TaskModuleSettings {
+  calendar_enabled: boolean;
+  board_enabled: boolean;
+  inbox_enabled: boolean;
+  list_enabled: boolean;
+  stats_enabled: boolean;
+}
+
+export interface TaskModuleSettingsUpdate {
+  calendar_enabled?: boolean;
+  board_enabled?: boolean;
+  inbox_enabled?: boolean;
+  list_enabled?: boolean;
+  stats_enabled?: boolean;
+}
+
 // Task status values
 export type TaskStatus =
   | "todo"
@@ -184,3 +216,98 @@ export type TaskStatus =
 
 // Task priority values
 export type TaskPriority = "low" | "medium" | "high" | "urgent";
+
+// Agenda item types
+export interface AgendaItem {
+  id: string;
+  title: string;
+  description?: string;
+  start_date: string;
+  end_date?: string;
+  source: string;
+  source_id?: string;
+  type: "task" | "event" | "meeting" | "deadline";
+  status?: string;
+  priority?: TaskPriority;
+  metadata?: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+// Agenda list parameters
+export interface AgendaListParams {
+  start_date?: string;
+  end_date?: string;
+  sources?: string;
+}
+
+// Calendar source types
+export interface CalendarSource {
+  id: string;
+  name: string;
+  type: "internal" | "external" | "google" | "outlook" | "calDAV";
+  enabled: boolean;
+  color?: string;
+  url?: string;
+  credentials?: Record<string, unknown>;
+  sync_enabled: boolean;
+  last_sync_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Calendar source preferences
+export interface CalendarSourcePreferences {
+  enabled_sources: string[];
+  default_colors: Record<string, string>;
+  sync_intervals: Record<string, number>;
+  display_options: {
+    show_completed: boolean;
+    show_cancelled: boolean;
+    group_by_source: boolean;
+  };
+}
+
+// Saved view types
+export interface SavedView {
+  id: string;
+  name: string;
+  description?: string;
+  filters: {
+    status?: TaskStatus[];
+    priority?: TaskPriority[];
+    assigned_to_id?: string[];
+    date_range?: {
+      start: string;
+      end: string;
+    };
+  };
+  sort_config: {
+    field: string;
+    direction: "asc" | "desc";
+  };
+  column_config: Record<
+    string,
+    {
+      visible: boolean;
+      width?: number;
+      order: number;
+    }
+  >;
+  is_default: boolean;
+  is_public: boolean;
+  created_by_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// View creation payload
+export interface ViewCreate {
+  name: string;
+  description?: string;
+  filters: SavedView["filters"];
+  sort_config: SavedView["sort_config"];
+  column_config: SavedView["column_config"];
+  is_default?: boolean;
+  is_public?: boolean;
+}

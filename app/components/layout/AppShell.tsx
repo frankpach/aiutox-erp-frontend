@@ -1,11 +1,13 @@
-import { useEffect, memo } from "react";
-import type { ReactNode } from "react";
+import { useEffect, memo, type ReactNode } from "react";
 import { MainContent } from "./MainContent";
 import { Footer } from "./Footer";
 import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
+import { Dialog, DialogContent } from "~/components/ui/dialog";
+import { TaskCalendar } from "~/features/tasks/components/TaskCalendar";
 import { initializeModules } from "~/stores/modulesStore";
 import { useSidebarStore } from "~/stores/sidebarStore";
+import { useCalendarModalStore } from "~/stores/calendarModalStore";
 
 /**
  * AppShell - Componente principal del layout
@@ -23,7 +25,7 @@ interface AppShellProps {
   children: ReactNode;
 }
 
-export const AppShell = memo(function AppShell({ children }: AppShellProps) {
+function AppShellComponent({ children }: AppShellProps) {
   const {
     isSidebarOpen,
     isSidebarCollapsed,
@@ -32,17 +34,23 @@ export const AppShell = memo(function AppShell({ children }: AppShellProps) {
     toggleSidebar,
     toggleCollapse,
   } = useSidebarStore();
+  const calendarModal = useCalendarModalStore((state) => state);
 
   // Initialize modules and encryption secret on mount
   useEffect(() => {
     // Fetch encryption secret first (required for module cache)
-    import("~/stores/encryptionStore").then(({ useEncryptionStore }) => {
-      useEncryptionStore.getState().fetchSecret().catch((error) => {
-        console.warn("Failed to fetch encryption secret:", error);
+    import("~/stores/encryptionStore")
+      .then(({ useEncryptionStore }) => {
+        useEncryptionStore
+          .getState()
+          .fetchSecret()
+          .catch((error) => {
+            console.warn("Failed to fetch encryption secret:", error);
+          });
+      })
+      .catch(() => {
+        // Ignore if store not available
       });
-    }).catch(() => {
-      // Ignore if store not available
-    });
 
     // Then initialize modules
     initializeModules().catch((error) => {
@@ -76,6 +84,18 @@ export const AppShell = memo(function AppShell({ children }: AppShellProps) {
     setIsSidebarOpen(false);
   };
 
+  useEffect(() => {
+    const handlePopState = () => {
+      const state = window.history.state as { calendarModal?: boolean } | null;
+      if (!state?.calendarModal && calendarModal.isOpen) {
+        calendarModal.close({ updateHistory: false });
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [calendarModal]);
+
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar
@@ -93,21 +113,20 @@ export const AppShell = memo(function AppShell({ children }: AppShellProps) {
         <MainContent>{children}</MainContent>
         <Footer />
       </div>
+      <Dialog
+        open={calendarModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            calendarModal.close();
+          }
+        }}
+      >
+        <DialogContent className="max-w-6xl w-[95vw] h-[90vh] overflow-y-auto">
+          <TaskCalendar />
+        </DialogContent>
+      </Dialog>
     </div>
   );
-});
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+export const AppShell = memo(AppShellComponent);

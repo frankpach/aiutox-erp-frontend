@@ -3,11 +3,13 @@
  * Task editing form for updating existing tasks
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { format } from "date-fns";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
+import { Label } from "~/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -23,10 +25,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
+import { Switch } from "~/components/ui/switch";
 import { Edit01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useUpdateTask } from "../hooks/useTasks";
 import { useUsers } from "~/features/users/hooks/useUsers";
+import { useTags } from "~/features/tags/hooks/useTags";
 import { useAuthStore } from "~/stores/authStore";
 import {
   createAssignment,
@@ -34,6 +38,8 @@ import {
   listAssignments,
 } from "../api/tasks.api";
 import { MultiSelect } from "~/components/ui/multi-select";
+import { cn } from "~/lib/utils";
+import type { TaskFormMode } from "./TaskQuickAdd";
 import type {
   Task,
   TaskUpdate,
@@ -57,7 +63,25 @@ export function TaskEdit({
   const { t } = useTranslation();
   const updateTask = useUpdateTask();
   const { users } = useUsers({ page_size: 100 });
+  const { data: tagList = [] } = useTags();
   const { user } = useAuthStore();
+
+  const DATE_INPUT_FORMAT = "yyyy-MM-dd'T'HH:mm";
+  const toDateTimeLocalValue = (value?: string | null) => {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return "";
+    }
+    return format(date, DATE_INPUT_FORMAT);
+  };
+
+  const toUTCISOString = (value?: string | null) => {
+    if (!value) return undefined;
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return undefined;
+    return parsed.toISOString();
+  };
 
   const [formData, setFormData] = useState<Partial<TaskUpdate>>({
     title: "",
@@ -65,11 +89,29 @@ export function TaskEdit({
     status: "todo",
     priority: "medium",
     due_date: "",
+    start_at: "",
+    end_at: "",
+    all_day: false,
+    tag_ids: [],
+    color_override: "",
     assigned_to_id: null,
   });
 
   const [assignedUserIds, setAssignedUserIds] = useState<string[]>([]);
   const [assignedGroupIds, setAssignedGroupIds] = useState<string[]>([]);
+  const [mode, setMode] = useState<TaskFormMode>("task");
+  const [formError, setFormError] = useState<string | null>(null);
+  const isEventMode = mode === "event";
+  const modeTabs = useMemo(
+    () => [
+      { key: "task" as TaskFormMode, label: t("tasks.type.task") || "Tarea" },
+      {
+        key: "event" as TaskFormMode,
+        label: t("tasks.type.event") || "Evento",
+      },
+    ],
+    [t]
+  );
 
   // Update form data when task changes
   useEffect(() => {
@@ -79,14 +121,41 @@ export function TaskEdit({
         description: task.description,
         status: task.status,
         priority: task.priority,
-        due_date: task.due_date || "",
+        due_date: toDateTimeLocalValue(task.due_date),
+        start_at: toDateTimeLocalValue(task.start_at ?? undefined),
+        end_at: toDateTimeLocalValue(task.end_at ?? undefined),
+        all_day: task.all_day ?? false,
+        tag_ids: task.tag_ids ?? [],
+        color_override: task.color_override ?? "",
         assigned_to_id: task.assigned_to_id,
       });
 
+      const nextMode = task.start_at || task.end_at ? "event" : "task";
+      setMode(nextMode);
+      setFormError(null);
+
       // Cargar asignaciones existentes
-      loadExistingAssignments(task.id);
+      void loadExistingAssignments(task.id);
     }
   }, [task]);
+
+  useEffect(() => {
+    if (!open) {
+      setFormError(null);
+    }
+  }, [open]);
+
+  const handleModeChange = (nextMode: TaskFormMode) => {
+    if (nextMode === mode) return;
+    setMode(nextMode);
+    setFormError(null);
+    setFormData((prev) => ({
+      ...prev,
+      ...(nextMode === "task"
+        ? { start_at: "", end_at: "", all_day: false }
+        : { due_date: "" }),
+    }));
+  };
 
   const loadExistingAssignments = async (taskId: string) => {
     try {
@@ -107,13 +176,54 @@ export function TaskEdit({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
 
     if (!task) return;
 
+    if (mode === "event") {
+      if (!formData.start_at || !formData.end_at) {
+        setFormError(
+          t("tasks.errors.eventTimesRequired") ||
+            "Debes indicar inicio y fin para un evento"
+        );
+        return;
+      }
+      if (new Date(formData.end_at) < new Date(formData.start_at)) {
+        setFormError(
+          t("tasks.errors.invalidEventRange") ||
+            "La hora de fin debe ser posterior al inicio"
+        );
+        return;
+      }
+    }
+
     try {
+      const basePayload: TaskUpdate = {
+        ...(formData as TaskUpdate),
+        color_override: formData.color_override || undefined,
+        tag_ids: formData.tag_ids?.length ? formData.tag_ids : undefined,
+      };
+
+      const payload: TaskUpdate =
+        mode === "event"
+          ? {
+              ...basePayload,
+              due_date: undefined,
+              start_at: toUTCISOString(formData.start_at) ?? null,
+              end_at: toUTCISOString(formData.end_at) ?? null,
+              all_day: Boolean(formData.all_day),
+            }
+          : {
+              ...basePayload,
+              due_date: toUTCISOString(formData.due_date),
+              start_at: undefined,
+              end_at: undefined,
+              all_day: false,
+            };
+
       await updateTask.mutateAsync({
         id: task.id,
-        payload: formData as TaskUpdate,
+        payload,
       });
 
       // Sincronizar asignaciones de usuarios
@@ -174,7 +284,7 @@ export function TaskEdit({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[560px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <HugeiconsIcon icon={Edit01Icon} size={20} />
@@ -184,11 +294,39 @@ export function TaskEdit({
             {t("tasks.editTaskDescription")}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form
+          onSubmit={(event) => {
+            void handleSubmit(event);
+          }}
+          className="space-y-3 pr-1"
+        >
+          <div className="space-y-2">
+            <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+              {t("tasks.type.title") || "Tipo"}
+            </Label>
+            <div className="inline-flex rounded-xl bg-muted/60 p-1 text-sm font-medium">
+              {modeTabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => handleModeChange(tab.key)}
+                  className={cn(
+                    "flex-1 rounded-lg px-3 py-1 transition",
+                    mode === tab.key
+                      ? "bg-background text-foreground shadow"
+                      : "text-muted-foreground"
+                  )}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div>
             <label
               htmlFor="edit-title"
-              className="block text-sm font-medium mb-2"
+              className="block text-sm font-medium mb-1"
             >
               {t("tasks.title")} *
             </label>
@@ -207,7 +345,7 @@ export function TaskEdit({
           <div>
             <label
               htmlFor="edit-description"
-              className="block text-sm font-medium mb-2"
+              className="block text-sm font-medium mb-1"
             >
               {t("tasks.description")}
             </label>
@@ -218,17 +356,17 @@ export function TaskEdit({
                 setFormData({ ...formData, description: e.target.value })
               }
               placeholder={t("tasks.descriptionPlaceholder")}
-              rows={3}
+              rows={2}
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div>
               <label
                 htmlFor="edit-status"
-                className="block text-sm font-medium mb-2"
+                className="block text-sm font-medium mb-1"
               >
-                {t("tasks.status.title" as any)}
+                {t("tasks.status.title")}
               </label>
               <Select
                 value={formData.status}
@@ -262,9 +400,9 @@ export function TaskEdit({
             <div>
               <label
                 htmlFor="edit-priority"
-                className="block text-sm font-medium mb-2"
+                className="block text-sm font-medium mb-1"
               >
-                {t("tasks.priority.title" as any)}
+                {t("tasks.priority.title")}
               </label>
               <Select
                 value={formData.priority}
@@ -293,25 +431,79 @@ export function TaskEdit({
             </div>
           </div>
 
-          <div>
-            <label
-              htmlFor="edit-due-date"
-              className="block text-sm font-medium mb-2"
-            >
-              {t("tasks.dueDate")}
-            </label>
-            <Input
-              id="edit-due-date"
-              type="date"
-              value={formData.due_date}
-              onChange={(e) =>
-                setFormData({ ...formData, due_date: e.target.value })
-              }
-            />
-          </div>
+          {isEventMode ? (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="edit-all-day">
+                  {t("calendar.events.allDay")}
+                </Label>
+                <Switch
+                  id="edit-all-day"
+                  checked={Boolean(formData.all_day)}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, all_day: checked })
+                  }
+                />
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label
+                    htmlFor="edit-start-at"
+                    className="block text-sm font-medium mb-1"
+                  >
+                    {t("calendar.labels.start")}
+                  </label>
+                  <Input
+                    id="edit-start-at"
+                    type="datetime-local"
+                    value={formData.start_at ?? ""}
+                    onChange={(e) =>
+                      setFormData({ ...formData, start_at: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="edit-end-at"
+                    className="block text-sm font-medium mb-1"
+                  >
+                    {t("calendar.labels.end")}
+                  </label>
+                  <Input
+                    id="edit-end-at"
+                    type="datetime-local"
+                    value={formData.end_at ?? ""}
+                    onChange={(e) =>
+                      setFormData({ ...formData, end_at: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <label
+                htmlFor="edit-due-date"
+                className="block text-sm font-medium mb-1"
+              >
+                {t("tasks.dueDate")}
+              </label>
+              <Input
+                id="edit-due-date"
+                type="datetime-local"
+                value={formData.due_date ?? ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, due_date: e.target.value })
+                }
+              />
+            </div>
+          )}
 
           <div>
-            <label className="block text-sm font-medium mb-2">
+            <label className="block text-sm font-medium mb-1">
               {t("tasks.assignedTo")}
             </label>
             <MultiSelect
@@ -326,9 +518,50 @@ export function TaskEdit({
             />
           </div>
 
+          <div className="space-y-2">
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                {t("tags.title") || "Tags"}
+              </label>
+              <MultiSelect
+                options={tagList.map((tag) => ({
+                  value: tag.id,
+                  label: tag.name,
+                }))}
+                selected={formData.tag_ids || []}
+                onChange={(values) =>
+                  setFormData({ ...formData, tag_ids: values })
+                }
+                placeholder={t("tags.select") || "Seleccionar tags"}
+                label={t("tags.title") || "Tags"}
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="edit-color-override"
+                className="block text-sm font-medium mb-1"
+              >
+                {t("tasks.colorOverride") || "Color override"}
+              </label>
+              <Input
+                id="edit-color-override"
+                type="color"
+                value={formData.color_override || "#023E87"}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    color_override: e.target.value,
+                  })
+                }
+                className="h-10 w-20 p-1"
+              />
+            </div>
+          </div>
+
           {/* Placeholder para asignaciones a grupos - futuro cuando exista módulo Groups */}
           <div className="opacity-60">
-            <label className="block text-sm font-medium mb-2">
+            <label className="block text-sm font-medium mb-1">
               Asignar a Grupos (Próximamente)
             </label>
             <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
@@ -342,6 +575,8 @@ export function TaskEdit({
               </p>
             </div>
           </div>
+
+          {formError && <p className="text-sm text-destructive">{formError}</p>}
 
           <DialogFooter>
             <Button

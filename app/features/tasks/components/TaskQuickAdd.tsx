@@ -3,12 +3,14 @@
  * Quick task creation form for rapid task capture
  */
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { format } from "date-fns";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { Label } from "~/components/ui/label";
+import { Switch } from "~/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -33,27 +35,57 @@ import { useUsers } from "~/features/users/hooks/useUsers";
 import { createAssignment, createChecklistItem } from "../api/tasks.api";
 import { useAuthStore } from "~/stores/authStore";
 import { MultiSelect } from "~/components/ui/multi-select";
+import { useTags } from "~/features/tags/hooks/useTags";
 import type { TaskCreate, TaskStatus, TaskPriority } from "../types/task.types";
+import { cn } from "~/lib/utils";
 
 interface TaskQuickAddProps {
   onTaskCreated?: () => void;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  initialDueDate?: Date | string | null;
+  initialStartDate?: Date | string | null;
+  initialEndDate?: Date | string | null;
+  initialAllDay?: boolean;
+  defaultMode?: TaskFormMode;
+  onFormReset?: () => void;
 }
+
+export type TaskFormMode = "task" | "event";
+
+const DATE_INPUT_FORMAT = "yyyy-MM-dd'T'HH:mm";
+
+const toDateTimeLocalValue = (value?: Date | string | null) => {
+  if (!value) return "";
+  const date = typeof value === "string" ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return "";
+  return format(date, DATE_INPUT_FORMAT);
+};
+
+const toUTCISOString = (value?: string | null) => {
+  if (!value) return undefined;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return undefined;
+  return parsed.toISOString();
+};
 
 export function TaskQuickAdd({
   onTaskCreated,
   open,
   onOpenChange,
+  initialDueDate,
+  initialStartDate,
+  initialEndDate,
+  initialAllDay,
+  defaultMode = "task",
+  onFormReset,
 }: TaskQuickAddProps) {
   const { t } = useTranslation();
   const [internalOpen, setInternalOpen] = useState(false);
   const createTask = useCreateTask();
   const { user } = useAuthStore();
   const { users } = useUsers({ page_size: 100 }); // Obtener usuarios para el MultiSelect
-
-  console.log("Users loaded in TaskQuickAdd:", users);
-  console.log("Users count:", users?.length || 0);
+  const { data: tagList = [] } = useTags();
 
   const isControlled = open !== undefined;
   const isOpen = isControlled ? open : internalOpen;
@@ -72,6 +104,11 @@ export function TaskQuickAdd({
     status: "todo",
     priority: "medium",
     due_date: "",
+    start_at: "",
+    end_at: "",
+    all_day: false,
+    tag_ids: [],
+    color_override: "",
     assigned_to_id: null,
   });
 
@@ -79,6 +116,76 @@ export function TaskQuickAdd({
   const [checklistItems, setChecklistItems] = useState<
     { id: string; title: string }[]
   >([]);
+  const [mode, setMode] = useState<TaskFormMode>(defaultMode);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isOpen || !initialDueDate || mode !== "task") {
+      return;
+    }
+
+    const date =
+      typeof initialDueDate === "string"
+        ? new Date(initialDueDate)
+        : initialDueDate;
+
+    if (Number.isNaN(date.getTime())) {
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      due_date: format(date, DATE_INPUT_FORMAT),
+    }));
+  }, [initialDueDate, isOpen, mode]);
+
+  useEffect(() => {
+    if (!isOpen || mode !== "event") {
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      start_at: toDateTimeLocalValue(initialStartDate) || prev.start_at,
+      end_at: toDateTimeLocalValue(initialEndDate) || prev.end_at,
+      all_day: initialAllDay ?? prev.all_day ?? false,
+    }));
+  }, [initialStartDate, initialEndDate, initialAllDay, isOpen, mode]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+    setMode(defaultMode);
+  }, [defaultMode, isOpen]);
+
+  const resetFormState = () => {
+    setFormData({
+      title: "",
+      description: "",
+      status: "todo",
+      priority: "medium",
+      due_date: "",
+      start_at: "",
+      end_at: "",
+      all_day: false,
+      tag_ids: [],
+      color_override: "",
+      assigned_to_id: null,
+    });
+    setAssignedUserIds([]);
+    setChecklistItems([]);
+    setMode(defaultMode);
+    setFormError(null);
+  };
+
+  const handleClose = (openState: boolean) => {
+    setOpen(openState);
+    if (!openState) {
+      resetFormState();
+      onFormReset?.();
+    }
+  };
 
   const handleAddChecklistItem = () => {
     setChecklistItems([
@@ -99,9 +206,50 @@ export function TaskQuickAdd({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
+
+    if (mode === "event") {
+      if (!formData.start_at || !formData.end_at) {
+        setFormError(
+          t("tasks.errors.eventTimesRequired") ||
+            "Debes indicar inicio y fin para un evento"
+        );
+        return;
+      }
+      if (new Date(formData.end_at) < new Date(formData.start_at)) {
+        setFormError(
+          t("tasks.errors.invalidEventRange") ||
+            "La hora de fin debe ser posterior al inicio"
+        );
+        return;
+      }
+    }
 
     try {
-      const response = await createTask.mutateAsync(formData as TaskCreate);
+      const basePayload: TaskCreate = {
+        ...(formData as TaskCreate),
+        color_override: formData.color_override || undefined,
+        tag_ids: formData.tag_ids?.length ? formData.tag_ids : undefined,
+      };
+
+      const payload: TaskCreate =
+        mode === "event"
+          ? {
+              ...basePayload,
+              due_date: undefined,
+              start_at: toUTCISOString(formData.start_at)!,
+              end_at: toUTCISOString(formData.end_at)!,
+              all_day: Boolean(formData.all_day),
+            }
+          : {
+              ...basePayload,
+              due_date: toUTCISOString(formData.due_date),
+              start_at: undefined,
+              end_at: undefined,
+              all_day: false,
+            };
+
+      const response = await createTask.mutateAsync(payload);
       const taskId = response.data.id;
 
       // Crear asignaciones de usuarios si se seleccionaron
@@ -131,17 +279,8 @@ export function TaskQuickAdd({
         );
       }
 
-      setFormData({
-        title: "",
-        description: "",
-        status: "todo",
-        priority: "medium",
-        due_date: "",
-        assigned_to_id: null,
-      });
-      setAssignedUserIds([]);
-      setChecklistItems([]);
-      setOpen(false);
+      resetFormState();
+      handleClose(false);
       onTaskCreated?.();
     } catch (error) {
       console.error("Error al crear tarea:", error);
@@ -149,9 +288,21 @@ export function TaskQuickAdd({
   };
 
   const isLoading = createTask.isPending;
+  const isEventMode = mode === "event";
+
+  const modeTabs = useMemo(
+    () => [
+      { key: "task" as TaskFormMode, label: t("tasks.type.task") || "Tarea" },
+      {
+        key: "event" as TaskFormMode,
+        label: t("tasks.type.event") || "Evento",
+      },
+    ],
+    [t]
+  );
 
   return (
-    <Dialog open={isOpen} onOpenChange={setOpen}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       {!isControlled && (
         <DialogTrigger asChild>
           <Button>
@@ -167,7 +318,45 @@ export function TaskQuickAdd({
             {t("tasks.quickAddDescription")}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form
+          onSubmit={(event) => {
+            void handleSubmit(event);
+          }}
+          className="space-y-4"
+        >
+          <div className="space-y-2">
+            <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+              {t("tasks.type.title") || "Tipo"}
+            </Label>
+            <div className="inline-flex rounded-xl bg-muted/60 p-1 text-sm font-medium">
+              {modeTabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => {
+                    if (mode === tab.key) return;
+                    setMode(tab.key);
+                    setFormError(null);
+                    setFormData((prev) => ({
+                      ...prev,
+                      ...(tab.key === "task"
+                        ? { start_at: "", end_at: "", all_day: false }
+                        : { due_date: "" }),
+                    }));
+                  }}
+                  className={cn(
+                    "flex-1 rounded-lg px-3 py-1 transition",
+                    mode === tab.key
+                      ? "bg-background text-foreground shadow"
+                      : "text-muted-foreground"
+                  )}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div>
             <label
               htmlFor="quick-title"
@@ -273,22 +462,76 @@ export function TaskQuickAdd({
             </div>
           </div>
 
-          <div>
-            <label
-              htmlFor="quick-due-date"
-              className="block text-sm font-medium mb-2"
-            >
-              {t("tasks.dueDate")}
-            </label>
-            <Input
-              id="quick-due-date"
-              type="date"
-              value={formData.due_date}
-              onChange={(e) =>
-                setFormData({ ...formData, due_date: e.target.value })
-              }
-            />
-          </div>
+          {isEventMode ? (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="quick-all-day">
+                  {t("calendar.events.allDay")}
+                </Label>
+                <Switch
+                  id="quick-all-day"
+                  checked={Boolean(formData.all_day)}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, all_day: checked })
+                  }
+                />
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label
+                    htmlFor="quick-start-at"
+                    className="block text-sm font-medium mb-2"
+                  >
+                    {t("calendar.labels.start")}
+                  </label>
+                  <Input
+                    id="quick-start-at"
+                    type="datetime-local"
+                    value={formData.start_at ?? ""}
+                    onChange={(e) =>
+                      setFormData({ ...formData, start_at: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="quick-end-at"
+                    className="block text-sm font-medium mb-2"
+                  >
+                    {t("calendar.labels.end")}
+                  </label>
+                  <Input
+                    id="quick-end-at"
+                    type="datetime-local"
+                    value={formData.end_at ?? ""}
+                    onChange={(e) =>
+                      setFormData({ ...formData, end_at: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <label
+                htmlFor="quick-due-date"
+                className="block text-sm font-medium mb-2"
+              >
+                {t("tasks.dueDate")}
+              </label>
+              <Input
+                id="quick-due-date"
+                type="datetime-local"
+                value={formData.due_date ?? ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, due_date: e.target.value })
+                }
+              />
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium mb-2">
@@ -304,6 +547,47 @@ export function TaskQuickAdd({
               placeholder="Seleccionar responsables..."
               label="Asignar responsables"
             />
+          </div>
+
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                {t("tags.title") || "Tags"}
+              </label>
+              <MultiSelect
+                options={tagList.map((tag) => ({
+                  value: tag.id,
+                  label: tag.name,
+                }))}
+                selected={formData.tag_ids || []}
+                onChange={(values) =>
+                  setFormData({ ...formData, tag_ids: values })
+                }
+                placeholder={t("tags.select") || "Seleccionar tags"}
+                label={t("tags.title") || "Tags"}
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="quick-color-override"
+                className="block text-sm font-medium mb-2"
+              >
+                {t("tasks.colorOverride") || "Color override"}
+              </label>
+              <Input
+                id="quick-color-override"
+                type="color"
+                value={formData.color_override || "#023E87"}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    color_override: e.target.value,
+                  })
+                }
+                className="h-10 w-20 p-1"
+              />
+            </div>
           </div>
 
           <div>
@@ -342,11 +626,13 @@ export function TaskQuickAdd({
             </div>
           </div>
 
+          {formError && <p className="text-sm text-destructive">{formError}</p>}
+
           <DialogFooter>
             <Button
               type="button"
               variant="outline"
-              onClick={() => setOpen(false)}
+              onClick={() => handleClose(false)}
               disabled={isLoading}
             >
               {t("common.cancel")}

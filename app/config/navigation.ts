@@ -11,7 +11,10 @@ import {
   ShieldIcon,
   FileEditIcon,
   ZapIcon,
+  Calendar01Icon,
+  Settings01Icon,
 } from "@hugeicons/core-free-icons";
+import type { IconSvgElement } from "@hugeicons/react";
 
 /**
  * Configuración de items de navegación del sidebar
@@ -20,12 +23,17 @@ import {
 export interface NavItem {
   id: string;
   label: string;
-  icon: typeof HomeIcon; // Tipo del icono de Hugeicons
+  icon: IconSvgElement;
   to?: string; // Opcional si tiene children
   permission?: string; // Permiso requerido para mostrar el item
   badge?: number; // Contador opcional (ej: notificaciones)
   children?: NavItem[]; // Sub-items
   requiresAnyPermission?: string[]; // Mostrar si tiene al menos uno de estos permisos
+  requiresModuleSetting?: {
+    module: string;
+    key: string;
+    value?: boolean;
+  };
 }
 
 /**
@@ -47,6 +55,18 @@ export const navigationItems: NavItem[] = [
     icon: HomeIcon,
     to: "/",
     // Sin permiso requerido - visible para todos los usuarios autenticados
+  },
+  {
+    id: "calendar",
+    label: "Mi calendario",
+    icon: Calendar01Icon,
+    to: "/calendar",
+    permission: "calendar.view",
+    requiresModuleSetting: {
+      module: "tasks",
+      key: "calendar.enabled",
+      value: true,
+    },
   },
 
   // Categoría: Operación
@@ -201,6 +221,13 @@ export const navigationItems: NavItem[] = [
         permission: "config.view",
       },
       {
+        id: "config-tasks",
+        label: "Configuración de tareas",
+        icon: Settings01Icon,
+        to: "/tasks/settings",
+        permission: "tasks.manage",
+      },
+      {
         id: "config-integrations",
         label: "Integraciones",
         icon: PlugIcon,
@@ -259,10 +286,6 @@ export const navigationItems: NavItem[] = [
     ],
   },
 ];
-
-
-
-
 
 
 

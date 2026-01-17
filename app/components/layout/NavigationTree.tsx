@@ -16,9 +16,14 @@ import { GridIcon } from "@hugeicons/core-free-icons";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useNavigation } from "~/hooks/useNavigation";
 import { useCategoryCollapse } from "~/hooks/useCategoryCollapse";
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "~/components/ui/collapsible";
+import {
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
+} from "~/components/ui/collapsible";
 import type { NavigationItem, ModuleNode } from "~/lib/modules/types";
 import { cn } from "~/lib/utils";
+import { useCalendarModalStore } from "~/stores/calendarModalStore";
 
 /**
  * Componente para renderizar un item de navegación (Nivel 3)
@@ -35,9 +40,13 @@ function NavigationItemComponent({
   level,
 }: NavigationItemComponentProps) {
   const location = useLocation();
+  const calendarModal = useCalendarModalStore();
 
   // Check if item is active
   const isActive = useMemo(() => {
+    if (item.to === "/calendar" && calendarModal.isOpen) {
+      return true;
+    }
     if (location.pathname === item.to) {
       return true;
     }
@@ -50,7 +59,7 @@ function NavigationItemComponent({
       return nextChar === undefined || nextChar === "/" || nextChar === "?";
     }
     return false;
-  }, [location.pathname, item.to]);
+  }, [calendarModal.isOpen, location.pathname, item.to]);
 
   const paddingLeft = level * 16; // 16px por nivel
 
@@ -62,15 +71,41 @@ function NavigationItemComponent({
 
   // Debug: Log files item to verify it's correct
   if (item.id === "files") {
-    console.log("[NavigationTree] Files item:", { id: item.id, to: item.to, label: item.label });
+    console.warn("[NavigationTree] Files item:", {
+      id: item.id,
+      to: item.to,
+      label: item.label,
+    });
   }
 
   return (
     <Link
       to={item.to}
+      onClick={(e) => {
+        // Handle calendar modal
+        if (item.to === "/calendar") {
+          e.preventDefault();
+          e.stopPropagation();
+          calendarModal.open(location.pathname);
+        }
+
+        // Debug: Log click event for files item
+        if (item.id === "files") {
+          console.warn("[NavigationTree] Files link clicked:", {
+            to: item.to,
+            currentPath: location.pathname,
+            target: e.currentTarget.href,
+            preventDefault: e.defaultPrevented,
+          });
+          // Ensure navigation happens
+          if (item.to && item.to !== location.pathname) {
+            console.warn("[NavigationTree] Navigating to:", item.to);
+          }
+        }
+      }}
       className={cn(
         "flex items-center gap-2 px-5 py-2 text-sm font-medium rounded-md mx-2 border-l-2 border-t border-r border-b",
-        "transition-all duration-150 ease-[cubic-bezier(0.4,0,0.2,1)]",
+        "transition-all duration-150 ease-in-out",
         "hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--accent-foreground))] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
         isActive
           ? "bg-primary/10 text-primary border-l-primary border-t-primary/50 border-r-primary/50 border-b-primary/50"
@@ -81,25 +116,10 @@ function NavigationItemComponent({
       aria-current={isActive ? "page" : undefined}
       aria-label={isCollapsed ? item.label : undefined}
       title={isCollapsed ? item.label : undefined}
-      onClick={(e) => {
-        // Debug: Log click event for files item
-        if (item.id === "files") {
-          console.log("[NavigationTree] Files link clicked:", {
-            to: item.to,
-            currentPath: location.pathname,
-            target: e.currentTarget.href,
-            preventDefault: e.defaultPrevented
-          });
-          // Ensure navigation happens
-          if (item.to && item.to !== location.pathname) {
-            console.log("[NavigationTree] Navigating to:", item.to);
-          }
-        }
-      }}
     >
       {item.icon ? (
         <HugeiconsIcon
-          icon={item.icon as any}
+          icon={item.icon}
           size={18}
           color={isActive ? "hsl(var(--primary))" : "hsl(var(--foreground))"}
           strokeWidth={1.5}
@@ -156,7 +176,7 @@ function ModuleNodeComponent({
   if (module.items.length === 1) {
     const firstItem = module.items[0];
     if (!firstItem) return null;
-    
+
     return (
       <NavigationItemComponent
         item={firstItem}
@@ -189,7 +209,7 @@ function ModuleNodeComponent({
         onClick={() => setIsExpanded(!isExpanded)}
         className={cn(
           "w-full flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-md mx-2",
-          "transition-all duration-150 ease-[cubic-bezier(0.4,0,0.2,1)]",
+          "transition-all duration-150 ease-in-out",
           "hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
           hasActiveItem
             ? "bg-primary/5 text-primary"
@@ -206,7 +226,9 @@ function ModuleNodeComponent({
         <HugeiconsIcon
           icon={GridIcon}
           size={18}
-          color={hasActiveItem ? "hsl(var(--primary))" : "hsl(var(--foreground))"}
+          color={
+            hasActiveItem ? "hsl(var(--primary))" : "hsl(var(--foreground))"
+          }
           strokeWidth={1.5}
           className="transition-colors duration-150"
         />
@@ -299,7 +321,7 @@ function CategoryNodeComponent({
           <button
             className={cn(
               "w-full flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-md mx-2",
-              "transition-all duration-150 ease-[cubic-bezier(0.4,0,0.2,1)]",
+              "transition-all duration-150 ease-in-out",
               "hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
               "data-[state=open]:bg-primary/5 data-[state=open]:text-primary",
               hasActiveItem
@@ -365,16 +387,23 @@ interface NavigationTreeProps {
 
 export function NavigationTree({ isCollapsed = false }: NavigationTreeProps) {
   const navigationTree = useNavigation();
-  const { toggleCategory, isExpanded } = useCategoryCollapse({ maxExpanded: 2 });
+  const { toggleCategory, isExpanded } = useCategoryCollapse({
+    maxExpanded: 2,
+  });
 
   if (!navigationTree || navigationTree.categories.size === 0) {
     return (
-      <div className={cn(
-        "py-8 text-center text-sm text-muted-foreground",
-        isCollapsed ? "px-2" : "px-4"
-      )}>
+      <div
+        className={cn(
+          "py-8 text-center text-sm text-muted-foreground",
+          isCollapsed ? "px-2" : "px-4"
+        )}
+      >
         {isCollapsed ? (
-          <div className="flex justify-center" title="No hay módulos disponibles">
+          <div
+            className="flex justify-center"
+            title="No hay módulos disponibles"
+          >
             <HugeiconsIcon
               icon={GridIcon}
               size={24}
@@ -406,9 +435,3 @@ export function NavigationTree({ isCollapsed = false }: NavigationTreeProps) {
     </nav>
   );
 }
-
-
-
-
-
-

@@ -20,16 +20,18 @@ import {
   createAssignment as createAssignmentApi,
   listAssignments,
   deleteAssignment as deleteAssignmentApi,
+  getTaskModuleSettings,
+  updateTaskModuleSettings,
 } from "~/features/tasks/api/tasks.api";
 import { useUsers } from "~/features/users/hooks/useUsers";
+import { useAuthStore } from "~/stores/authStore";
 import type {
-  TaskCreate,
   TaskUpdate,
   TaskListParams,
   ChecklistItem,
   TaskAssignmentCreate,
-  Task,
   TaskAssignment,
+  TaskModuleSettingsUpdate,
 } from "~/features/tasks/types/task.types";
 
 // Query hooks
@@ -81,6 +83,18 @@ export function useAssignments(taskId: string) {
   });
 }
 
+export function useTaskModuleSettings() {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
+  return useQuery({
+    queryKey: ["tasks", "settings"],
+    queryFn: () => getTaskModuleSettings(),
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
+    enabled: isAuthenticated,
+  });
+}
+
 // Mutation hooks
 export function useCreateTask() {
   const queryClient = useQueryClient();
@@ -89,7 +103,7 @@ export function useCreateTask() {
     mutationFn: createTask,
     onSuccess: () => {
       // Invalidate tasks list queries
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      void queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
     onError: (error) => {
       console.error("Failed to create task:", error);
@@ -105,8 +119,8 @@ export function useUpdateTask() {
       updateTask(id, payload),
     onSuccess: (_, variables) => {
       // Invalidate specific task and list queries
-      queryClient.invalidateQueries({ queryKey: ["tasks", variables.id] });
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      void queryClient.invalidateQueries({ queryKey: ["tasks", variables.id] });
+      void queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
     onError: (error) => {
       console.error("Failed to update task:", error);
@@ -121,7 +135,7 @@ export function useDeleteTask() {
     mutationFn: deleteTask,
     onSuccess: () => {
       // Invalidate tasks list queries
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      void queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
     onError: (error) => {
       console.error("Failed to delete task:", error);
@@ -142,11 +156,13 @@ export function useChecklistMutations() {
     }) => createChecklistItem(taskId, payload),
     onSuccess: (_, variables) => {
       // Invalidate specific task and list queries
-      queryClient.invalidateQueries({ queryKey: ["tasks", variables.taskId] });
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
+        queryKey: ["tasks", variables.taskId],
+      });
+      void queryClient.invalidateQueries({
         queryKey: ["tasks", variables.taskId, "checklist"],
       });
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      void queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
     onError: (error) => {
       console.error("Failed to create checklist item:", error);
@@ -163,7 +179,7 @@ export function useChecklistMutations() {
     }) => updateChecklistItem(itemId, payload),
     onSuccess: () => {
       // Invalidate all checklist queries
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      void queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
     onError: (error) => {
       console.error("Failed to update checklist item:", error);
@@ -174,7 +190,7 @@ export function useChecklistMutations() {
     mutationFn: (itemId: string) => deleteChecklistItem(itemId),
     onSuccess: () => {
       // Invalidate all checklist queries
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      void queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
     onError: (error) => {
       console.error("Failed to delete checklist item:", error);
@@ -201,11 +217,13 @@ export function useAssignmentMutations() {
     }) => createAssignmentApi(taskId, assignment),
     onSuccess: (_, variables) => {
       // Invalidate task and assignments queries
-      queryClient.invalidateQueries({ queryKey: ["tasks", variables.taskId] });
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
+        queryKey: ["tasks", variables.taskId],
+      });
+      void queryClient.invalidateQueries({
         queryKey: ["tasks", variables.taskId, "assignments"],
       });
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      void queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
     onError: (error) => {
       console.error("Failed to create assignment:", error);
@@ -222,7 +240,7 @@ export function useAssignmentMutations() {
     }) => deleteAssignmentApi(taskId, assignmentId),
     onSuccess: () => {
       // Invalidate all assignment queries
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      void queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
     onError: (error) => {
       console.error("Failed to delete assignment:", error);
@@ -233,6 +251,21 @@ export function useAssignmentMutations() {
     createAssignment,
     deleteAssignment,
   };
+}
+
+export function useTaskModuleSettingsMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: TaskModuleSettingsUpdate) =>
+      updateTaskModuleSettings(payload),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["tasks", "settings"] });
+    },
+    onError: (error) => {
+      console.error("Failed to update tasks settings:", error);
+    },
+  });
 }
 
 // Hook para obtener asignaciones con nombres de usuarios

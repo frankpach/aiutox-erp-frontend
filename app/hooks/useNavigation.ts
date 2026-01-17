@@ -9,6 +9,7 @@ import { useMemo } from "react";
 import { useLocation } from "react-router";
 import { useModulesStore } from "../stores/modulesStore";
 import { usePermissions } from "./usePermissions";
+import { useTaskModuleSettings } from "~/features/tasks/hooks/useTasks";
 import type {
   NavigationTree,
   NavigationItem,
@@ -24,19 +25,44 @@ import type {
  */
 export function useNavigation(): NavigationTree | null {
   const { navigationTree } = useModulesStore();
-  const { hasPermission, hasAnyPermission, permissions } = usePermissions();
+  const { hasPermission, hasAnyPermission } = usePermissions();
+  const { data: taskSettingsData } = useTaskModuleSettings();
+  const taskSettings = taskSettingsData?.data;
 
   return useMemo(() => {
     if (!navigationTree) {
       return null;
     }
 
+    const isItemEnabledBySettings = (item: NavigationItem) => {
+      if (!item.requiresModuleSetting) {
+        return true;
+      }
+
+      const { module, key, value = true } = item.requiresModuleSetting;
+      if (module === "tasks") {
+        if (!taskSettings) {
+          return false;
+        }
+        const settingsMap: Record<string, boolean | undefined> = {
+          "calendar.enabled": taskSettings.calendar_enabled,
+          "board.enabled": taskSettings.board_enabled,
+          "inbox.enabled": taskSettings.inbox_enabled,
+          "list.enabled": taskSettings.list_enabled,
+          "stats.enabled": taskSettings.stats_enabled,
+        };
+        return settingsMap[key] === value;
+      }
+
+      return true;
+    };
+
     // Filter navigation tree by permissions
     const filteredCategories = new Map<string, CategoryNode>();
 
     for (const [categoryName, categoryNode] of navigationTree.categories) {
       // Check if category has requiresAnyPermission
-      const requiresAnyPerm = (categoryNode as any).requiresAnyPermission;
+      const requiresAnyPerm = categoryNode.requiresAnyPermission;
       if (requiresAnyPerm && requiresAnyPerm.length > 0) {
         // Check if user has at least one of the required permissions
         const hasAny = hasAnyPermission(requiresAnyPerm);
@@ -56,10 +82,10 @@ export function useNavigation(): NavigationTree | null {
         // Filter items by permissions
         const filteredItems = moduleNode.items.filter((item) => {
           if (!item.permission) {
-            return true; // No permission required
+            return isItemEnabledBySettings(item);
           }
           const hasItemPerm = hasPermission(item.permission);
-          return hasItemPerm;
+          return hasItemPerm && isItemEnabledBySettings(item);
         });
 
         // Only include module if it has visible items
@@ -92,7 +118,7 @@ export function useNavigation(): NavigationTree | null {
       categories: filteredCategories,
       allItems,
     };
-  }, [navigationTree, hasPermission, hasAnyPermission, permissions]);
+  }, [navigationTree, hasPermission, hasAnyPermission, taskSettings]);
 }
 
 /**
@@ -141,7 +167,9 @@ export function useActiveNavigationItem(): NavigationItem | null {
 
   return useMemo(() => {
     // Find exact match first
-    const exactMatch = navigationItems.find((item) => item.to === location.pathname);
+    const exactMatch = navigationItems.find(
+      (item) => item.to === location.pathname
+    );
     if (exactMatch) {
       return exactMatch;
     }
@@ -195,9 +223,7 @@ export function useIsNavigationItemActive(item: NavigationItem): boolean {
  *
  * @param moduleId - Module identifier
  */
-export function useModuleNavigationItems(
-  moduleId: string
-): NavigationItem[] {
+export function useModuleNavigationItems(moduleId: string): NavigationItem[] {
   const navigationTree = useNavigation();
 
   return useMemo(() => {
@@ -222,9 +248,7 @@ export function useModuleNavigationItems(
  *
  * @param categoryName - Category name
  */
-export function useCategoryNavigationItems(
-  categoryName: string
-): ModuleNode[] {
+export function useCategoryNavigationItems(categoryName: string): ModuleNode[] {
   const navigationTree = useNavigation();
 
   return useMemo(() => {
@@ -240,10 +264,3 @@ export function useCategoryNavigationItems(
     return Array.from(categoryNode.modules.values());
   }, [navigationTree, categoryName]);
 }
-
-
-
-
-
-
-

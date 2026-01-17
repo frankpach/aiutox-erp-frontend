@@ -23,7 +23,7 @@ interface SidebarProps {
   onToggleCollapse?: () => void;
 }
 
-export const Sidebar = memo(function Sidebar({
+function SidebarComponent({
   isOpen = true,
   onClose,
   isCollapsed = false,
@@ -48,7 +48,7 @@ export const Sidebar = memo(function Sidebar({
     if (isOpen && window.innerWidth < 1024) {
       const handleClickOutside = (event: MouseEvent) => {
         const target = event.target as HTMLElement;
-        if (!target.closest('[data-sidebar]')) {
+        if (!target.closest("[data-sidebar]")) {
           onClose?.();
         }
       };
@@ -75,12 +75,12 @@ export const Sidebar = memo(function Sidebar({
       {/* Sidebar */}
       <aside
         data-sidebar
-        style={{ ["--foreground" as any]: "var(--sidebar-text)" }}
+        style={{ "--foreground": "var(--sidebar-text)" } as React.CSSProperties}
         className={cn(
           "fixed lg:static inset-y-0 left-0 z-50",
           "w-64 bg-[hsl(var(--sidebar))] shadow-[2px_0_8px_rgba(0,0,0,0.04)]",
           "flex flex-col h-screen lg:h-full",
-          "transition-[width,transform] duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]",
+          "transition-[width,transform] duration-200 ease-in-out",
           "lg:translate-x-0",
           isOpen ? "translate-x-0" : "-translate-x-full",
           isCollapsed && "lg:w-20"
@@ -94,13 +94,13 @@ export const Sidebar = memo(function Sidebar({
             <img
               src={theme.logo_small || "/logo-icon.png"}
               alt="AiutoX Logo"
-              className="h-10 w-10 object-contain flex-shrink-0 transition-all duration-200"
+              className="h-10 w-10 object-contain shrink-0 transition-all duration-200"
             />
             <img
               src={theme.logo_name || "/logo-name.png"}
               alt="AiutoX"
               className={cn(
-                "h-6 object-contain transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
+                "h-6 object-contain transition-all duration-300 ease-in-out",
                 isCollapsed
                   ? "opacity-0 w-0 invisible scale-95"
                   : "opacity-100 w-auto visible scale-100"
@@ -121,10 +121,12 @@ export const Sidebar = memo(function Sidebar({
           {isAuthenticated ? (
             <NavigationTree isCollapsed={isCollapsed} />
           ) : (
-            <div className={cn(
-              "px-4 py-8 text-center text-sm text-muted-foreground",
-              isCollapsed && "px-2"
-            )}>
+            <div
+              className={cn(
+                "px-4 py-8 text-center text-sm text-muted-foreground",
+                isCollapsed && "px-2"
+              )}
+            >
               {isCollapsed ? (
                 <span role="img" aria-label={t("layout.sidebar.locked")}>
                   🔒
@@ -143,8 +145,16 @@ export const Sidebar = memo(function Sidebar({
             size="icon"
             onClick={onToggleCollapse}
             className="h-9 w-9 hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--accent-foreground))]"
-            aria-label={isCollapsed ? t("layout.sidebar.expandMenu") : t("layout.sidebar.collapseMenu")}
-            title={isCollapsed ? t("layout.sidebar.expandMenu") : t("layout.sidebar.collapseMenu")}
+            aria-label={
+              isCollapsed
+                ? t("layout.sidebar.expandMenu")
+                : t("layout.sidebar.collapseMenu")
+            }
+            title={
+              isCollapsed
+                ? t("layout.sidebar.expandMenu")
+                : t("layout.sidebar.collapseMenu")
+            }
           >
             {isCollapsed ? (
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -156,13 +166,6 @@ export const Sidebar = memo(function Sidebar({
       </aside>
     </>
   );
-});
+}
 
-
-
-
-
-
-
-
-
+export const Sidebar = memo(SidebarComponent);

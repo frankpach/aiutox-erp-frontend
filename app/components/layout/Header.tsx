@@ -1,7 +1,11 @@
 import { memo, useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, useLocation } from "react-router";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { SearchIcon, Add01Icon } from "@hugeicons/core-free-icons";
+import {
+  SearchIcon,
+  Add01Icon,
+  Calendar01Icon,
+} from "@hugeicons/core-free-icons";
 import { MoonIcon, SunIcon } from "lucide-react";
 import { UserMenu } from "./UserMenu";
 import { SidebarToggle } from "./SidebarToggle";
@@ -14,14 +18,16 @@ import { useQuickActions } from "~/hooks/useQuickActions";
 import {
   initializeQuickActions,
   quickActionsRegistry,
+  type QuickAction,
 } from "~/lib/quickActions/registry";
 import { useQuickActionsStore } from "~/stores/quickActionsStore";
 import { TaskQuickAdd } from "~/features/tasks/components/TaskQuickAdd";
+import { useTaskModuleSettings } from "~/features/tasks/hooks/useTasks";
+import { useCalendarModalStore } from "~/stores/calendarModalStore";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 
@@ -40,7 +46,11 @@ interface HeaderProps {
   isSidebarCollapsed?: boolean;
 }
 
-export const Header = memo(function Header({
+type CSSPropertiesWithVars = React.CSSProperties & {
+  [key: `--${string}`]: string | number;
+};
+
+function HeaderComponent({
   onSidebarToggle,
   isSidebarOpen,
   isSidebarCollapsed,
@@ -48,9 +58,16 @@ export const Header = memo(function Header({
   const { theme, setTheme, resolvedTheme } = useTheme();
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const quickActions = useQuickActions();
   const [isTaskQuickAddOpen, setIsTaskQuickAddOpen] = useState(false);
+  const taskSettingsQuery = useTaskModuleSettings();
+  const taskSettings = taskSettingsQuery.data?.data;
+  const showCalendarButton = taskSettings?.calendar_enabled;
+  const calendarModal = useCalendarModalStore();
+  const isCalendarActive =
+    location.pathname === "/calendar" || calendarModal.isOpen;
 
   // Inicializar acciones rápidas del sistema (solo una vez)
   useEffect(() => {
@@ -78,22 +95,22 @@ export const Header = memo(function Header({
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      void navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
 
-  const handleQuickActionClick = (action: any) => {
+  const handleQuickActionClick = (action: QuickAction) => {
     if (action.id === "new-task") {
       setIsTaskQuickAddOpen(true);
     } else {
-      navigate(action.route);
+      void navigate(action.route);
     }
   };
 
   return (
     <header
-      style={{ ["--foreground" as any]: "var(--navbar-text)" }}
-      className="h-16 flex-shrink-0 bg-[hsl(var(--navbar-bg))] text-[hsl(var(--navbar-text))] px-6 flex items-center justify-between shadow-[0_1px_3px_rgba(0,0,0,0.05)]"
+      style={{ "--foreground": "var(--navbar-text)" } as CSSPropertiesWithVars}
+      className="h-16 shrink-0 bg-[hsl(var(--navbar-bg))] text-[hsl(var(--navbar-text))] px-6 flex items-center justify-between shadow-[0_1px_3px_rgba(0,0,0,0.05)]"
       role="banner"
     >
       {/* Sección izquierda: Logo y SidebarToggle (móvil) */}
@@ -108,7 +125,7 @@ export const Header = memo(function Header({
           to="/"
           className={cn(
             "hidden lg:flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded overflow-hidden",
-            "transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]",
+            "transition-all duration-200 ease-in-out",
             isSidebarCollapsed
               ? "opacity-100 max-w-[200px] visible"
               : "opacity-0 max-w-0 invisible"
@@ -187,7 +204,7 @@ export const Header = memo(function Header({
                     <div className="w-2 h-2 bg-gray-400 rounded-full" />
                   </div>
                 )}
-                {t(action.label as any)}
+                {t(action.label)}
               </DropdownMenuItem>
             ))}
             {quickActions.length === 0 && (
@@ -198,16 +215,34 @@ export const Header = memo(function Header({
           </DropdownMenuContent>
         </DropdownMenu>
 
+        {showCalendarButton && (
+          <Button
+            variant={isCalendarActive ? "default" : "ghost"}
+            size="icon"
+            className={cn(
+              "hidden lg:flex",
+              !isCalendarActive &&
+                "hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--accent-foreground))]"
+            )}
+            onClick={() => calendarModal.open(location.pathname)}
+            aria-label={t("tasks.settings.calendar")}
+            title={t("tasks.settings.calendar")}
+          >
+            <HugeiconsIcon icon={Calendar01Icon} size={18} />
+          </Button>
+        )}
+
         {/* TaskQuickAdd Modal (controlled) */}
         <TaskQuickAdd
           open={isTaskQuickAddOpen}
           onOpenChange={setIsTaskQuickAddOpen}
+          defaultMode="task"
           onTaskCreated={() => setIsTaskQuickAddOpen(false)}
         />
 
         {/* Quick Add Task Button (Mobile - Floating) */}
         <div className="md:hidden">
-          <TaskQuickAdd onTaskCreated={() => {}} />
+          <TaskQuickAdd defaultMode="task" onTaskCreated={() => {}} />
         </div>
 
         {/* Theme Toggle */}
@@ -238,4 +273,6 @@ export const Header = memo(function Header({
       </div>
     </header>
   );
-});
+}
+
+export const Header = memo(HeaderComponent);

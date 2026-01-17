@@ -18,6 +18,7 @@ export default [
   route("/profile", "routes/profile.tsx"),
   route("/settings", "routes/settings.tsx"),
   route("/files", "routes/files.tsx"),
+  route("/calendar", "routes/calendar.tsx"),
   route("/tags-create", "routes/tags-create.tsx"),
   route("/calendar-create", "routes/calendar-create.tsx"),
   route("/templates-create", "routes/templates-create.tsx"),
@@ -28,6 +29,7 @@ export default [
   // Feature routes
   route("/tasks", "routes/tasks.tsx"),
   route("/tasks-create", "routes/tasks-create.tsx"),
+  route("/tasks/settings", "routes/tasks.settings.tsx"),
   route("/tasks/:id", "routes/tasks.$id.tsx"),
   route("/tasks/:id/edit", "routes/tasks.$id.edit.tsx"),
   route("/approvals", "routes/approvals.tsx"),

@@ -19,6 +19,12 @@ import type {
   EventReminderCreate,
   CalendarListParams,
   EventListParams,
+  CalendarResource,
+  CalendarResourceCreate,
+  CalendarResourceUpdate,
+  EventResource,
+  EventResourceCreate,
+  ResourceListParams,
 } from "~/features/calendar/types/calendar.types";
 
 // Calendars API functions
@@ -26,69 +32,85 @@ import type {
 /**
  * List calendars with pagination and filters
  * GET /api/v1/calendar/calendars
- * 
+ *
  * Requires: calendar.view permission
  */
 export async function listCalendars(
   params?: CalendarListParams
 ): Promise<StandardListResponse<Calendar>> {
-  const response = await apiClient.get<StandardListResponse<Calendar>>("/calendar/calendars", {
-    params: {
-      page: params?.page || 1,
-      page_size: params?.page_size || 20,
-      user_id: params?.user_id,
-      is_shared: params?.is_shared,
-    },
-  });
+  const response = await apiClient.get<StandardListResponse<Calendar>>(
+    "/calendar/calendars",
+    {
+      params: {
+        page: params?.page || 1,
+        page_size: params?.page_size || 20,
+        calendar_type: params?.calendar_type,
+      },
+    }
+  );
   return response.data;
 }
 
 /**
  * Get calendar by ID
  * GET /api/v1/calendar/calendars/{id}
- * 
+ *
  * Requires: calendar.view permission
  */
-export async function getCalendar(id: string): Promise<StandardResponse<Calendar>> {
-  const response = await apiClient.get<StandardResponse<Calendar>>(`/calendar/calendars/${id}`);
+export async function getCalendar(
+  id: string
+): Promise<StandardResponse<Calendar>> {
+  const response = await apiClient.get<StandardResponse<Calendar>>(
+    `/calendar/calendars/${id}`
+  );
   return response.data;
 }
 
 /**
  * Create new calendar
  * POST /api/v1/calendar/calendars
- * 
+ *
  * Requires: calendar.manage permission
  */
 export async function createCalendar(
   payload: CalendarCreate
 ): Promise<StandardResponse<Calendar>> {
-  const response = await apiClient.post<StandardResponse<Calendar>>("/calendar/calendars", payload);
+  const response = await apiClient.post<StandardResponse<Calendar>>(
+    "/calendar/calendars",
+    payload
+  );
   return response.data;
 }
 
 /**
  * Update existing calendar
  * PUT /api/v1/calendar/calendars/{id}
- * 
+ *
  * Requires: calendar.manage permission
  */
 export async function updateCalendar(
   id: string,
   payload: CalendarUpdate
 ): Promise<StandardResponse<Calendar>> {
-  const response = await apiClient.put<StandardResponse<Calendar>>(`/calendar/calendars/${id}`, payload);
+  const response = await apiClient.put<StandardResponse<Calendar>>(
+    `/calendar/calendars/${id}`,
+    payload
+  );
   return response.data;
 }
 
 /**
  * Delete calendar
  * DELETE /api/v1/calendar/calendars/{id}
- * 
+ *
  * Requires: calendar.manage permission
  */
-export async function deleteCalendar(id: string): Promise<StandardResponse<null>> {
-  const response = await apiClient.delete<StandardResponse<null>>(`/calendar/calendars/${id}`);
+export async function deleteCalendar(
+  id: string
+): Promise<StandardResponse<null>> {
+  const response = await apiClient.delete<StandardResponse<null>>(
+    `/calendar/calendars/${id}`
+  );
   return response.data;
 }
 
@@ -97,71 +119,86 @@ export async function deleteCalendar(id: string): Promise<StandardResponse<null>
 /**
  * List events with pagination and filters
  * GET /api/v1/calendar/events
- * 
+ *
  * Requires: calendar.view permission
  */
 export async function listEvents(
   params?: EventListParams
 ): Promise<StandardListResponse<CalendarEvent>> {
-  const response = await apiClient.get<StandardListResponse<CalendarEvent>>("/calendar/events", {
-    params: {
-      page: params?.page || 1,
-      page_size: params?.page_size || 20,
-      calendar_id: params?.calendar_id,
-      start_date: params?.start_date,
-      end_date: params?.end_date,
-      user_id: params?.user_id,
-    },
-  });
+  const response = await apiClient.get<StandardListResponse<CalendarEvent>>(
+    "/calendar/events",
+    {
+      params: {
+        page: params?.page || 1,
+        page_size: params?.page_size || 20,
+        calendar_id: params?.calendar_id,
+        start_date: params?.start_date,
+        end_date: params?.end_date,
+        status: params?.status,
+      },
+    }
+  );
   return response.data;
 }
 
 /**
  * Get event by ID
  * GET /api/v1/calendar/events/{id}
- * 
+ *
  * Requires: calendar.view permission
  */
-export async function getEvent(id: string): Promise<StandardResponse<CalendarEvent>> {
-  const response = await apiClient.get<StandardResponse<CalendarEvent>>(`/calendar/events/${id}`);
+export async function getEvent(
+  id: string
+): Promise<StandardResponse<CalendarEvent>> {
+  const response = await apiClient.get<StandardResponse<CalendarEvent>>(
+    `/calendar/events/${id}`
+  );
   return response.data;
 }
 
 /**
  * Create new event
  * POST /api/v1/calendar/events
- * 
+ *
  * Requires: calendar.manage permission
  */
 export async function createEvent(
   payload: EventCreate
 ): Promise<StandardResponse<CalendarEvent>> {
-  const response = await apiClient.post<StandardResponse<CalendarEvent>>("/calendar/events", payload);
+  const response = await apiClient.post<StandardResponse<CalendarEvent>>(
+    "/calendar/events",
+    payload
+  );
   return response.data;
 }
 
 /**
  * Update existing event
  * PUT /api/v1/calendar/events/{id}
- * 
+ *
  * Requires: calendar.manage permission
  */
 export async function updateEvent(
   id: string,
   payload: EventUpdate
 ): Promise<StandardResponse<CalendarEvent>> {
-  const response = await apiClient.put<StandardResponse<CalendarEvent>>(`/calendar/events/${id}`, payload);
+  const response = await apiClient.put<StandardResponse<CalendarEvent>>(
+    `/calendar/events/${id}`,
+    payload
+  );
   return response.data;
 }
 
 /**
  * Delete event
  * DELETE /api/v1/calendar/events/{id}
- * 
+ *
  * Requires: calendar.manage permission
  */
 export async function deleteEvent(id: string): Promise<StandardResponse<null>> {
-  const response = await apiClient.delete<StandardResponse<null>>(`/calendar/events/${id}`);
+  const response = await apiClient.delete<StandardResponse<null>>(
+    `/calendar/events/${id}`
+  );
   return response.data;
 }
 
@@ -170,7 +207,7 @@ export async function deleteEvent(id: string): Promise<StandardResponse<null>> {
 /**
  * Create reminder for event
  * POST /api/v1/calendar/events/{id}/reminders
- * 
+ *
  * Requires: calendar.manage permission
  */
 export async function createReminder(
@@ -187,7 +224,7 @@ export async function createReminder(
 /**
  * Delete reminder from event
  * DELETE /api/v1/calendar/events/{id}/reminders/{reminder_id}
- * 
+ *
  * Requires: calendar.manage permission
  */
 export async function deleteReminder(
@@ -204,18 +241,20 @@ export async function deleteReminder(
 
 /**
  * Update attendee status
- * PUT /api/v1/calendar/events/{id}/attendees/{user_id}
- * 
+ * PUT /api/v1/calendar/events/{id}/attendees/me?status={status}
+ *
  * Requires: calendar.view permission
  */
 export async function updateAttendeeStatus(
   eventId: string,
-  userId: string,
   status: "accepted" | "declined" | "tentative"
 ): Promise<StandardResponse<null>> {
   const response = await apiClient.put<StandardResponse<null>>(
-    `/calendar/events/${eventId}/attendees/${userId}`,
-    { status }
+    `/calendar/events/${eventId}/attendees/me`,
+    null,
+    {
+      params: { status },
+    }
   );
   return response.data;
 }

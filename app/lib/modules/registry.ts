@@ -27,7 +27,6 @@ import {
   cacheModuleData,
   getCachedModuleData,
   cacheModuleList,
-  getCachedModuleList,
   clearModuleCache,
 } from "../storage/moduleCache";
 import { useAuthStore } from "../../stores/authStore";
@@ -115,7 +114,10 @@ class ModuleRegistry {
           modules.push(frontendModule);
           this.modules.set(frontendModule.id, frontendModule);
         } catch (error) {
-          console.warn(`Failed to fetch metadata for module ${moduleItem.id}:`, error);
+          console.warn(
+            `Failed to fetch metadata for module ${moduleItem.id}:`,
+            error
+          );
         }
       }
 
@@ -380,7 +382,11 @@ class ModuleRegistry {
         // Create a module node for this item (but it will render as a direct link, not expandable)
         // Debug: Log files item to verify it's correct
         if (navItem.id === "files") {
-          console.log("[ModuleRegistry] Processing files navItem:", { id: navItem.id, to: navItem.to, label: navItem.label });
+          console.warn("[ModuleRegistry] Processing files navItem:", {
+            id: navItem.id,
+            to: navItem.to,
+            label: navItem.label,
+          });
         }
 
         const moduleNode: ModuleNode = {
@@ -395,6 +401,7 @@ class ModuleRegistry {
               icon: navItem.icon,
               permission: navItem.permission,
               order: 0,
+              requiresModuleSetting: navItem.requiresModuleSetting,
             },
           ],
           mainRoute: navItem.to,
@@ -436,6 +443,7 @@ class ModuleRegistry {
             icon: child.icon,
             permission: child.permission,
             order: 0,
+            requiresModuleSetting: child.requiresModuleSetting,
           })),
           mainRoute: navItem.children[0]?.to,
           permission: undefined, // Category-level permission check
@@ -446,7 +454,9 @@ class ModuleRegistry {
 
         // Store requiresAnyPermission for the category if present
         if (navItem.requiresAnyPermission) {
-          (categoryNode as any).requiresAnyPermission = navItem.requiresAnyPermission;
+          (
+            categoryNode as { requiresAnyPermission?: string[] }
+          ).requiresAnyPermission = navItem.requiresAnyPermission;
         }
       }
     }
@@ -458,12 +468,17 @@ class ModuleRegistry {
         continue;
       }
 
-      const { category, module: moduleId, items, categoryOrder, moduleOrder } =
-        module.navigation;
+      const {
+        category,
+        module: moduleId,
+        items,
+        categoryOrder,
+        moduleOrder,
+      } = module.navigation;
 
       // ✅ FIXED: Skip this module if its ID is already used in static navigation
       if (usedIds.has(moduleId)) {
-        console.log(`[ModuleRegistry] Skipping duplicate module: ${moduleId}`);
+        console.warn(`[ModuleRegistry] Skipping duplicate module: ${moduleId}`);
         continue;
       }
 
@@ -496,9 +511,7 @@ class ModuleRegistry {
 
     // Sort categories
     const sortedCategories = new Map(
-      Array.from(categories.entries()).sort(
-        (a, b) => a[1].order - b[1].order
-      )
+      Array.from(categories.entries()).sort((a, b) => a[1].order - b[1].order)
     );
 
     // Sort modules within each category
@@ -527,7 +540,7 @@ class ModuleRegistry {
    */
   getNavigationItems(
     hasPermission: (permission: string) => boolean,
-    tenantId?: string
+    _tenantId?: string
   ): NavigationItem[] {
     const tree = this.getNavigationTree();
     const filteredItems: NavigationItem[] = [];
@@ -573,10 +586,3 @@ class ModuleRegistry {
 
 // Export singleton instance
 export const moduleRegistry = new ModuleRegistry();
-
-
-
-
-
-
-
