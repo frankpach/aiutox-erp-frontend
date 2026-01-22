@@ -21,7 +21,12 @@ export interface Task {
   color_override?: string | null;
   completed_at?: string;
   checklist: ChecklistItem[];
+  checklist_items?: ChecklistItem[]; // Alias for backend compatibility
   metadata?: Record<string, unknown>;
+  // Board view and templates (Fase 1)
+  status_id?: string | null; // Reference to TaskStatus
+  board_order?: number | null; // Order in board view
+  template_id?: string | null; // Reference to TaskTemplate
   // Multi-module integration
   source_module?: string; // e.g., 'projects', 'workflows'
   source_id?: string; // ID of source entity
@@ -72,6 +77,10 @@ export interface TaskUpdate {
   color_override?: string | null;
   checklist?: ChecklistItem[];
   metadata?: Record<string, unknown>;
+  // Board view and templates (Fase 1)
+  status_id?: string | null;
+  board_order?: number | null;
+  template_id?: string | null;
   // Multi-module integration
   source_module?: string;
   source_id?: string;

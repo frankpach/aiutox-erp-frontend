@@ -1175,7 +1175,7 @@ export const translations = {
     tabs: {
       inbox: "Inbox",
       list: "List",
-      board: "Board",
+      taskBoard: "Task Board",
       calendar: "Calendar",
       stats: "Statistics",
     },

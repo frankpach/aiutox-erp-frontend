@@ -10,11 +10,12 @@ import { PageLayout } from "~/components/layout/PageLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { TaskList } from "~/features/tasks/components/TaskList";
-import { TaskBoard } from "~/features/tasks/components/TaskBoard";
 import { TaskCalendar } from "~/features/tasks/components/TaskCalendar";
 import { TaskInbox } from "~/features/tasks/components/TaskInbox";
 import { TaskQuickAdd } from "~/features/tasks/components/TaskQuickAdd";
 import { TaskEdit } from "~/features/tasks/components/TaskEdit";
+import { TaskAgendaView } from "~/features/tasks/components/TaskAgendaView";
+import { BoardViewWrapper } from "~/features/tasks/components/BoardViewWrapper";
 import { showToast } from "~/components/common/Toast";
 import {
   useMyTasks,
@@ -45,13 +46,18 @@ export default function TasksPage() {
         enabled: settings?.list_enabled ?? true,
       },
       {
-        value: "board",
-        label: t("tasks.tabs.board"),
+        value: "board-pro",
+        label: t("tasks.tabs.taskBoard"),
         enabled: settings?.board_enabled ?? true,
       },
       {
         value: "calendar",
         label: t("tasks.tabs.calendar"),
+        enabled: settings?.calendar_enabled ?? true,
+      },
+      {
+        value: "agenda",
+        label: t("tasks.tabs.agenda") || "Agenda",
         enabled: settings?.calendar_enabled ?? true,
       },
       {
@@ -204,16 +210,14 @@ export default function TasksPage() {
             )}
 
             {settings?.board_enabled !== false && (
-              <TabsContent value="board" className="mt-6">
-                {/* Task Board */}
+              <TabsContent value="board-pro" className="mt-6">
+                {/* Board Pro - Advanced Kanban */}
                 <CardContent className="space-y-4">
-                  <TaskBoard
+                  <BoardViewWrapper
                     tasks={tasks}
                     loading={loading}
-                    onTaskSelect={handleEditTask}
-                    onTaskEdit={handleUpdateTask}
-                    onTaskDelete={handleDeleteTask}
-                    onTaskCreate={() => setIsQuickAddOpen(true)}
+                    onTaskClick={handleEditTask}
+                    onRefresh={() => void refetch()}
                   />
                 </CardContent>
               </TabsContent>
@@ -226,9 +230,23 @@ export default function TasksPage() {
                   <TaskCalendar
                     tasks={tasks}
                     loading={loading}
-                    onRefresh={refetch}
+                    onRefresh={() => void refetch()}
                     onTaskClick={handleEditTask}
                     onTaskCreate={() => setIsQuickAddOpen(true)}
+                  />
+                </CardContent>
+              </TabsContent>
+            )}
+
+            {settings?.calendar_enabled !== false && (
+              <TabsContent value="agenda" className="mt-6">
+                {/* Task Agenda */}
+                <CardContent className="space-y-4">
+                  <TaskAgendaView
+                    tasks={tasks}
+                    loading={loading}
+                    onTaskClick={handleEditTask}
+                    _onTaskCreate={() => setIsQuickAddOpen(true)}
                   />
                 </CardContent>
               </TabsContent>
