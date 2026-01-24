@@ -126,7 +126,7 @@ export default function ApprovalFlowEditRoute() {
           <FlowEditor
             initialNodes={nodes}
             initialEdges={edges}
-            onSave={handleSave}
+            onSave={(nodes: Node[], edges: Edge[]) => void handleSave(nodes, edges)}
             onPreview={handlePreview}
             readonly={false}
           />

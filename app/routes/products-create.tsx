@@ -29,15 +29,15 @@ export default function CreateProductPage() {
     e.preventDefault();
     try {
       // TODO: Implementar API call para crear producto
-      console.log("Creating product:", formData);
-      navigate("/products");
+      console.warn("Creating product:", formData);
+      void navigate("/products");
     } catch (error) {
       console.error("Error creating product:", error);
     }
   };
 
   const handleCancel = () => {
-    navigate("/products");
+    void navigate("/products");
   };
 
   const handleChange = (field: string, value: string) => {
@@ -55,7 +55,7 @@ export default function CreateProductPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={(e) => void handleSubmit(e)} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Nombre del Producto</Label>

@@ -94,7 +94,7 @@ export function FileUpload({
     (e: React.FormEvent) => {
       e.preventDefault();
       if (selectedFile) {
-        uploadMutation.mutate(selectedFile as globalThis.File);
+        uploadMutation.mutate(selectedFile);
       }
     },
     [selectedFile, uploadMutation]

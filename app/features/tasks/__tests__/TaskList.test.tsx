@@ -16,7 +16,7 @@ vi.mock("~/lib/i18n/useTranslation", () => ({
       const translations: Record<string, string> = {
         "tasks.loading": "Cargando tareas...",
         "tasks.noTasks": "No hay tareas",
-        "tasks.createTask": "Crear Tarea",
+        "tasks.createActivity": "Crear Actividad",
         "tasks.title": "Tareas",
         "tasks.description": "Gestiona tus tareas y proyectos",
         "tasks.refresh": "Actualizar",

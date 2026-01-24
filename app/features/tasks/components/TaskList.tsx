@@ -5,12 +5,11 @@
 
 import { format } from "date-fns";
 import { es, enUS } from "date-fns/locale";
-import { useState } from "react";
+import { useState, useMemo, memo } from "react";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
-import { Checkbox } from "~/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -21,13 +20,11 @@ import {
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { DataTable } from "~/components/common/DataTable";
-import { SearchBar } from "~/components/common/SearchBar";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Delete01Icon, Edit01Icon } from "@hugeicons/core-free-icons";
+import { Delete01Icon, Edit01Icon, Refresh01Icon, ViewIcon } from "@hugeicons/core-free-icons";
 import { TaskEdit } from "./TaskEdit";
 import { TaskView } from "./TaskView";
-import { useAuthStore } from "~/stores/authStore";
-import { useTaskAssignments, useChecklistMutations } from "../hooks/useTasks";
+import { useTaskAssignments } from "../hooks/useTasks";
 import type {
   Task,
   TaskStatus,
@@ -40,8 +37,6 @@ interface TaskListProps {
   assignments?: Record<string, TaskAssignment[]>; // taskId -> assignments
   loading?: boolean;
   onRefresh?: () => void;
-  onTaskSelect?: (task: Task) => void;
-  onTaskEdit?: (task: Task) => void;
   onTaskDelete?: (task: Task) => void;
   onTaskComplete?: (taskId: string, itemId: string) => void;
   onTaskCreate?: () => void;
@@ -76,91 +71,64 @@ const priorityColors: Record<TaskPriority, string> = {
   urgent: "bg-purple-100 text-purple-800 border-purple-200",
 };
 
-export function TaskList({
+export const TaskAdvancedFilter = memo(({
   tasks,
-  assignments,
+  assignments: _assignments,
   loading,
   onRefresh,
-  onTaskSelect,
-  onTaskEdit,
   onTaskDelete,
-  onTaskComplete,
+  onTaskComplete: _onTaskComplete,
   onTaskCreate,
-  onFilterBySourceModule,
+  onFilterBySourceModule: _onFilterBySourceModule,
   onFilterChange,
-}: TaskListProps) {
+}: TaskListProps) => {
   const { t, language } = useTranslation();
-  const currentUser = useAuthStore((state) => state.user);
 
   const dateLocale = language === "es" ? es : enUS;
 
-  // Obtener asignaciones con nombres de usuarios
-  const taskIds = tasks.map((task) => task.id);
+  // Memoizar taskIds para evitar recalcular en cada render
+  const taskIds = useMemo(() => tasks.map((task) => task.id), [tasks]);
   const { assignments: assignmentsWithUsers } = useTaskAssignments(taskIds);
 
-  // Hook para mutaciones de checklist
-  const { updateItem: updateChecklistItem } = useChecklistMutations();
-
-  // Manejar cambio de estado de checklist item
-  const handleChecklistItemChange = (
-    taskId: string,
-    itemId: string,
-    completed: boolean
-  ) => {
-    updateChecklistItem.mutate({
-      itemId,
-      payload: { completed },
-    });
-  };
-
+  
   const [filters, setFilters] = useState<TaskFilters>({});
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [viewingTask, setViewingTask] = useState<Task | null>(null);
   const [isViewOpen, setIsViewOpen] = useState(false);
 
-  // Verificar si el usuario puede editar una tarea terminada
-  const canEditCompletedTask = (task: Task): boolean => {
-    if (!currentUser) return false;
-
-    // Si no está terminada, se puede editar
-    if (task.status !== "done" && task.status !== "cancelled") {
+  // Memoizar filtrado de tareas
+  const filteredTasks = useMemo(() => {
+    return tasks.filter((task) => {
+      if (filters.status && task.status !== filters.status) return false;
+      if (filters.priority && task.priority !== filters.priority) return false;
+      if (filters.sourceModule && task.source_module !== filters.sourceModule)
+        return false;
+      if (
+        filters.search &&
+        !task.title.toLowerCase().includes(filters.search.toLowerCase())
+      )
+        return false;
+      if (
+        filters.dueDateFrom &&
+        task.due_date &&
+        new Date(task.due_date) < new Date(filters.dueDateFrom)
+      )
+        return false;
+      if (
+        filters.dueDateTo &&
+        task.due_date &&
+        new Date(task.due_date) > new Date(filters.dueDateTo)
+      )
+        return false;
       return true;
-    }
+    });
+  }, [tasks, filters]);
 
-    // Si está terminada, solo el creador puede editar
-    return task.created_by_id === currentUser.id;
-  };
-
-  const filteredTasks = tasks.filter((task) => {
-    if (filters.status && task.status !== filters.status) return false;
-    if (filters.priority && task.priority !== filters.priority) return false;
-    if (filters.sourceModule && task.source_module !== filters.sourceModule)
-      return false;
-    if (
-      filters.search &&
-      !task.title.toLowerCase().includes(filters.search.toLowerCase())
-    )
-      return false;
-    if (
-      filters.dueDateFrom &&
-      task.due_date &&
-      new Date(task.due_date) < new Date(filters.dueDateFrom)
-    )
-      return false;
-    if (
-      filters.dueDateTo &&
-      task.due_date &&
-      new Date(task.due_date) > new Date(filters.dueDateTo)
-    )
-      return false;
-    return true;
-  });
-
-  const handleFilterChange = (newFilters: Partial<TaskFilters>) => {
-    const updatedFilters = { ...filters, ...newFilters };
-    setFilters(updatedFilters);
-    onFilterChange?.(updatedFilters);
+  const handleFilterChange = (updates: Partial<TaskFilters>) => {
+    const newFilters = { ...filters, ...updates };
+    setFilters(newFilters);
+    onFilterChange?.(newFilters);
   };
 
   const clearFilters = () => {
@@ -174,8 +142,8 @@ export function TaskList({
   };
 
   const handleTaskUpdated = () => {
-    setIsEditOpen(false);
-    setEditingTask(null);
+    // No cerrar el modal automáticamente, solo refrescar los datos
+    // El usuario decidirá cuándo cerrar el modal
     onRefresh?.();
   };
 
@@ -197,7 +165,7 @@ export function TaskList({
   const getStatusBadge = (status: TaskStatus) => {
     return (
       <Badge variant="outline" className={statusColors[status]}>
-        {t(`tasks.statuses.${status}` as any)}
+        {t(`tasks.statuses.${status}`)}
       </Badge>
     );
   };
@@ -205,65 +173,107 @@ export function TaskList({
   const getPriorityBadge = (priority: TaskPriority) => {
     return (
       <Badge variant="outline" className={priorityColors[priority]}>
-        {t(`tasks.priorities.${priority}` as any)}
+        {t(`tasks.priorities.${priority}`)}
       </Badge>
     );
   };
 
-  const _getAssignmentIndicator = (task: Task) => {
-    const taskAssignments = assignments?.[task.id] || [];
-    if (taskAssignments.length === 0) {
-      return <span className="text-sm text-muted-foreground">-</span>;
+  
+  
+  // Función para determinar el tipo de actividad
+  const getActivityType = (task: Task): "tarea" | "evento" => {
+    // Si tiene start_at y end_at definidos, es un evento
+    if (task.start_at && task.end_at) {
+      return "evento";
     }
-
-    return (
-      <div className="flex items-center gap-1">
-        <Badge variant="secondary" className="text-xs">
-          {taskAssignments.length}
-        </Badge>
-        <span className="text-xs text-muted-foreground">
-          {taskAssignments.length > 1
-            ? t("tasks.assigned.plural")
-            : t("tasks.assigned.singular")}
-        </span>
-      </div>
-    );
+    // Si solo tiene due_date o es del módulo calendar, es una tarea
+    return "tarea";
   };
 
-  const _getSourceModuleBadge = (task: Task) => {
-    if (!task.source_module) return null;
+  // Función para formatear tiempo restante para humanos
+  const getTimeRemaining = (endDate: string): string => {
+    const now = new Date();
+    const end = new Date(endDate);
+    const diffMs = end.getTime() - now.getTime();
+    
+    if (diffMs <= 0) {
+      return "Finalizado";
+    }
+    
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    
+    if (diffDays > 0) {
+      return `${diffDays} día${diffDays > 1 ? 's' : ''}`;
+    } else if (diffHours > 0) {
+      return `${diffHours} hora${diffHours > 1 ? 's' : ''}`;
+    } else {
+      return `${diffMinutes} minuto${diffMinutes > 1 ? 's' : ''}`;
+    }
+  };
 
-    const moduleColors: Record<string, string> = {
-      projects: "bg-purple-100 text-purple-800 border-purple-200",
-      workflows: "bg-indigo-100 text-indigo-800 border-indigo-200",
+  // Función para formatear fechas de inicio y fin
+  const formatStartEndDates = (startAt?: string | null, endAt?: string | null): string => {
+    if (!startAt && !endAt) return "-";
+    
+    const formatDate = (dateStr: string) => {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('es-ES', { 
+        day: 'numeric', 
+        month: 'short', 
+        year: 'numeric' 
+      });
     };
-
-    return (
-      <Badge
-        variant="outline"
-        className={
-          moduleColors[task.source_module] || "bg-gray-100 text-gray-800"
-        }
-      >
-        {task.source_module}
-      </Badge>
-    );
+    
+    if (startAt && endAt) {
+      return `${formatDate(startAt)} - ${formatDate(endAt)}`;
+    } else if (startAt) {
+      return `Desde: ${formatDate(startAt)}`;
+    } else if (endAt) {
+      return `Hasta: ${formatDate(endAt)}`;
+    }
+    
+    return "-";
   };
 
   const columns = [
     {
       key: "title",
-      header: t("tasks.title"),
-      cell: (task: Task) => <div className="font-medium">{task.title}</div>,
+      header: "Descripción",
+      cell: (task: Task) => {
+        const activityType = getActivityType(task);
+        const typeLabel = activityType === "evento" ? "Evento" : "Tarea";
+        return (
+          <div className="font-medium">
+            {typeLabel}: {task.title}
+          </div>
+        );
+      },
     },
     {
       key: "status",
-      header: t("tasks.status.title" as any),
-      cell: (task: Task) => getStatusBadge(task.status),
+      header: t("tasks.status.title") || "Status",
+      cell: (task: Task) => {
+        const activityType = getActivityType(task);
+        
+        if (activityType === "evento") {
+          // Para eventos, mostrar tiempo restante
+          const timeRemaining = task.end_at ? getTimeRemaining(task.end_at) : "Sin fecha";
+          return (
+            <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
+              {timeRemaining}
+            </Badge>
+          );
+        } else {
+          // Para tareas, mostrar estado normal
+          return getStatusBadge(task.status);
+        }
+      },
     },
     {
       key: "priority",
-      header: t("tasks.priority.title" as any),
+      header: t("tasks.priority.title") || "Priority",
       cell: (task: Task) => getPriorityBadge(task.priority),
     },
     {
@@ -278,7 +288,7 @@ export function TaskList({
 
         return (
           <div className="flex flex-wrap gap-1">
-            {taskAssignments.map((assignment) => (
+            {taskAssignments.map((assignment: { id: string; userName: string }) => (
               <Badge
                 key={assignment.id}
                 variant="secondary"
@@ -293,42 +303,25 @@ export function TaskList({
     },
     {
       key: "due_date",
-      header: t("tasks.dueDate"),
-      cell: (task: Task) => (
-        <span className="text-sm">
-          {task.due_date ? formatDate(task.due_date) : "-"}
-        </span>
-      ),
-    },
-    {
-      key: "checklist",
-      header: t("tasks.checklist.title" as any),
-      cell: (task: Task) => (
-        <div className="space-y-2">
-          {task.checklist?.map((item: any) => (
-            <div key={item.id} className="flex items-center space-x-2">
-              <Checkbox
-                checked={item.completed}
-                onCheckedChange={(checked) =>
-                  handleChecklistItemChange(task.id, item.id, !!checked)
-                }
-                disabled={task.status === "done" || task.status === "cancelled"}
-              />
-              <span
-                className={`text-sm ${item.completed ? "line-through text-muted-foreground" : ""}`}
-              >
-                {item.title}
-              </span>
-            </div>
-          )) || (
-            <span className="text-sm text-muted-foreground">
-              {t("tasks.checklist.noItems")}
+      header: "Fechas",
+      cell: (task: Task) => {
+        const activityType = getActivityType(task);
+        
+        if (activityType === "evento") {
+          // Para eventos, mostrar fechas de inicio y fin
+          const dates = formatStartEndDates(task.start_at, task.end_at);
+          return <span className="text-sm">{dates}</span>;
+        } else {
+          // Para tareas, mostrar fecha de vencimiento normal
+          return (
+            <span className="text-sm">
+              {task.due_date ? formatDate(task.due_date) : "-"}
             </span>
-          )}
-        </div>
-      ),
+          );
+        }
+      },
     },
-    {
+        {
       key: "actions",
       header: t("common.actions"),
       cell: (task: Task) => (
@@ -336,27 +329,28 @@ export function TaskList({
           <Button
             variant="outline"
             size="sm"
+            className="h-8 w-8 p-0"
             onClick={() => handleViewTask(task)}
           >
-            {t("common.view")}
+            <HugeiconsIcon icon={ViewIcon} size={12} />
           </Button>
           <Button
             variant="outline"
             size="sm"
+            className="h-8 w-8 p-0"
             onClick={() => handleEditTask(task)}
             disabled={task.status === "done" || task.status === "cancelled"}
           >
-            <HugeiconsIcon icon={Edit01Icon} size={14} className="mr-1" />
-            {t("common.edit")}
+            <HugeiconsIcon icon={Edit01Icon} size={12} />
           </Button>
           <Button
-            variant="outline"
+            variant="destructive"
             size="sm"
+            className="h-8 w-8 p-0"
             onClick={() => onTaskDelete?.(task)}
             disabled={task.status === "done" || task.status === "cancelled"}
-            className="text-destructive hover:text-destructive"
           >
-            {t("common.delete")}
+            <HugeiconsIcon icon={Delete01Icon} size={12} />
           </Button>
         </div>
       ),
@@ -369,7 +363,7 @@ export function TaskList({
         <CardContent className="p-8">
           <div className="flex items-center space-x-2">
             <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary" />
-            <span>{t("tasks.loading" as any)}</span>
+            <span>{t("tasks.loading") || "Loading..."}</span>
           </div>
         </CardContent>
       </Card>
@@ -381,7 +375,7 @@ export function TaskList({
       <Card>
         <CardContent className="p-8 text-center">
           <div className="text-muted-foreground">{t("tasks.noTasks")}</div>
-          <Button onClick={onTaskCreate}>{t("tasks.createTask")}</Button>
+          <Button onClick={onTaskCreate}>{t("tasks.createActivity") || "Crear Actividad"}</Button>
         </CardContent>
       </Card>
     );
@@ -389,26 +383,16 @@ export function TaskList({
 
   return (
     <div className="space-y-6">
-      {/* Header with actions */}
-      <div className="flex justify-between items-center">
-        <div className="flex items-center space-x-4">
-          <Badge variant="secondary">
-            {filteredTasks.length} {t("tasks.stats.total")}
-          </Badge>
-        </div>
-        <div className="flex space-x-2">
-          <Button onClick={onRefresh} disabled={loading}>
-            {t("common.refresh" as any)}
-          </Button>
-          <Button onClick={onTaskCreate}>{t("tasks.createTask")}</Button>
-        </div>
-      </div>
-
       {/* Advanced Filters */}
       <Card className="border-0 shadow-none">
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold">{t("tasks.advancedFilters")}</h3>
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-2">
+              <h3 className="text-lg font-semibold">{t("tasks.advancedFilters")}</h3>
+              <Badge variant="secondary" className="text-xs">
+                {filteredTasks.length} {t("tasks.stats.total")}
+              </Badge>
+            </div>
             {hasActiveFilters && (
               <Button variant="ghost" size="sm" onClick={clearFilters}>
                 {t("tasks.clearFilters")}
@@ -416,10 +400,10 @@ export function TaskList({
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Status Filter */}
             <div className="space-y-2">
-              <Label>{t("tasks.status.title" as any)}</Label>
+              <Label>{t("tasks.status.title") || "Status"}</Label>
               <Select
                 value={filters.status || "all"}
                 onValueChange={(value) =>
@@ -454,7 +438,7 @@ export function TaskList({
 
             {/* Priority Filter */}
             <div className="space-y-2">
-              <Label>{t("tasks.priority.title" as any)}</Label>
+              <Label>{t("tasks.priority.title") || "Priority"}</Label>
               <Select
                 value={filters.priority || "all"}
                 onValueChange={(value) =>
@@ -511,7 +495,7 @@ export function TaskList({
               </Select>
             </div>
 
-            {/* Due Date Range */}
+            {/* Due Date Range and Assigned To - Same Row */}
             <div className="space-y-2">
               <Label>{t("tasks.dueDateRange")}</Label>
               <div className="flex gap-2">
@@ -534,8 +518,7 @@ export function TaskList({
               </div>
             </div>
 
-            {/* Assigned To Filter */}
-            <div className="space-y-2 md:col-span-2">
+            <div className="space-y-2">
               <Label>{t("tasks.assignedTo")}</Label>
               <Input
                 value={filters.assignedToId || ""}
@@ -545,14 +528,26 @@ export function TaskList({
                 placeholder={t("tasks.filterAssignedToPlaceholder")}
               />
             </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-2 mt-6">
+              <Button onClick={onRefresh} disabled={loading} variant="outline" size="sm">
+                <HugeiconsIcon icon={Refresh01Icon} size={16} className="mr-2" />
+              </Button>
+              <Button onClick={onTaskCreate} size="sm">
+                {t("tasks.createActivity") || "Crear Actividad"}
+              </Button>
+            </div>
           </div>
+
+          
 
           {/* Active Filters Badges */}
           {hasActiveFilters && (
             <div className="flex flex-wrap gap-2 mt-4">
               {filters.status && (
                 <Badge variant="outline" className="flex items-center gap-1">
-                  Estado: {t(`tasks.statuses.${filters.status}` as any)}
+                  Estado: {t(`tasks.statuses.${filters.status}`) || filters.status}
                   <Button
                     variant="ghost"
                     size="icon"
@@ -565,7 +560,7 @@ export function TaskList({
               )}
               {filters.priority && (
                 <Badge variant="outline" className="flex items-center gap-1">
-                  Prioridad: {t(`tasks.priorities.${filters.priority}` as any)}
+                  Prioridad: {t(`tasks.priorities.${filters.priority}`) || filters.priority}
                   <Button
                     variant="ghost"
                     size="icon"
@@ -615,12 +610,6 @@ export function TaskList({
         </CardContent>
       </Card>
 
-      {/* Search bar */}
-      <SearchBar
-        placeholder={t("tasks.searchPlaceholder")}
-        onChange={(value) => handleFilterChange({ search: value })}
-      />
-
       {/* Tasks table */}
       <DataTable
         columns={columns}
@@ -652,4 +641,6 @@ export function TaskList({
       />
     </div>
   );
-}
+});
+
+TaskAdvancedFilter.displayName = "TaskAdvancedFilter";

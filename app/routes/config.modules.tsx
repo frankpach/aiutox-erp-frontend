@@ -18,8 +18,8 @@ import { ConfigEmptyState } from "~/components/config/ConfigEmptyState";
 import { Card, CardContent } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Switch } from "~/components/ui/switch";
-import { Label } from "~/components/ui/label";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
+// import { Label } from "~/components/ui/label";
+import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import {
   Tooltip,
   TooltipContent,
@@ -52,7 +52,7 @@ export default function ModulesConfigPage() {
   const enableMutation = useMutation({
     mutationFn: enableModule,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["modules"] });
+      void queryClient.invalidateQueries({ queryKey: ["modules"] });
       showToast(t("config.modules.enableSuccess"), "success");
     },
     onError: (err) => {
@@ -66,7 +66,7 @@ export default function ModulesConfigPage() {
   const disableMutation = useMutation({
     mutationFn: disableModule,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["modules"] });
+      void queryClient.invalidateQueries({ queryKey: ["modules"] });
       showToast(t("config.modules.disableSuccess"), "success");
     },
     onError: (err) => {

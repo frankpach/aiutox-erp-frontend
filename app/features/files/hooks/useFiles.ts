@@ -59,7 +59,7 @@ export function useFiles(params?: FilesListParams) {
   return {
     files: response?.data ?? EMPTY_FILES,
     loading,
-    error: error as Error | null,
+    error: error,
     pagination: response?.meta && typeof response.meta === "object" && "total" in response.meta
       ? {
           total: (response.meta as { total: number }).total,
@@ -97,7 +97,7 @@ export function useFile(fileId: string | null) {
   return {
     file: response?.data || null,
     loading,
-    error: error as Error | null,
+    error: error,
     refresh: () => refetch(),
   };
 }
@@ -241,7 +241,7 @@ export function useFileVersions(fileId: string | null) {
   return {
     versions: response?.data || [],
     loading,
-    error: error as Error | null,
+    error: error,
     refresh: () => refetch(),
   };
 }

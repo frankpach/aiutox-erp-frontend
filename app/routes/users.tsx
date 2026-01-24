@@ -22,7 +22,7 @@ export default function UsersPage() {
   const handleManageFiltersClick = () => {
     // This will open the FilterManagementModal in Phase 4
     // For now, just a placeholder
-    console.log("Open filter management");
+    console.warn("Open filter management");
   };
 
   return (

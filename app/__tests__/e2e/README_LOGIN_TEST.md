@@ -31,7 +31,7 @@ uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Ver más detalles en `backend/INICIAR_SERVIDOR.md`
+Ver más detalles en `docs/10-backend/temp/2026-01-14-iniciar-servidor.md`
 
 ### 3. Usuario Admin exista
 

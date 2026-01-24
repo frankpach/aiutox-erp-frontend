@@ -254,7 +254,7 @@ export function SearchResultsList({
           data-testid="loading-more-indicator"
         >
           <div className="flex items-center text-sm text-muted-foreground">
-            <span className="loading loading-spinner loading-sm mr-2"></span>
+            <span className="loading loading-spinner loading-sm mr-2" />
             {t("search.loadingMore")}
           </div>
         </div>

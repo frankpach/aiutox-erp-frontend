@@ -21,7 +21,7 @@ import {
   useAdvanceWorkflowExecution,
   useWorkflowExecutions,
 } from "~/features/workflows/hooks/useWorkflows";
-import type { Workflow, WorkflowExecution } from "~/features/workflows/types/workflow.types";
+import type { Workflow, WorkflowExecution, WorkflowCreate, WorkflowUpdate } from "~/features/workflows/types/workflow.types";
 
 export default function WorkflowsPage() {
   const { t } = useTranslation();
@@ -58,7 +58,7 @@ export default function WorkflowsPage() {
     
     deleteWorkflowMutation.mutate(workflow.id, {
       onSuccess: () => {
-        refetchWorkflows();
+        void refetchWorkflows();
       },
     });
   };
@@ -78,7 +78,7 @@ export default function WorkflowsPage() {
         onSuccess: () => {
           setExecutionsWorkflowId(workflow.id);
           setCurrentTab("executions");
-          refetchExecutions();
+          void refetchExecutions();
         },
       }
     );
@@ -97,28 +97,28 @@ export default function WorkflowsPage() {
       },
       {
         onSuccess: () => {
-          refetchExecutions();
+          void refetchExecutions();
         },
       }
     );
   };
 
-  const handleWorkflowSubmit = (data: any) => {
+  const handleWorkflowSubmit = (data: WorkflowCreate | WorkflowUpdate) => {
     if (showCreateDialog) {
-      createWorkflowMutation.mutate(data, {
+      createWorkflowMutation.mutate(data as WorkflowCreate, {
         onSuccess: () => {
           setShowCreateDialog(false);
-          refetchWorkflows();
+          void refetchWorkflows();
         },
       });
     } else if (showEditDialog && selectedWorkflow) {
       updateWorkflowMutation.mutate(
-        { id: selectedWorkflow.id, payload: data },
+        { id: selectedWorkflow.id, payload: data as WorkflowUpdate },
         {
           onSuccess: () => {
             setShowEditDialog(false);
             setSelectedWorkflow(null);
-            refetchWorkflows();
+            void refetchWorkflows();
           },
         }
       );

@@ -10,7 +10,7 @@ import type { FrontendModule, NavigationTree } from "../lib/modules/types";
 import { moduleRegistry } from "../lib/modules/registry";
 import {
   cacheModuleData,
-  getCachedModuleData,
+  getCachedModuleData as _getCachedModuleData,
   clearExpiredCache,
 } from "../lib/storage/moduleCache";
 import { useAuthStore } from "./authStore";
@@ -82,7 +82,7 @@ export const useModulesStore = create<ModulesState>((set, get) => ({
           isInitialized: true,
           error: error instanceof Error ? error : new Error("Failed to load modules"),
         });
-      } catch (treeError) {
+      } catch {
         // Si hasta esto falla, al menos marcar como inicializado
         set({
           isLoading: false,

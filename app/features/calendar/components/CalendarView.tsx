@@ -3,10 +3,36 @@
  * Main calendar component with month/week/day views
  */
 
-import { useState, type ReactNode, type CSSProperties } from "react";
+import { useState, useMemo, type ReactNode, type CSSProperties } from "react";
 import { cn } from "~/lib/utils";
+import { useActivityIcons, useDefaultActivityIcons } from "~/features/activity-icons/hooks/useActivityIcons";
 
 import { Card, CardContent } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
+import { Separator } from "~/components/ui/separator";
+import type { TaskStatus } from "~/features/tasks/types/task.types";
+
+// Colores de estado consistentes con TaskList
+const statusColors: Record<TaskStatus, string> = {
+  todo: "bg-gray-100 text-gray-800 border-gray-200",
+  in_progress: "bg-blue-100 text-blue-800 border-blue-200",
+  on_hold: "bg-yellow-100 text-yellow-800 border-yellow-200",
+  blocked: "bg-red-100 text-red-800 border-red-200",
+  review: "bg-purple-100 text-purple-800 border-purple-200",
+  done: "bg-green-100 text-green-800 border-green-200",
+  cancelled: "bg-gray-100 text-gray-800 border-gray-200",
+};
+
+// Default icon configurations (fallback)
+const DEFAULT_EVENT_STATUS_VISUALS: Record<string, { icon: string; className: string }> = {
+  todo: { icon: "•", className: "text-white/70" },
+  pending: { icon: "•", className: "text-white/70" },
+  in_progress: { icon: "↻", className: "text-white" },
+  done: { icon: "✓", className: "text-white" },
+  completed: { icon: "✓", className: "text-white" },
+  canceled: { icon: "✕", className: "text-white" },
+  blocked: { icon: "!", className: "text-white" },
+};
 import {
   DndContext,
   DragOverlay,
@@ -180,6 +206,77 @@ const getEventStyles = (
   };
 };
 
+// Función para crear tooltips estructurados con buena UX
+const createStructuredTooltip = (event: CalendarEvent): string => {
+  const lines = [];
+  
+  // Título principal
+  lines.push(`📋 ${event.title}`);
+  
+  // Determinar correctamente si es tarea o evento
+  const isEvent = event.metadata?.activity_type === "event" || 
+                  event.all_day ||
+                  (event.source_type !== "task");
+  
+  const activityType = isEvent ? "evento" : "tarea";
+  lines.push(`🏷️ Tipo: ${activityType === "tarea" ? "Tarea" : "Evento"}`);
+  
+  // Estado
+  if (event.status) {
+    const statusLabels = {
+      todo: "Por Hacer",
+      in_progress: "En Progreso",
+      done: "Completada",
+      on_hold: "En Pausa",
+      cancelled: "Cancelada",
+      blocked: "Bloqueada",
+      review: "En Revisión"
+    };
+    lines.push(`📊 Estado: ${statusLabels[event.status as keyof typeof statusLabels] || event.status}`);
+  }
+  
+  // Horario
+  if (event.all_day) {
+    lines.push(`⏰ Todo el día`);
+  } else {
+    const startTime = event.start_time ? new Date(event.start_time) : null;
+    const endTime = event.end_time ? new Date(event.end_time) : null;
+    
+    if (startTime) {
+      lines.push(`🕐 Inicio: ${format(startTime, "HH:mm")}`);
+    }
+    if (endTime) {
+      lines.push(`🕐 Fin: ${format(endTime, "HH:mm")}`);
+    }
+  }
+  
+  // Descripción si existe
+  if (event.description) {
+    lines.push(`📝 ${event.description}`);
+  }
+  
+  // Prioridad si es tarea
+  if (activityType === "tarea" && event.calendar_id) {
+    const priority = event.calendar_id.replace("tasks-", "");
+    const priorityLabels = {
+      low: "Baja",
+      medium: "Media", 
+      high: "Alta",
+      urgent: "Urgente"
+    };
+    if (priorityLabels[priority as keyof typeof priorityLabels]) {
+      lines.push(`⚡ Prioridad: ${priorityLabels[priority as keyof typeof priorityLabels]}`);
+    }
+  }
+  
+  // Fecha de creación/modificación
+  if (event.updated_at) {
+    lines.push(`🔄 Actualizado: ${format(new Date(event.updated_at), "dd/MM HH:mm")}`);
+  }
+  
+  return lines.join("\n");
+};
+
 interface MonthDayCellProps {
   day: Date;
   isCurrentMonth: boolean;
@@ -339,6 +436,60 @@ export function CalendarView({
     useSensor(KeyboardSensor)
   );
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
+  
+  // Fetch configurable icons
+  const { data: iconConfigs } = useActivityIcons();
+  const { data: defaultIcons } = useDefaultActivityIcons();
+  
+  // Memoize icon map for performance
+  const iconMap = useMemo(() => {
+    const map: Record<string, Record<string, { icon: string; className: string }>> = {};
+    
+    if (iconConfigs && iconConfigs.length > 0) {
+      iconConfigs.forEach((config) => {
+        if (!map[config.activity_type]) {
+          map[config.activity_type] = {};
+        }
+        const activityMap = map[config.activity_type];
+        if (activityMap) {
+          activityMap[config.status] = {
+            icon: config.icon,
+            className: config.class_name || "text-white",
+          };
+        }
+      });
+    } else if (defaultIcons) {
+      Object.entries(defaultIcons).forEach(([activityType, statuses]) => {
+        if (statuses) {
+          map[activityType] = {};
+          const activityMap = map[activityType];
+          if (activityMap) {
+            Object.entries(statuses).forEach(([status, config]) => {
+              if (config) {
+                activityMap[status] = {
+                  icon: config.icon,
+                  className: config.class_name || "text-white",
+                };
+              }
+            });
+          }
+        }
+      });
+    }
+    
+    return map;
+  }, [iconConfigs, defaultIcons]);
+  
+  // Function to get icon for activity type and status
+  const getActivityIcon = (activityType: string, status: string) => {
+    const icon = iconMap[activityType]?.[status];
+    if (icon) {
+      return icon;
+    }
+    
+    // Fallback to default visuals
+    return DEFAULT_EVENT_STATUS_VISUALS[status] || { icon: "•", className: "text-white/70" };
+  };
 
   const getCalendarColor = (calendarId: string) => {
     const calendar = calendars.find((c) => c.id === calendarId);
@@ -546,15 +697,23 @@ export function CalendarView({
                           onEventCreate={onEventCreate}
                           onEventClick={onEventClick}
                           renderEvent={(event) => {
-                            const statusIcon = getStatusIconProps(event.status);
+                            const isEvent = event.metadata?.activity_type === "event" || 
+                    event.all_day ||
+                    (event.source_type !== "task");
+                            
+                            const activityType = isEvent ? "evento" : "tarea";
+                            const activitySubtype = event.metadata?.activity_type;
+                            const activityIcon = getActivityIcon(event.source_type || "task", event.status);
                             return (
                               <div className="group/event flex w-full min-w-0 items-center gap-1 pr-2">
                                 <DraggableEvent event={event} action="move">
                                   <button
                                     type="button"
                                     data-calendar-event="true"
-                                    title={event.title}
-                                    className="box-border flex w-full min-w-0 max-w-full items-center overflow-hidden rounded-full px-3 py-1.5 text-left text-xs font-medium shadow-sm transition hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 data-[dragging=true]:cursor-grabbing"
+                                    data-activity-type={activityType}           // ← Para CSS/estilos
+                                    data-activity-subtype={activitySubtype}     // ← Para CSS/estilos
+                                    title={createStructuredTooltip(event)}
+                                    className="box-border flex w-full min-w-0 max-w-[calc(100%-8px)] items-center overflow-hidden rounded-full px-2 py-1.5 text-left text-xs font-medium shadow-sm transition hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 data-[dragging=true]:cursor-grabbing"
                                     style={{
                                       backgroundColor: resolveEventColor(event),
                                       color: getEventTextColor(
@@ -567,12 +726,9 @@ export function CalendarView({
                                     }}
                                   >
                                     <span
-                                      className={cn(
-                                        "mr-1.5 text-[10px]",
-                                        statusIcon.className
-                                      )}
+                                      className={cn("mr-1.5 text-[10px]", activityIcon.className)}
                                     >
-                                      {statusIcon.icon}
+                                      {activityIcon.icon}
                                     </span>
                                     <span className="truncate min-w-0">
                                       {(() => {
@@ -990,78 +1146,203 @@ export function CalendarView({
       (a, b) =>
         new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
     );
+    
+    // Group events by date similar to AgendaView
+    const today = startOfDay(new Date());
+    const startDate = subDays(today, 30); // Incluir 30 días atrás
+    const endDate = new Date(currentDate);
+    endDate.setDate(endDate.getDate() + 60); // Show next 60 days
+    
     const groupedEvents = sortedEvents.reduce<Record<string, CalendarEvent[]>>(
       (acc, event) => {
-        const dateKey = format(new Date(event.start_time), "yyyy-MM-dd");
-        (acc[dateKey] ??= []).push(event);
+        const eventDate = startOfDay(new Date(event.start_time));
+        
+        // Show events within the extended range (past 30 days to future 60 days)
+        if (eventDate >= startDate && eventDate <= endDate) {
+          const dateKey = format(eventDate, "yyyy-MM-dd");
+          (acc[dateKey] ??= []).push(event);
+        }
         return acc;
       },
       {}
     );
 
-    return (
-      <div className="space-y-6">
-        {Object.entries(groupedEvents).map(([dateKey, dayEvents]) => (
-          <div key={dateKey} className="space-y-3">
-            <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              {format(new Date(dateKey), "PPP", { locale: dateLocale })}
+    // Sort events within each day by start time
+    Object.keys(groupedEvents).forEach(dateKey => {
+      const events = groupedEvents[dateKey];
+      if (events) {
+        events.sort((a, b) => 
+          new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
+        );
+      }
+    });
+
+    // Convert to sorted array
+    const groupedArray = Object.entries(groupedEvents)
+      .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
+      .map(([dateKey, dayEvents]) => ({
+        date: new Date(dateKey),
+        dateKey,
+        events: dayEvents,
+        isToday: isSameDay(new Date(dateKey), today),
+      }));
+
+    if (groupedArray.length === 0) {
+      return (
+        <Card className="border-border/60">
+          <CardContent className="flex h-64 items-center justify-center">
+            <div className="text-center">
+              <p className="text-muted-foreground">
+                {t("calendar.agenda.noEvents")}
+              </p>
             </div>
-            <div className="space-y-3">
-              {dayEvents.map((event) => (
-                <Card
-                  key={event.id}
-                  className="cursor-pointer border transition hover:opacity-90"
-                  style={{
-                    backgroundColor: resolveEventColor(event) + "1A",
-                    borderColor: resolveEventColor(event) + "33",
-                  }}
-                  onClick={() => onEventClick?.(event)}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
+          </CardContent>
+        </Card>
+      );
+    }
+
+    return (
+      <div className="mx-4 mt-4 mb-4 space-y-4">
+        {groupedArray.map(({ date, dateKey, events: dayEvents, isToday }) => (
+          <Card
+            key={dateKey}
+            className={cn(
+              "border-border/60 transition-colors",
+              isToday && "border-primary/40 bg-primary/5"
+            )}
+          >
+            <CardContent className="p-4">
+              {/* Date header - estilo AgendaView */}
+              <div className="mb-4 flex items-center gap-3">
+                <div className="flex flex-col">
+                  <span className="text-2xl font-bold text-foreground">
+                    {format(date, "d", { locale: dateLocale })}
+                  </span>
+                  <span className="text-xs text-muted-foreground uppercase">
+                    {format(date, "MMM", { locale: dateLocale })}
+                  </span>
+                </div>
+                <Separator orientation="vertical" className="h-12" />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-semibold text-foreground">
+                      {format(date, "EEEE", { locale: dateLocale })}
+                    </h3>
+                    {isToday && (
+                      <Badge variant="default" className="text-xs">
+                        {t("calendar.today")}
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {format(date, "PPP", { locale: dateLocale })}
+                  </p>
+                </div>
+                <Badge variant="outline" className="ml-auto">
+                  {dayEvents.length}{" "}
+                  {dayEvents.length === 1
+                    ? t("calendar.agenda.event")
+                    : t("calendar.agenda.events")}
+                </Badge>
+              </div>
+
+              {/* Events list - estilo AgendaView pero con colores de TaskCalendar */}
+              <div className="space-y-2">
+                {dayEvents.map((event) => {
+                  const eventColor = resolveEventColor(event);
+
+                  return (
+                    <button
+                      key={event.id}
+                      type="button"
+                      onClick={() => onEventClick?.(event)}
+                      className="group w-full rounded-lg border border-border/60 bg-card p-3 text-left transition-all hover:border-primary/40 hover:shadow-md"
+                    >
+                      <div className="flex items-start gap-3">
+                        {/* Color indicator - usando colores de TaskCalendar */}
                         <div
-                          className="h-3 w-3 rounded-full"
-                          style={{
-                            backgroundColor: resolveEventColor(event),
-                          }}
+                          className="mt-1 h-10 w-1 rounded-full"
+                          style={{ backgroundColor: eventColor }}
                         />
-                        <div>
-                          <div className="font-medium">{event.title}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {(() => {
-                              const timeLabel = getEventTimeLabel(
-                                event,
-                                "agenda"
-                              );
-                              const dateLabel = format(
-                                new Date(event.start_time),
-                                "PPP",
-                                { locale: dateLocale }
-                              );
-                              return timeLabel
-                                ? `${dateLabel} ${timeLabel}`
-                                : dateLabel;
-                            })()}
+
+                        {/* Event details */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                              {event.title}
+                            </h4>
+                            {event.status && (
+                              <Badge
+                                variant="outline"
+                                className={cn(
+                                  "shrink-0 text-xs",
+                                  statusColors[event.status as TaskStatus] || "bg-gray-100 text-gray-800 border-gray-200"
+                                )}
+                              >
+                                {t(`tasks.statuses.${event.status}` as `tasks.statuses.${TaskStatus}`)}
+                              </Badge>
+                            )}
                           </div>
-                          {event.location && (
-                            <div className="text-sm text-muted-foreground">
-                              {event.location}
-                            </div>
+
+                          {event.description && (
+                            <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
+                              {event.description}
+                            </p>
                           )}
+
+                          <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                            {/* Time */}
+                            {!event.all_day && (
+                              <div className="flex items-center gap-1">
+                                <span>🕐</span>
+                                <span>
+                                  {format(new Date(event.start_time), "HH:mm", {
+                                    locale: dateLocale,
+                                  })}{" "}
+                                  -{" "}
+                                  {format(new Date(event.end_time), "HH:mm", {
+                                    locale: dateLocale,
+                                  })}
+                                </span>
+                              </div>
+                            )}
+
+                            {event.all_day && (
+                              <div className="flex items-center gap-1">
+                                <span>📅</span>
+                                <span>{t("calendar.events.allDay")}</span>
+                              </div>
+                            )}
+
+                            {/* Location */}
+                            {event.location && (
+                              <div className="flex items-center gap-1">
+                                <span>📍</span>
+                                <span className="truncate max-w-[200px]">
+                                  {event.location}
+                                </span>
+                              </div>
+                            )}
+
+                            {/* Recurrence indicator */}
+                            {event.recurrence_type &&
+                              event.recurrence_type !== "none" && (
+                                <div className="flex items-center gap-1">
+                                  <span>🔄</span>
+                                  <span>
+                                    {t("calendar.recurrence.recurring")}
+                                  </span>
+                                </div>
+                              )}
+                          </div>
                         </div>
                       </div>
-                      {!event.metadata?.due_only && (
-                        <div className="text-sm text-muted-foreground">
-                          {getEventTimeLabel(event, "agenda")}
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
     );

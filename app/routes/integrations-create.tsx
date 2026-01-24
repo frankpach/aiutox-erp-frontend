@@ -13,7 +13,7 @@ export default function CreateIntegrationPage() {
 
   const handleSubmit = () => {
     // TODO: Implementar creación de integración
-    navigate("/config/integrations");
+    void navigate("/config/integrations");
   };
 
   return (
@@ -32,10 +32,10 @@ export default function CreateIntegrationPage() {
                 Formulario de creación de integración en desarrollo...
               </p>
               <div className="flex gap-4 justify-center mt-6">
-                <Button onClick={handleSubmit}>
+                <Button onClick={() => void handleSubmit()}>
                   Crear Integración
                 </Button>
-                <Button variant="outline" onClick={() => navigate("/config/integrations")}>
+                <Button variant="outline" onClick={() => void navigate("/config/integrations")}>
                   Cancelar
                 </Button>
               </div>

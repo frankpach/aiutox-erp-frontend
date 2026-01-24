@@ -6,7 +6,7 @@
 
 import { useState } from "react";
 import { PageLayout } from "~/components/layout/PageLayout";
-import { useTranslation } from "~/lib/i18n/useTranslation";
+// import { useTranslation } from "~/lib/i18n/useTranslation";
 import { showToast } from "~/components/common/Toast";
 import { UserFormModal } from "~/features/users/components/UserFormModal";
 import { useAuthStore } from "~/stores/authStore";
@@ -162,7 +162,7 @@ export default function ProfilePage() {
           {/* Nota de restricciones */}
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
             <div className="flex">
-              <div className="flex-shrink-0">
+              <div className="shrink-0">
                 <svg
                   className="h-5 w-5 text-blue-400"
                   viewBox="0 0 20 20"

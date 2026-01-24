@@ -13,7 +13,7 @@ import { FileList } from "../features/files/components/FileList";
 import { FileUpload } from "../features/files/components/FileUpload";
 import { FileDetail } from "../features/files/components/FileDetail";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+// import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "~/components/ui/dialog";
 import type { File } from "../features/files/types/file.types";
 

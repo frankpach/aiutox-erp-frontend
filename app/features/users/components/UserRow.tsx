@@ -35,19 +35,20 @@ interface UserRowProps {
   onSelect?: () => void;
 }
 
-export const UserRow = memo(function UserRow({
+export const UserRow = memo(({
   user,
   onDelete,
   deleting,
   selected = false,
   onSelect,
-}: UserRowProps) {
+}: UserRowProps) => {
+UserRow.displayName = "UserRow";
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 
   // Prefetch user data on hover for faster navigation
   const handleMouseEnter = () => {
-    queryClient.prefetchQuery({
+    void queryClient.prefetchQuery({
       queryKey: userKeys.detail(user.id),
       queryFn: () => getUser(user.id),
       staleTime: 1000 * 60 * 5, // 5 minutes
@@ -148,7 +149,7 @@ export const UserRow = memo(function UserRow({
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => onDelete(user.id)}
+                onClick={() => void onDelete(user.id)}
                 disabled={deleting}
                 className="text-destructive focus:text-destructive"
                 aria-label={`${t("users.delete") || "Eliminar"} usuario ${user.email}`}

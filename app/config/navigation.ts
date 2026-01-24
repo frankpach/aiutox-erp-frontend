@@ -200,6 +200,13 @@ export const navigationItems: NavItem[] = [
     ],
     children: [
       {
+        id: "config-webhooks",
+        label: "Webhooks",
+        icon: PlugIcon,
+        to: "/config/webhooks",
+        permission: "integrations.view",
+      },
+      {
         id: "config-users",
         label: "Usuarios",
         icon: UserIcon,
@@ -226,6 +233,13 @@ export const navigationItems: NavItem[] = [
         icon: Settings01Icon,
         to: "/tasks/settings",
         permission: "tasks.manage",
+      },
+      {
+        id: "config-activity-icons",
+        label: "Iconos de Actividades",
+        icon: Calendar01Icon,
+        to: "/settings/activity-icons",
+        permission: "system.configure",
       },
       {
         id: "config-integrations",

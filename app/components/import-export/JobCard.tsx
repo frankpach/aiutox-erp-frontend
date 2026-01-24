@@ -36,7 +36,7 @@ export function JobCard({ job, jobType, onStatusChange }: JobCardProps) {
     }
   }, [updatedJob, localJob.id]);
 
-  const currentJob = (updatedJob || localJob) as ImportJobResponse | ExportJobResponse;
+  const currentJob = (updatedJob || localJob);
 
   const getStatusBadge = (status: string) => {
     const statusColors: Record<string, string> = {

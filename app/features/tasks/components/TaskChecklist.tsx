@@ -93,7 +93,7 @@ export function TaskChecklist({
                 <div
                   className="bg-green-500 h-2 rounded-full transition-all duration-300"
                   style={{ width: `${completionPercentage}%` }}
-                ></div>
+                 />
               </div>
             )}
           </div>

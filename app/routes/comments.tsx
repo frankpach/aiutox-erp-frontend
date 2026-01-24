@@ -7,25 +7,24 @@ import { useState } from "react";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 import { PageLayout } from "~/components/layout/PageLayout";
 import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Card, CardContent } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { CommentThread } from "~/features/comments/components/CommentThread";
-import { CommentForm } from "~/features/comments/components/CommentForm";
 import { useMentions, useComments, useCreateComment } from "~/features/comments/hooks/useComments";
-import { CommentMention } from "~/features/comments/types/comment.types";
+import type { CommentMention } from "~/features/comments/types/comment.types";
 
 export default function CommentsPage() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("mentions");
 
   // Query hooks
-  const { data: mentionsData, loading: mentionsLoading, refetch: refetchMentions } = useMentions({
+  const { data: mentionsData, isLoading: mentionsLoading, refetch: refetchMentions } = useMentions({
     page: 1,
     page_size: 20,
   });
 
-  const { data: commentsData, loading: commentsLoading, refetch: refetchComments } = useComments({
+  const { data: commentsData, isLoading: commentsLoading, refetch: refetchComments } = useComments({
     page: 1,
     page_size: 20,
   });
@@ -40,8 +39,8 @@ export default function CommentsPage() {
       parent_id: commentId,
     }, {
       onSuccess: () => {
-        refetchMentions();
-        refetchComments();
+        void refetchMentions();
+        void refetchComments();
       },
     });
   };
@@ -88,7 +87,7 @@ export default function CommentsPage() {
                 <h2 className="text-xl font-semibold">
                   {t("comments.mentions.subtitle")}
                 </h2>
-                <Button onClick={refetchMentions}>
+                <Button onClick={() => void refetchMentions()}>
                   {t("common.refresh")}
                 </Button>
               </div>
@@ -143,7 +142,7 @@ export default function CommentsPage() {
                 <h2 className="text-xl font-semibold">
                   {t("comments.recent.subtitle")}
                 </h2>
-                <Button onClick={refetchComments}>
+                <Button onClick={() => void refetchComments()}>
                   {t("common.refresh")}
                 </Button>
               </div>

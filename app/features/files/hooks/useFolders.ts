@@ -61,7 +61,7 @@ export function useFolders(params?: {
   return {
     folders: response?.data || [],
     loading,
-    error: error as Error | null,
+    error: error,
     refresh: () => refetch(),
   };
 }
@@ -90,7 +90,7 @@ export function useFolderTree(params?: {
   return {
     tree: response?.data || [],
     loading,
-    error: error as Error | null,
+    error: error,
     refresh: () => refetch(),
   };
 }
@@ -119,7 +119,7 @@ export function useFolder(folderId: string | null) {
   return {
     folder: response?.data || null,
     loading,
-    error: error as Error | null,
+    error: error,
     refresh: () => refetch(),
   };
 }

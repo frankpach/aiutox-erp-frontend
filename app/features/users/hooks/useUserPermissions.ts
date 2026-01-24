@@ -5,7 +5,7 @@
  * including delegation and revocation
  */
 
-import { useCallback, useState, useEffect, useMemo } from "react";
+import { useCallback, useState, useEffect } from "react";
 import {
   listPermissions,
   getPermissionsByModule,
@@ -17,12 +17,7 @@ import {
   revokeUserPermission,
   type DelegatedPermissionResponse,
 } from "../api/permissions.api";
-import type { PermissionGroup } from "../types/user.types";
-import type {
-  Permission,
-  PermissionGroup,
-  PermissionDelegation,
-} from "../types/user.types";
+import type { PermissionGroup, Permission, PermissionDelegation } from "../types/user.types";
 
 /**
  * Hook to get all permissions (optionally filtered by module/tenant)

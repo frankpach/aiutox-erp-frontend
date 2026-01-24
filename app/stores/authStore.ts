@@ -54,10 +54,10 @@ export const useAuthStore = create<AuthState>()(
                 refreshToken: parsed.state.refreshToken || refreshToken || "",
                 isAuthenticated: true,
               });
-              console.debug("[AuthStore] Synced from stored state");
+              console.warn("[AuthStore] Synced from stored state");
               return true;
             }
-          } catch (e) {
+          } catch {
             // Ignore parse errors
           }
         }
@@ -72,9 +72,9 @@ export const useAuthStore = create<AuthState>()(
             refreshToken: refreshToken || currentState.refreshToken,
             isAuthenticated: true,
           });
-          console.debug(
-            "[AuthStore] Token found, setting isAuthenticated=true"
-          );
+              console.warn(
+                "[AuthStore] Token found, setting isAuthenticated=true"
+              );
           return true;
         }
 
@@ -141,7 +141,7 @@ export const useAuthStore = create<AuthState>()(
 
             messageChannel.port1.onmessage = (event) => {
               if (event.data.success) {
-                console.log("[Auth] Service Worker cache cleared");
+                console.warn("[Auth] Service Worker cache cleared");
               }
             };
 
@@ -201,10 +201,10 @@ export const useAuthStore = create<AuthState>()(
                         token,
                         parsed.state.refreshToken || refreshToken || ""
                       );
-                    console.debug("[AuthStore] Synced from stored state");
+                    console.warn("[AuthStore] Synced from stored state");
                     return;
                   }
-                } catch (e) {
+                } catch {
                   // Ignore parse errors
                 }
               }
@@ -218,7 +218,7 @@ export const useAuthStore = create<AuthState>()(
                 refreshToken: refreshToken || currentState.refreshToken,
                 isAuthenticated: true,
               });
-              console.debug(
+              console.warn(
                 "[AuthStore] Token found, setting isAuthenticated=true"
               );
             }

@@ -1,17 +1,17 @@
 import { useState, useEffect, useMemo } from "react";
 import { useSearchParams, Link, useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Search as SearchIcon, X, AlertCircle, Clock, FileText, User, Settings, Bell, Calendar, CheckCircle, MessageSquare, Activity, History } from "lucide-react";
+import { Loader2, Search as SearchIcon, X, AlertCircle, FileText, User, Settings, Bell, Calendar, CheckCircle, MessageSquare, Activity, History } from "lucide-react";
 
 import { search, type SearchResultItem, type SearchQueryParams } from "~/features/search/api/search.api";
-import { SearchResultsList } from "~/features/search/components/SearchResultsList";
+// import { SearchResultsList } from "~/features/search/components/SearchResultsList";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Badge } from "~/components/ui/badge";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { cn } from "~/lib/utils";
+// import { cn } from "~/lib/utils";
 
 // Map result types to icons for the tabs
 const typeIcons: Record<string, React.ReactNode> = {
@@ -79,7 +79,7 @@ export default function SearchPage() {
     enabled: !!searchQuery,
     retry: 2,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    keepPreviousData: true,
+    placeholderData: (previousData) => previousData,
   });
 
   // Handle API errors
@@ -120,10 +120,13 @@ export default function SearchPage() {
 
   // Handle pagination
   const handleLoadMore = () => {
-    setSearchFilters(prev => ({
-      ...prev,
-      offset: (prev.offset || 0) + (prev.limit || DEFAULT_SEARCH_PARAMS.limit),
-    }));
+    setSearchFilters(prev => {
+      const current = prev || { limit: DEFAULT_SEARCH_PARAMS.limit, offset: 0, types: [] };
+      return {
+        ...current,
+        offset: (current.offset! ?? 0) + (current.limit! ?? DEFAULT_SEARCH_PARAMS.limit),
+      };
+    });
   };
 
   // Handle result item click
@@ -133,7 +136,7 @@ export default function SearchPage() {
       window.open(url, '_blank');
       return;
     }
-    navigate(url);
+    void navigate(url);
   };
 
   // Get icon for result type
@@ -160,7 +163,7 @@ export default function SearchPage() {
       if (!byType[result.type]) {
         byType[result.type] = [];
       }
-      byType[result.type].push(result);
+      byType[result.type]!.push(result);
     });
 
     return {
@@ -194,7 +197,7 @@ export default function SearchPage() {
           />
           <div className="mt-8 space-y-4">
             {[...Array(3)].map((_, i) => (
-              <SearchResultSkeleton key={i} />
+              <div className="h-20 w-full bg-gray-200 rounded animate-pulse" key={i} />
             ))}
           </div>
         </div>
@@ -331,11 +334,8 @@ export default function SearchPage() {
         {/* Results summary */}
         <div className="flex items-center justify-between mb-6">
           <p className="text-sm text-muted-foreground">
-            {searchResults?.total ? (
-              t("search.resultsCount", { 
-                count: searchResults.total,
-                query: searchQuery 
-              })
+            {searchResults?.meta?.total ? (
+              t("search.resultsCount")
             ) : (
               t("search.noResults")
             )}
@@ -376,7 +376,7 @@ export default function SearchPage() {
                       <TabsTrigger value="all" className="flex items-center gap-2">
                         {t("search.types.all")}
                         <Badge variant="secondary" className="ml-1">
-                          {searchResults?.total || 0}
+                          {searchResults?.meta?.total || 0}
                         </Badge>
                       </TabsTrigger>
                       
@@ -387,7 +387,7 @@ export default function SearchPage() {
                           className="flex items-center gap-2 capitalize"
                         >
                           {getTypeIcon(type)}
-                          {t(`search.types.${type}`, { defaultValue: type })}
+                          {t(`search.types.${type}`) || type}
                           <Badge variant="secondary" className="ml-1">
                             {resultsByType[type]?.length || 0}
                           </Badge>
@@ -413,9 +413,9 @@ export default function SearchPage() {
                         <CardTitle className="text-lg font-medium line-clamp-2">
                           {result.title}
                         </CardTitle>
-                        <div className="flex-shrink-0 ml-2">
+                        <div className="shrink-0 ml-2">
                           <Badge variant="outline" className="capitalize">
-                            {t(`search.types.${result.type}`, { defaultValue: result.type })}
+                            {t(`search.types.${result.type}`) || result.type}
                           </Badge>
                         </div>
                       </div>
@@ -437,7 +437,7 @@ export default function SearchPage() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          {result.metadata?.tags?.map((tag: string) => (
+                          {(result.metadata?.tags as string[] | undefined)?.map((tag: string) => (
                             <Badge key={tag} variant="outline" className="text-xs">
                               {tag}
                             </Badge>
@@ -451,7 +451,7 @@ export default function SearchPage() {
             </div>
             
             {/* Pagination */}
-            {searchResults && searchResults.total > (searchFilters.offset || 0) + filteredResults.length && (
+            {searchResults && searchResults.meta?.total > (searchFilters.offset || 0) + filteredResults.length && (
               <div className="mt-6 flex justify-center">
                 <Button 
                   variant="outline" 
@@ -508,7 +508,7 @@ function SearchHeader({
       <h1 className="text-3xl font-bold mb-6">
         {searchQuery ? (
           <>
-            {t("search.resultsFor")} "{searchQuery}"
+            {t("search.resultsFor")} &quot;{searchQuery}&quot;
           </>
         ) : (
           t("search.title")

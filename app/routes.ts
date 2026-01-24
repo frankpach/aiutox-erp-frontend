@@ -30,6 +30,7 @@ export default [
   route("/tasks", "routes/tasks.tsx"),
   route("/tasks-create", "routes/tasks-create.tsx"),
   route("/tasks/settings", "routes/tasks.settings.tsx"),
+  route("/tasks/status-customizer", "routes/tasks.status-customizer.tsx"),
   route("/tasks/:id", "routes/tasks.$id.tsx"),
   route("/tasks/:id/edit", "routes/tasks.$id.edit.tsx"),
   route("/approvals", "routes/approvals.tsx"),
@@ -50,6 +51,7 @@ export default [
   route("/products/:id/variants", "routes/products.$id.variants.tsx"),
   route("/products/:id/barcodes", "routes/products.$id.barcodes.tsx"),
   // Config routes
+  route("/config/webhooks", "routes/config.webhooks.tsx"),
   route("/config/theme", "routes/config.theme.tsx"),
   route("/config/modules", "routes/config.modules.tsx"),
   route("/config/general", "routes/config.general.tsx"),
@@ -60,5 +62,6 @@ export default [
   route("/config/import-export", "routes/config.import-export.tsx"),
   route("/config/audit", "routes/config.audit.tsx"),
   route("/config/files", "routes/config.files.tsx"),
+  route("/settings/activity-icons", "routes/settings.activity-icons.tsx"),
   route("*", "routes/not-found.tsx"), // Catch-all para 404
 ] satisfies RouteConfig;

@@ -279,7 +279,7 @@ export function FilterEditorModal({
           <Button variant="outline" onClick={onClose} disabled={isSaving}>
             Cancelar
           </Button>
-          <Button onClick={handleSave} disabled={!isValid || isSaving || !name.trim()}>
+          <Button onClick={() => void handleSave()} disabled={!isValid || isSaving || !name.trim()}>
             <Save className="mr-2 h-4 w-4" />
             {isSaving ? t("filterEditor.saving") : filter ? t("filterEditor.update") : t("filterEditor.save")}
           </Button>

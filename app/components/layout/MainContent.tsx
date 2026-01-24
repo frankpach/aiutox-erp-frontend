@@ -11,7 +11,7 @@ interface MainContentProps {
   children: ReactNode;
 }
 
-export const MainContent = memo(function MainContent({ children }: MainContentProps) {
+export const MainContent = memo(({ children }: MainContentProps) => {
   const mainRef = useRef<HTMLElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const [hasOverflow, setHasOverflow] = useState(false);

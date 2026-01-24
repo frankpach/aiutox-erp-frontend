@@ -3,9 +3,8 @@
  * Form for creating and editing tasks
  */
 
-import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { useTranslation } from "~/lib/i18n/useTranslation";
+import { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { PageLayout } from "~/components/layout/PageLayout";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -19,7 +18,6 @@ import {
 } from "~/components/ui/select";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Separator } from "~/components/ui/separator";
 import { ArrowLeftIcon, PlugIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -27,42 +25,47 @@ import {
   useCreateTask,
   useUpdateTask,
   useAssignments,
-  useAssignmentMutations,
 } from "~/features/tasks/hooks/useTasks";
 import type {
-  Task,
   TaskCreate,
-  TaskUpdate,
   TaskStatus,
   TaskPriority,
-  ChecklistItem,
-  TaskAssignment,
 } from "~/features/tasks/types/task.types";
 
 interface TaskFormProps {
   taskId?: string;
+  initialData?: Partial<TaskCreate>;
+  onSubmit?: (taskData: Partial<TaskCreate>) => Promise<void>;
+  onCancel?: () => void;
+  submitLabel?: string;
+  isSubmitting?: boolean;
 }
 
-export function TaskForm({ taskId }: TaskFormProps) {
-  const { t } = useTranslation();
+export function TaskForm({
+  taskId,
+  initialData,
+  onSubmit,
+  onCancel,
+  submitLabel,
+  isSubmitting,
+}: TaskFormProps) {
   const navigate = useNavigate();
-  const { data: taskResponse, isLoading, error } = useTask(taskId);
+  const { data: taskResponse, isLoading } = useTask(taskId || "");
   const { data: assignmentsResponse } = useAssignments(taskId || "");
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
-  const { createAssignment: createTaskAssignment } = useAssignmentMutations();
 
   const task = taskResponse?.data;
-  const assignments = assignmentsResponse?.data || [];
+  const assignments = useMemo(() => assignmentsResponse?.data || [], [assignmentsResponse?.data]);
 
-  const [formData, setFormData] = useState<TaskCreate>({
+  const [formData, setFormData] = useState<Partial<TaskCreate>>({
     title: "",
     description: "",
-    assigned_to_id: null,
-    status: "todo",
     priority: "medium",
-    due_date: "",
-    checklist: [],
+    status: "todo",
+    due_date: undefined,
+    assigned_to_id: undefined,
+    ...initialData,
   });
 
   const [checklistItems, setChecklistItems] = useState<string[]>([""]);
@@ -106,15 +109,18 @@ export function TaskForm({ taskId }: TaskFormProps) {
           title,
           completed: false,
         })),
-      };
+      } as TaskCreate;
 
-      if (taskId) {
+      if (onSubmit) {
+        await onSubmit(submitData);
+        if (onCancel) onCancel();
+      } else if (taskId) {
         await updateTask.mutateAsync({ id: taskId, payload: submitData });
+        void navigate("/tasks");
       } else {
         await createTask.mutateAsync(submitData);
+        void navigate("/tasks");
       }
-
-      navigate("/tasks");
     } catch (error) {
       console.error("Error al guardar tarea:", error);
     }
@@ -142,9 +148,9 @@ export function TaskForm({ taskId }: TaskFormProps) {
     return (
       <PageLayout title={taskId ? "Edit Task" : "Create Task"} loading>
         <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
-          <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
-          <div className="h-20 bg-gray-200 rounded mb-4"></div>
+          <div className="h-8 bg-gray-200 rounded w-1/4 mb-4" />
+          <div className="h-4 bg-gray-200 rounded w-1/2 mb-2" />
+          <div className="h-20 bg-gray-200 rounded mb-4" />
         </div>
       </PageLayout>
     );
@@ -153,13 +159,13 @@ export function TaskForm({ taskId }: TaskFormProps) {
   return (
     <PageLayout
       title={taskId ? "Edit Task" : "Create Task"}
-      breadcrumbs={[
+      breadcrumb={[
         { label: "Tasks", href: "/tasks" },
         { label: taskId ? "Edit Task" : "Create Task" },
       ]}
     >
       <div className="max-w-2xl mx-auto">
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={(e) => void handleSubmit(e)} className="space-y-6">
           {/* Basic Information */}
           <Card>
             <CardHeader>
@@ -470,18 +476,16 @@ export function TaskForm({ taskId }: TaskFormProps) {
             <Button
               type="button"
               variant="outline"
-              onClick={() => navigate("/tasks")}
+              onClick={() => void navigate("/tasks")}
             >
               <HugeiconsIcon icon={ArrowLeftIcon} size={16} className="mr-2" />
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoadingData}>
+            <Button type="submit" disabled={isSubmitting || isLoadingData}>
               <HugeiconsIcon icon={PlugIcon} size={16} className="mr-2" />
-              {isLoadingData
+              {isSubmitting || isLoadingData
                 ? "Saving..."
-                : taskId
-                  ? "Update Task"
-                  : "Create Task"}
+                : submitLabel || (taskId ? "Update Task" : "Create Task")}
             </Button>
           </div>
         </form>

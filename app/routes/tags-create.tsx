@@ -27,14 +27,14 @@ export default function CreateTagPage() {
     e.preventDefault();
     try {
       await createTag.mutateAsync(formData);
-      navigate("/tags");
+      void navigate("/tags");
     } catch (error) {
       console.error("Error creating tag:", error);
     }
   };
 
   const handleCancel = () => {
-    navigate("/tags");
+    void navigate("/tags");
   };
 
   const handleChange = (field: string, value: string) => {
@@ -52,7 +52,7 @@ export default function CreateTagPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={(e) => void handleSubmit(e)} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="name">Nombre de la Etiqueta</Label>
                 <Input

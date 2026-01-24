@@ -3,16 +3,15 @@
  * Displays a list of templates with filters and actions
  */
 
-import { useState } from "react";
 import { format } from "date-fns";
-import { es, enUS } from "date-fns/locale";
+import { es } from "date-fns/locale";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Card, CardContent } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { DataTable } from "~/components/common/DataTable";
 import { SearchBar } from "~/components/common/SearchBar";
-import { Template, TemplateType } from "~/features/templates/types/template.types";
+import type { Template, TemplateType, TemplateRenderContext, RenderFormat } from "~/features/templates/types/template.types";
 
 interface TemplateListProps {
   templates: Template[];
@@ -21,7 +20,7 @@ interface TemplateListProps {
   onEdit?: (template: Template) => void;
   onDelete?: (template: Template) => void;
   onPreview?: (template: Template) => void;
-  onRender?: (template: Template) => void;
+  onRender?: (context: TemplateRenderContext, format: RenderFormat) => void;
   onCreate?: () => void;
 }
 
@@ -152,7 +151,12 @@ export function TemplateList({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => onRender?.(template)}
+            onClick={() => {
+              onRender?.(
+                { templateId: template.id, data: {} },
+                'html'
+              );
+            }}
             className="text-blue-600 hover:text-blue-700"
           >
             {t("templates.render")}
@@ -225,7 +229,7 @@ export function TemplateList({
       {/* Search bar */}
       <SearchBar
         placeholder={t("templates.search.placeholder")}
-        onChange={(value) => {
+        onChange={(_value) => {
           // Handle search
         }}
       />

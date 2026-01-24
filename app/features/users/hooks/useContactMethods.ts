@@ -70,7 +70,7 @@ export function useContactMethods(
   return {
     contactMethods: response?.data || [],
     loading,
-    error: error as Error | null,
+    error: error,
     refresh: refetch,
   };
 }
@@ -100,7 +100,7 @@ export function useContactMethod(contactMethodId: string | null) {
   return {
     contactMethod: response?.data || null,
     loading,
-    error: error as Error | null,
+    error: error,
     refresh: refetch,
   };
 }
@@ -143,7 +143,7 @@ export function useCreateContactMethod() {
       }
     },
     loading: mutation.isPending,
-    error: mutation.error as Error | null,
+    error: mutation.error,
   };
 }
 
@@ -192,7 +192,7 @@ export function useUpdateContactMethod() {
       }
     },
     loading: mutation.isPending,
-    error: mutation.error as Error | null,
+    error: mutation.error,
   };
 }
 
@@ -228,7 +228,7 @@ export function useDeleteContactMethod() {
       }
     },
     loading: mutation.isPending,
-    error: mutation.error as Error | null,
+    error: mutation.error,
   };
 }
 

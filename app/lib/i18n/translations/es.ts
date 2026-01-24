@@ -218,6 +218,17 @@ export const translations = {
     isNotNull: "no es nulo",
   },
 
+  // Activity Icons
+  activityIcons: {
+    pageTitle: "Iconos de Actividad",
+    pageDescription: "Configura los iconos para diferentes tipos de actividad",
+    title: "Título",
+    description: "Descripción",
+    selected: "Seleccionado",
+    resetToDefaults: "Restablecer valores predeterminados",
+  },
+
+  
   // Dashboard
   dashboard: {
     title: "Dashboard",
@@ -228,6 +239,7 @@ export const translations = {
   },
   // Common
   common: {
+    name: "Nombre",
     selectField: "Seleccionar campo",
     selectOperator: "Seleccionar operador",
     selectValue: "Seleccionar valor",
@@ -276,6 +288,7 @@ export const translations = {
     emptyDescription: "No se encontraron elementos para mostrar.",
     refresh: "Actualizar",
     expand: "Expandir",
+    uploading: "Subiendo...",
   },
   // Layout
   layout: {
@@ -1270,9 +1283,10 @@ export const translations = {
     list: "Lista de Tareas",
     create: "Crear Tarea",
     createTask: "Crear Tarea",
+    createActivity: "Crear Actividad",
     editTask: "Editar Tarea",
     editTaskDescription: "Edita los detalles de la tarea existente",
-    updateTask: "Actualizar Tarea",
+    update: "Actualizar",
     titlePlaceholder: "Título de la tarea",
     descriptionPlaceholder: "Describe los detalles de la tarea...",
     delete: "Eliminar Tarea",
@@ -1295,6 +1309,7 @@ export const translations = {
     checklist: {
       title: "Checklist",
       noItems: "Sin items",
+      addItem: "Agregar Item",
     },
     assigned: {
       singular: "asignado",
@@ -1321,7 +1336,6 @@ export const translations = {
     filters: "Filtros de Tareas",
     searchPlaceholder: "Buscar tareas...",
     noTasks: "No hay tareas",
-    createSuccess: "Tarea creada exitosamente",
     updateSuccess: "Tarea actualizada exitosamente",
     deleteSuccess: "Tarea eliminada exitosamente",
     error: "Error al cargar tareas",
@@ -1344,6 +1358,54 @@ export const translations = {
     },
     quickAdd: "Nueva Tarea",
     quickAddDescription: "Crear una nueva tarea rápidamente",
+    createdSuccess: "Tarea creada exitosamente",
+    addFilesAndComments: "Ahora puedes agregar archivos y comentarios",
+    files: {
+      dragDrop: "Arrastra archivos aquí",
+      orClickToSelect: "o haz clic para seleccionar",
+      selectFile: "Seleccionar archivo",
+      attach: "Adjuntar",
+      noFiles: "No hay archivos",
+      viewFile: "Ver archivo",
+      downloadFile: "Descargar archivo",
+      deleteFile: "Eliminar archivo",
+      fileDeleted: "Archivo eliminado correctamente",
+      fileDeleteError: "Error al eliminar archivo",
+      fileAttached: "Archivo adjuntado correctamente",
+      fileAttachError: "Error al adjuntar archivo",
+      maxSize: "Máximo {{size}}MB",
+      tooBig: "El archivo es demasiado grande"
+    },
+    comments: {
+      title: "Comentarios",
+      noComments: "No hay comentarios",
+      addComment: "Agregar comentario",
+      placeholder: "Escribe un comentario...",
+      send: "Enviar",
+      sending: "Enviando...",
+      edit: "Editar",
+      editing: "Editando...",
+      save: "Guardar",
+      cancel: "Cancelar",
+      delete: "Eliminar",
+      deleting: "Eliminando...",
+      commentAdded: "Comentario agregado",
+      commentUpdated: "Comentario actualizado",
+      commentDeleted: "Comentario eliminado",
+      errorAdding: "Error al agregar comentario",
+      errorUpdating: "Error al actualizar comentario",
+      errorDeleting: "Error al eliminar comentario",
+      reply: "Responder",
+      mention: "Mencionar",
+      mentioned: "mencionó",
+      justNow: "ahora",
+      minutesAgo: "hace {{count}} minutos",
+      hoursAgo: "hace {{count}} horas",
+      daysAgo: "hace {{count}} días"
+    },
+    infoNote: {
+      addFilesAndComments: "Para anexar comentarios y agregar archivos relevantes abra la tarea recién creada"
+    },
     quickAddPlaceholder: "Escribe el título de la tarea...",
     filtersTitle: "Filtros",
     filtersReset: "Restablecer",
@@ -1413,6 +1475,9 @@ export const translations = {
         title: "Por Prioridad",
       },
     },
+    calendarSync: {
+      sync: "Sincronizar con Calendario",
+    },
     summary: {
       title: "Resumen de tareas",
       subtitle: "Actividad reciente",
@@ -1422,6 +1487,47 @@ export const translations = {
       completed: "Completadas",
       upcoming: "Próximas tareas",
       reminders: "Recordatorios",
+    },
+    templates: {
+      title: "Plantillas de Tareas",
+      selectTemplate: "Seleccionar Plantilla",
+      useTemplate: "Usar Plantilla",
+      createFromTemplate: "Crear desde Plantilla",
+      loading: "Cargando plantillas...",
+      noTemplates: "No hay plantillas disponibles",
+      noTemplatesDescription: "No se encontraron plantillas. Crea una nueva plantilla para comenzar.",
+      category: "Categoría",
+      estimatedDuration: "Duración estimada",
+      minutes: "minutos",
+      checklistSteps: "pasos en checklist",
+      popular: "Plantillas Populares",
+      categories: "Categorías de Plantillas",
+      createSuccess: "Tarea creada desde plantilla",
+      createSuccessDescription: "La tarea se creó exitosamente",
+      createError: "Error al crear tarea",
+      createErrorDescription: "No se pudo crear la tarea desde la plantilla",
+      saveSuccess: "Plantilla creada",
+      saveSuccessDescription: "La plantilla se creó exitosamente",
+      saveError: "Error al crear plantilla",
+      saveErrorDescription: "No se pudo crear la plantilla",
+    },
+    notifications: {
+      assigned: "Nueva Tarea Asignada",
+      assignedDescription: "Se te ha asignado la tarea: {title}",
+      statusChanged: "Estado de Tarea Cambiado",
+      statusChangedDescription: "La tarea \"{title}\" cambió a {status}",
+      dueSoon: "Tarea Próxima a Vencer",
+      dueSoonDescription: "La tarea \"{title}\" vence {window}",
+      overdue: "Tarea Vencida",
+      overdueDescription: "La tarea \"{title}\" está vencida",
+      completed: "¡Tarea Completada!",
+      completedDescription: "La tarea \"{title}\" ha sido completada",
+      windows: {
+        "24h": "en 24 horas",
+        "1h": "en 1 hora",
+        "15min": "en 15 minutos",
+        soon: "pronto",
+      },
     },
   },
   calendar: {
@@ -1565,6 +1671,22 @@ export const translations = {
       count: "Cantidad",
       occurrences: "ocurrencias",
       every: "Cada",
+    },
+    files: {
+      title: "Archivos",
+      noFiles: "No hay archivos",
+      dragDrop: "Arrastra archivos aquí o haz clic para seleccionar",
+      orClickToSelect: "o haz clic para seleccionar",
+      selectFile: "Seleccionar archivo",
+    },
+    comments: {
+      title: "Comentarios",
+      noComments: "No hay comentarios",
+      placeholder: "Escribe un comentario...",
+      send: "Enviar",
+    },
+    calendarSync: {
+      sync: "Sincronizar",
     },
   },
   // Approvals module

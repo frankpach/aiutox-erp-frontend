@@ -5,6 +5,27 @@ import tsconfigPaths from "vite-tsconfig-paths";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-query': ['@tanstack/react-query'],
+          'vendor-ui': ['@radix-ui/react-dialog', '@radix-ui/react-select', '@radix-ui/react-dropdown-menu'],
+          'vendor-date': ['date-fns'],
+          'tasks-core': [
+            './app/features/tasks/components/TaskList.tsx',
+            './app/features/tasks/components/TaskQuickAdd.tsx',
+          ],
+          'tasks-advanced': [
+            './app/features/tasks/components/BoardView.tsx',
+            './app/features/tasks/components/TaskCalendar.tsx',
+          ],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 800,
+  },
   server: {
     host: "127.0.0.1", // Use IPv4 only to avoid ::1 issues
     port: 3000, // Changed port to avoid permission issues

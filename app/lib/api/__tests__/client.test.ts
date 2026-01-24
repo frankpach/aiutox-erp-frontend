@@ -20,7 +20,7 @@ const createCallCount = vi.hoisted(() => ({ count: 0 }));
 
 // Store mock refresh client post function that can be configured per test
 const mockRefreshClientPost = vi.hoisted(() => ({
-  fn: vi.fn() as ReturnType<typeof vi.fn>,
+  fn: vi.fn(),
 }));
 
 // Store post function for first instance (apiClient)
@@ -95,12 +95,12 @@ vi.mock("axios", async () => {
         // For other instances, use instance.request directly
         const callableInstance = function(this: any, config: any) {
           // #region agent log
-          const requestFn = isFirstCall ? firstInstanceRequest : (callableInstance as any).request;
+          const requestFn = isFirstCall ? firstInstanceRequest : (callableInstance).request;
           fetch('http://127.0.0.1:7242/ingest/bd91a56b-aa7d-44fb-ac11-0977789d60c5',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'client.test.ts:85',message:'callableInstance called',data:{callNumber:currentCall,isFirstCall,configUrl:config?.url||config,hasRequest:typeof requestFn==='function',requestIsMock:requestFn?.mock!==undefined},timestamp:Date.now(),sessionId:'debug-session',runId:'run19',hypothesisId:'J'})}).catch(()=>{});
           // #endregion
           // For first instance, use firstInstanceRequest which can be updated by tests
           // For other instances, use the request from the instance
-          const requestToUse = isFirstCall ? firstInstanceRequest : (callableInstance as any).request;
+          const requestToUse = isFirstCall ? firstInstanceRequest : (callableInstance).request;
           return requestToUse(config);
         } as any;
         // Copy all properties from instance to callableInstance

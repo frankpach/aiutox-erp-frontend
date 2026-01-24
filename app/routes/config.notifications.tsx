@@ -381,7 +381,7 @@ export default function NotificationsConfigPage() {
                 {testSMTPMutation.isPending ? t("config.common.testing") : t("config.notifications.testConnection")}
               </Button>
               <Button
-                onClick={handleSaveSMTP}
+                onClick={() => void handleSaveSMTP()}
                 disabled={!smtpForm.hasChanges || isSavingSMTP || !smtpForm.isValid}
               >
                 {isSavingSMTP ? t("config.common.saving") : t("config.notifications.saveConfig")}
@@ -427,7 +427,7 @@ export default function NotificationsConfigPage() {
             </div>
             <div className="flex gap-4 pt-4">
               <Button
-                onClick={handleSaveSMS}
+                onClick={() => void handleSaveSMS()}
                 disabled={!smsForm.hasChanges || isSavingSMS || !smsForm.isValid}
               >
                 {isSavingSMS ? t("config.common.saving") : t("config.notifications.saveConfig")}
@@ -485,7 +485,7 @@ export default function NotificationsConfigPage() {
                 {testWebhookMutation.isPending ? t("config.common.testing") : t("config.notifications.testWebhook")}
               </Button>
               <Button
-                onClick={handleSaveWebhook}
+                onClick={() => void handleSaveWebhook()}
                 disabled={!webhookForm.hasChanges || isSavingWebhook || !webhookForm.isValid}
               >
                 {isSavingWebhook ? t("config.common.saving") : t("config.notifications.saveConfig")}

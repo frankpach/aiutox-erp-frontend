@@ -4,8 +4,7 @@
  */
 
 import { Eye, Info } from "lucide-react";
-import type { FilterConfig } from "../types/savedFilter.types";
-import type { FieldConfig } from "../types/savedFilter.types";
+import type { FilterConfig, FieldConfig } from "../types/savedFilter.types";
 import { buildFilterDescription } from "../utils/filterUtils";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 

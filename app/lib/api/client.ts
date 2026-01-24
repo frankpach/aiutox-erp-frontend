@@ -88,7 +88,7 @@ export const scheduleProactiveRefresh = (token: string) => {
 
   try {
     // Decode JWT to get expiration time
-    const payload = JSON.parse(atob(parts[1]));
+    const payload = JSON.parse(atob(parts[1] || ''));
 
     // Validate that payload has expiration time
     if (!payload.exp || typeof payload.exp !== "number") {
@@ -219,6 +219,18 @@ const refreshAccessToken = async (): Promise<string | null> => {
 // Request interceptor for auth token
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    // Log simple para todas las solicitudes
+    console.warn('[API Request]', config.method?.toUpperCase(), config.url);
+    
+    // Log de depuración para solicitudes DELETE
+    if (config.method?.toLowerCase() === 'delete') {
+      console.warn('=== DELETE REQUEST INTERCEPTOR ===');
+      console.warn('URL:', config.url);
+      console.warn('Base URL:', apiClient.defaults.baseURL);
+      console.warn('Full URL:', `${apiClient.defaults.baseURL || ''}${config.url || ''}`);
+      console.warn('Method:', config.method);
+    }
+    
     const token = localStorage.getItem("auth_token");
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -267,6 +279,15 @@ apiClient.interceptors.request.use(
 // Response interceptor for error handling and token refresh
 apiClient.interceptors.response.use(
   (response) => {
+    // Log de depuración para respuestas DELETE
+    if (response.config.method?.toLowerCase() === 'delete') {
+      console.warn('=== DELETE RESPONSE INTERCEPTOR ===');
+      console.warn('Status:', response.status);
+      console.warn('Status Text:', response.statusText);
+      console.warn('Data:', response.data);
+      console.warn('Headers:', response.headers);
+    }
+    
     // Log successful responses for contact-methods
     if (response.config.url?.includes("contact-methods")) {
       console.log("[apiClient] Response from contact-methods:", {

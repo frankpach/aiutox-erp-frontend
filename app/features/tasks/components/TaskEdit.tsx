@@ -3,7 +3,7 @@
  * Task editing form for updating existing tasks
  */
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 import { Button } from "~/components/ui/button";
@@ -32,14 +32,15 @@ import { useUpdateTask } from "../hooks/useTasks";
 import { useUsers } from "~/features/users/hooks/useUsers";
 import { useTags } from "~/features/tags/hooks/useTags";
 import { useAuthStore } from "~/stores/authStore";
+import { CalendarSyncToggle } from "./CalendarSyncToggle";
+import { FileUploader } from "./FileUploader";
+import { CommentThread } from "./CommentThread";
 import {
   createAssignment,
   deleteAssignment,
   listAssignments,
 } from "../api/tasks.api";
 import { MultiSelect } from "~/components/ui/multi-select";
-import { cn } from "~/lib/utils";
-import type { TaskFormMode } from "./TaskQuickAdd";
 import type {
   Task,
   TaskUpdate,
@@ -65,7 +66,8 @@ export function TaskEdit({
   const { users } = useUsers({ page_size: 100 });
   const { data: tagList = [] } = useTags();
   const { user } = useAuthStore();
-
+  
+  
   const DATE_INPUT_FORMAT = "yyyy-MM-dd'T'HH:mm";
   const toDateTimeLocalValue = (value?: string | null) => {
     if (!value) return "";
@@ -99,19 +101,7 @@ export function TaskEdit({
 
   const [assignedUserIds, setAssignedUserIds] = useState<string[]>([]);
   const [assignedGroupIds, setAssignedGroupIds] = useState<string[]>([]);
-  const [mode, setMode] = useState<TaskFormMode>("task");
   const [formError, setFormError] = useState<string | null>(null);
-  const isEventMode = mode === "event";
-  const modeTabs = useMemo(
-    () => [
-      { key: "task" as TaskFormMode, label: t("tasks.type.task") || "Tarea" },
-      {
-        key: "event" as TaskFormMode,
-        label: t("tasks.type.event") || "Evento",
-      },
-    ],
-    [t]
-  );
 
   // Update form data when task changes
   useEffect(() => {
@@ -130,8 +120,6 @@ export function TaskEdit({
         assigned_to_id: task.assigned_to_id,
       });
 
-      const nextMode = task.start_at || task.end_at ? "event" : "task";
-      setMode(nextMode);
       setFormError(null);
 
       // Cargar asignaciones existentes
@@ -145,17 +133,6 @@ export function TaskEdit({
     }
   }, [open]);
 
-  const handleModeChange = (nextMode: TaskFormMode) => {
-    if (nextMode === mode) return;
-    setMode(nextMode);
-    setFormError(null);
-    setFormData((prev) => ({
-      ...prev,
-      ...(nextMode === "task"
-        ? { start_at: "", end_at: "", all_day: false }
-        : { due_date: "" }),
-    }));
-  };
 
   const loadExistingAssignments = async (taskId: string) => {
     try {
@@ -180,7 +157,7 @@ export function TaskEdit({
 
     if (!task) return;
 
-    if (mode === "event") {
+    if (task.start_at || task.end_at) {
       if (!formData.start_at || !formData.end_at) {
         setFormError(
           t("tasks.errors.eventTimesRequired") ||
@@ -205,7 +182,7 @@ export function TaskEdit({
       };
 
       const payload: TaskUpdate =
-        mode === "event"
+        task.start_at || task.end_at
           ? {
               ...basePayload,
               due_date: undefined,
@@ -273,7 +250,7 @@ export function TaskEdit({
         }
       }
 
-      onOpenChange(false);
+      // Notificar que la tarea fue actualizada pero no cerrar el modal
       onTaskUpdated?.();
     } catch (error) {
       console.error("Error al actualizar tarea:", error);
@@ -288,7 +265,7 @@ export function TaskEdit({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <HugeiconsIcon icon={Edit01Icon} size={20} />
-            {t("tasks.editTask")}
+            {task ? (task.start_at && task.end_at && !task.due_date ? 'Editar Evento' : task.all_day ? 'Editar Evento' : t("tasks.editTask")) : t("tasks.editTask")}
           </DialogTitle>
           <DialogDescription>
             {t("tasks.editTaskDescription")}
@@ -300,35 +277,13 @@ export function TaskEdit({
           }}
           className="space-y-3 pr-1"
         >
-          <div className="space-y-2">
-            <Label className="text-xs uppercase tracking-wide text-muted-foreground">
-              {t("tasks.type.title") || "Tipo"}
-            </Label>
-            <div className="inline-flex rounded-xl bg-muted/60 p-1 text-sm font-medium">
-              {modeTabs.map((tab) => (
-                <button
-                  key={tab.key}
-                  type="button"
-                  onClick={() => handleModeChange(tab.key)}
-                  className={cn(
-                    "flex-1 rounded-lg px-3 py-1 transition",
-                    mode === tab.key
-                      ? "bg-background text-foreground shadow"
-                      : "text-muted-foreground"
-                  )}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          </div>
 
           <div>
             <label
               htmlFor="edit-title"
               className="block text-sm font-medium mb-1"
             >
-              {t("tasks.title")} *
+              {t("common.name")} *
             </label>
             <Input
               id="edit-title"
@@ -431,7 +386,7 @@ export function TaskEdit({
             </div>
           </div>
 
-          {isEventMode ? (
+          {task && (task.start_at || task.end_at) ? (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <Label htmlFor="edit-all-day">
@@ -502,6 +457,13 @@ export function TaskEdit({
             </div>
           )}
 
+          {/* Calendar Sync Toggle - Sprint 2.1 Fase 2 */}
+          {task && (formData.start_at || formData.due_date || formData.end_at) && (
+            <div className="pt-4 border-t">
+              <CalendarSyncToggle taskId={task.id} compact showStatus />
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium mb-1">
               {t("tasks.assignedTo")}
@@ -559,22 +521,24 @@ export function TaskEdit({
             </div>
           </div>
 
-          {/* Placeholder para asignaciones a grupos - futuro cuando exista módulo Groups */}
-          <div className="opacity-60">
-            <label className="block text-sm font-medium mb-1">
-              Asignar a Grupos (Próximamente)
-            </label>
-            <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
-              <p>
-                Las asignaciones a grupos estarán disponibles cuando el módulo
-                Groups esté implementado.
-              </p>
-              <p className="text-xs mt-1">
-                Esta característica permitirá asignar tareas a equipos
-                completos.
-              </p>
+          {/* Files Section - Sprint 2.3 Fase 2 */}
+          {task && (
+            <div className="space-y-4 pt-4 border-t">
+              {(() => {
+                console.warn('[TaskEdit] Rendering FileUploader with task.id:', task?.id);
+                return null;
+              })()}
+              <FileUploader taskId={task.id} />
             </div>
-          </div>
+          )}
+
+          {/* Comments Section - Sprint 2.4 Fase 2 */}
+          {task && (
+            <div className="pt-4 border-t">
+              <CommentThread taskId={task.id} showTitle />
+            </div>
+          )}
+
 
           {formError && <p className="text-sm text-destructive">{formError}</p>}
 
@@ -588,7 +552,7 @@ export function TaskEdit({
               {t("common.cancel")}
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? t("common.saving") : t("tasks.updateTask")}
+              {isLoading ? t("common.saving") : t("tasks.update")}
             </Button>
           </DialogFooter>
         </form>

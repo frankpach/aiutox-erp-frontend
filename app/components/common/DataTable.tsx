@@ -122,14 +122,14 @@ export function DataTable<T = unknown>({
         )
       ) : (
         <>
-          <div className="rounded-md border overflow-hidden">
-            <table className="w-full">
+          <div className="rounded-md border overflow-auto">
+            <table className="w-full min-w-[800px]">
               <thead className="bg-muted/50">
                 <tr>
                   {columns.map((column) => (
                     <th
                       key={column.key}
-                      className="px-4 py-3 text-left text-sm font-medium text-foreground"
+                      className="px-4 py-3 text-left text-sm font-medium text-foreground whitespace-nowrap"
                       style={column.width ? { width: column.width } : undefined}
                     >
                       {column.header}
@@ -144,7 +144,7 @@ export function DataTable<T = unknown>({
                     className="hover:bg-muted/50 transition-colors"
                   >
                     {columns.map((column) => (
-                      <td key={column.key} className="px-4 py-3 text-sm">
+                      <td key={column.key} className="px-4 py-3 text-sm whitespace-nowrap">
                         {column.cell(row)}
                       </td>
                     ))}

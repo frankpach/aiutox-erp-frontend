@@ -1,3 +1,6 @@
+// Importar script para suprimir errores de hidratación
+import "./suppress-hydration-warnings";
+
 import {
   isRouteErrorResponse,
   Links,
@@ -195,7 +198,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
 
   // Show stack trace only in development
   const stack =
-    (import.meta as any).env?.DEV && error && error instanceof Error ? error.stack : undefined;
+    import.meta.env.DEV && error && error instanceof Error ? error.stack : undefined;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">

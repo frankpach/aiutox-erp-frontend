@@ -153,7 +153,7 @@ export function EventForm({
       <Card>
         <CardHeader>
           <CardTitle>
-            {event ? t("calendar.events.edit") : t("calendar.events.create")}
+            {event ? `${t("calendar.events.edit")}: Evento` : t("calendar.events.create")}
           </CardTitle>
         </CardHeader>
         <CardContent>

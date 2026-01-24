@@ -49,6 +49,8 @@ export interface User {
   roles?: UserRole[];
   module_roles?: ModuleRole[];
   delegated_permissions?: DelegatedPermission[];
+  // Permisos (calculados)
+  permissions?: string[];
 }
 
 export interface UserCreate {

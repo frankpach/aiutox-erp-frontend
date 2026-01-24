@@ -38,6 +38,8 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { EmptyState } from "~/components/common/EmptyState";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Refresh01Icon } from "@hugeicons/core-free-icons";
 import { TaskQuickAdd, type TaskFormMode } from "./TaskQuickAdd";
 import { TaskEdit } from "./TaskEdit";
 import { CalendarView } from "~/features/calendar/components/CalendarView";
@@ -412,6 +414,7 @@ export function TaskCalendar({
             location: null,
             all_day: task.all_day ?? false,
             status: task.status,
+            source_type: "task", 
             recurrence_type: "none",
             recurrence_end_date: null,
             recurrence_count: null,
@@ -425,6 +428,7 @@ export function TaskCalendar({
               display_time: times.displayTime ?? null,
               color_override: task.color_override ?? null,
               tag_ids: task.tag_ids ?? undefined,
+              activity_type: (task.start_at && task.end_at && !task.due_date) || task.all_day ? "event" : "task",
             },
             read_only: false,
             created_at: task.created_at,
@@ -705,8 +709,8 @@ export function TaskCalendar({
                 </Button>
               )
             )}
-            <Button variant="outline" size="sm" onClick={handleRefresh}>
-              {t("common.refresh")}
+            <Button variant="outline" size="icon" onClick={handleRefresh}>
+              <HugeiconsIcon icon={Refresh01Icon} size={16} />
             </Button>
             <Button
               size="sm"
@@ -718,7 +722,7 @@ export function TaskCalendar({
                 })
               }
             >
-              {t("tasks.createTask")}
+              {t("tasks.createActivity") || "Crear Actividad"}
             </Button>
           </div>
         </div>
@@ -985,7 +989,7 @@ export function TaskCalendar({
                     })
                   }
                 >
-                  {t("tasks.createTask")}
+                  {t("tasks.createActivity") || "Crear Actividad"}
                 </Button>
               }
             />

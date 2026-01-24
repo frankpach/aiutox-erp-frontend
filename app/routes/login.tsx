@@ -4,8 +4,6 @@
  */
 
 import { useState, useEffect, useRef } from "react";
-import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { useAuth } from "~/hooks/useAuth";
 import { useAuthStore } from "~/stores/authStore";
@@ -14,7 +12,6 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Checkbox } from "~/components/ui/checkbox";
-import { loginSchema, type LoginFormData } from "~/lib/validations/auth.schema";
 import { Loader2 } from "lucide-react";
 import { checkRateLimit } from "~/lib/security/rateLimit";
 import { sanitizeEmail } from "~/lib/security/sanitize";
@@ -38,16 +35,11 @@ export default function LoginPage() {
   const [pendingRedirect, setPendingRedirect] = useState<string | null>(null);
   const hasJustLoggedIn = useRef(false);
 
-  const {
-    register,
-    handleSubmit,
-    control,
-    formState: { errors },
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      remember_me: false,
-    },
+  // Form state simple sin react-hook-form
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    remember_me: false
   });
 
   // Handle navigation after login success using useEffect
@@ -57,7 +49,7 @@ export default function LoginPage() {
       // Use requestAnimationFrame to ensure navigation happens after DOM is ready
       // This prevents issues when component unmounts during navigation
       const rafId = requestAnimationFrame(() => {
-        navigate(pendingRedirect, { replace: true });
+        void navigate(pendingRedirect, { replace: true });
         setPendingRedirect(null); // Clear after navigation
         hasJustLoggedIn.current = false; // Reset flag after navigation
       });
@@ -87,7 +79,7 @@ export default function LoginPage() {
         }
       }
 
-      navigate(targetPath, { replace: true });
+      void navigate(targetPath, { replace: true });
     }
   }, [isAuthenticated, navigate, searchParams, user, pendingRedirect]);
 
@@ -97,21 +89,32 @@ export default function LoginPage() {
     return null;
   }
 
-  const onSubmit = async (data: LoginFormData, e?: React.BaseSyntheticEvent) => {
+  const handleSimpleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    console.warn("[Login] Simple submit called with formData:", { 
+      email: formData.email, 
+      passwordLength: formData.password?.length || 0,
+      hasPassword: !!formData.password,
+      rememberMe: formData.remember_me
+    });
 
-    // Prevent default form submission (handleSubmit already does this, but be explicit)
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
+    // Validación simple
+    if (!formData.email || !formData.password) {
+      setError("Email y contraseña son requeridos");
+      return;
     }
 
-    console.debug("[Login] onSubmit called with data:", { email: data.email, hasPassword: !!data.password });
+    if (formData.password.length < 8) {
+      setError("La contraseña debe tener al menos 8 caracteres");
+      return;
+    }
 
     setIsLoading(true);
     setError(null);
 
     // Sanitize email input
-    const sanitizedEmail = sanitizeEmail(data.email);
+    const sanitizedEmail = sanitizeEmail(formData.email);
     if (!sanitizedEmail) {
       setError("Email inválido");
       setIsLoading(false);
@@ -120,8 +123,9 @@ export default function LoginPage() {
 
     try {
       const result = await login({
-        ...data,
         email: sanitizedEmail,
+        password: formData.password,
+        remember_me: formData.remember_me
       });
 
       if (result.success) {
@@ -232,8 +236,7 @@ export default function LoginPage() {
     <PublicLayout title="Iniciar Sesión">
       <form
         onSubmit={(e) => {
-          e.preventDefault(); // Prevent default form submission
-          handleSubmit(onSubmit)(e);
+          void handleSimpleSubmit(e);
         }}
         className="space-y-6"
       >
@@ -251,13 +254,10 @@ export default function LoginPage() {
             id="email"
             type="email"
             placeholder="tu@email.com"
-            {...register("email")}
+            value={formData.email}
+            onChange={(e) => setFormData({...formData, email: e.target.value})}
             disabled={isLoading}
-            className={errors.email ? "border-red-500" : ""}
           />
-          {errors.email && (
-            <p className="text-sm text-red-600">{errors.email.message}</p>
-          )}
         </div>
 
         {/* Password Field */}
@@ -267,28 +267,19 @@ export default function LoginPage() {
             id="password"
             type="password"
             placeholder="••••••••"
-            {...register("password")}
+            value={formData.password}
+            onChange={(e) => setFormData({...formData, password: e.target.value})}
             disabled={isLoading}
-            className={errors.password ? "border-red-500" : ""}
           />
-          {errors.password && (
-            <p className="text-sm text-red-600">{errors.password.message}</p>
-          )}
         </div>
 
         {/* Remember Me Checkbox */}
         <div className="flex items-center space-x-2">
-          <Controller
-            name="remember_me"
-            control={control}
-            render={({ field }) => (
-              <Checkbox
-                id="remember_me"
-                checked={field.value}
-                onCheckedChange={field.onChange}
-                disabled={isLoading}
-              />
-            )}
+          <Checkbox
+            id="remember_me"
+            checked={formData.remember_me}
+            onCheckedChange={(checked) => setFormData({...formData, remember_me: checked as boolean})}
+            disabled={isLoading}
           />
           <Label
             htmlFor="remember_me"
@@ -308,6 +299,7 @@ export default function LoginPage() {
           </Link>
         </div>
 
+        
         {/* Submit Button */}
         <Button
           type="submit"

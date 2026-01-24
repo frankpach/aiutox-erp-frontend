@@ -5,7 +5,7 @@
  */
 
 import { useState } from "react";
-import { useNavigate } from "react-router";
+// import { useNavigate } from "react-router";
 import { PageLayout } from "~/components/layout/PageLayout";
 import { useAuthStore } from "~/stores/authStore";
 import { useUser, useUpdateUser } from "~/features/users/hooks/useUsers";
@@ -249,7 +249,7 @@ export default function SettingsPage() {
 
           {/* Botones de acción */}
           <div className="flex gap-4 pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">
-            <Button onClick={handleSave} disabled={updating} className="flex-1">
+            <Button onClick={() => void handleSave()} disabled={updating} className="flex-1">
               {updating ? "Guardando..." : "Guardar Cambios"}
             </Button>
             <Button

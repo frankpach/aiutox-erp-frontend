@@ -8,8 +8,11 @@
 import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "~/lib/i18n/useTranslation";
-import type { GeneralSettings } from "~/features/config/api/config.api";
-import { getGeneralSettings, updateGeneralSettings } from "~/features/config/api/config.api";
+import { 
+  type GeneralSettings, 
+  getGeneralSettings, 
+  updateGeneralSettings 
+} from "~/features/config/api/config.api";
 import { ConfigPageLayout } from "~/components/config/ConfigPageLayout";
 import { ConfigFormField } from "~/components/config/ConfigFormField";
 import { ConfigSection } from "~/components/config/ConfigSection";
@@ -178,7 +181,7 @@ export default function GeneralConfigPage() {
       hasChanges={form.hasChanges}
       isSaving={isSaving}
       onReset={handleReset}
-      onSave={handleSave}
+      onSave={() => void handleSave()}
       saveDisabled={!form.isValid}
     >
       <ConfigSection

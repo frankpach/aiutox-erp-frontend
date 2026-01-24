@@ -239,7 +239,7 @@ export function SearchBar({
                 // Show search suggestions
                 isLoadingSuggestions ? (
                   <div className="px-4 py-2 text-sm text-muted-foreground flex items-center">
-                    <span className="loading loading-spinner loading-xs mr-2"></span>
+                    <span className="loading loading-spinner loading-xs mr-2" />
                     {t("search.loading")}
                   </div>
                 ) : suggestions.length > 0 ? (

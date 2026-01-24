@@ -86,7 +86,7 @@ export function useConfigSave<T>({
   return {
     save,
     isSaving: mutation.isPending,
-    error: mutation.error as Error | null,
+    error: mutation.error,
   };
 }
 

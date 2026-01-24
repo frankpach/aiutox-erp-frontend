@@ -29,7 +29,11 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:parallel": "playwright test  --project=chromium --workers=4 --headed --max-failures=1 --reporter=line",
     "test:e2e:theme": "playwright test app/__tests__/e2e/config/theme-config-e2e.spec.ts --project=chromium --workers=4 --headed --max-failures=1 --reporter=line",
-    "test:theme:all": "npm run test:run -- app/hooks/__tests__/useThemeConfig.test.ts app/routes/__tests__/config.theme.test.tsx app/__tests__/integration/config/theme-api.test.ts && npm run test:e2e:theme"
+    "test:theme:all": "npm run test:run -- app/hooks/__tests__/useThemeConfig.test.ts app/routes/__tests__/config.theme.test.tsx app/__tests__/integration/config/theme-api.test.ts && npm run test:e2e:theme",
+    "lighthouse": "lhci autorun",
+    "lighthouse:collect": "lhci collect",
+    "lighthouse:upload": "lhci upload",
+    "lighthouse:report": "lhci report"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -87,6 +91,7 @@
     "zustand": "^5.0.2"
   },
   "devDependencies": {
+    "@lhci/cli": "^0.12.0",
     "@playwright/test": "^1.49.1",
     "@react-router/dev": "7.10.1",
     "@tailwindcss/vite": "^4.1.13",

@@ -285,6 +285,7 @@ export const translations = {
 
   // Common
   common: {
+    name: "Name",
     selectField: "Select field",
     selectOperator: "Select operator",
     selectValue: "Select value",
@@ -309,6 +310,7 @@ export const translations = {
     clear: "Clear",
     previous: "Previous",
     expand: "Expand",
+    uploading: "Uploading...",
   },
   // Layout
   layout: {
@@ -722,14 +724,16 @@ export const translations = {
       actionExport: "Export",
     },
   },
-  dashboard: {
-    title: "Dashboard",
-    description: "Main dashboard of AiutoX ERP",
-    welcome: "Welcome",
-    welcomeDescription: "Main system dashboard",
-    comingSoon: "Dashboard content will be implemented soon",
+  // Activity Icons
+  activityIcons: {
+    pageTitle: "Activity Icons",
+    pageDescription: "Configure icons for different activity types",
+    title: "Title",
+    description: "Description",
+    selected: "Selected",
+    resetToDefaults: "Reset to Defaults",
   },
-  // Files module
+    // Files module
   files: {
     title: "Files",
     upload: "Upload File",
@@ -1048,9 +1052,10 @@ export const translations = {
     list: "Task List",
     create: "Create Task",
     createTask: "Create Task",
+    createActivity: "Create Activity",
     editTask: "Edit Task",
     editTaskDescription: "Edit the details of the existing task",
-    updateTask: "Update Task",
+    update: "Update",
     titlePlaceholder: "Task title",
     descriptionPlaceholder: "Describe the task details...",
     delete: "Delete Task",
@@ -1073,6 +1078,7 @@ export const translations = {
     checklist: {
       title: "Checklist",
       noItems: "No items",
+      addItem: "Add Item",
     },
     assigned: {
       singular: "assigned",
@@ -1189,6 +1195,9 @@ export const translations = {
         title: "By Priority",
       },
     },
+    calendarSync: {
+      sync: "Sync with Calendar",
+    },
     summary: {
       title: "Task summary",
       subtitle: "Recent activity",
@@ -1198,6 +1207,20 @@ export const translations = {
       completed: "Completed",
       upcoming: "Upcoming tasks",
       reminders: "Reminders",
+    },
+    files: {
+      title: "Files",
+      noFiles: "No files",
+      dragDrop: "Drag files here",
+      orClickToSelect: "or click to select",
+      selectFile: "Select file",
+      attach: "Attach",
+      maxSize: "Maximum {size}MB",
+      uploading: "Uploading file...",
+      uploadSuccess: "File uploaded successfully",
+      uploadError: "Error uploading file",
+      removeFile: "Remove file",
+      confirmRemove: "Are you sure you want to remove this file?",
     },
   },
   calendar: {
@@ -1276,6 +1299,28 @@ export const translations = {
       count: "Count",
       occurrences: "occurrences",
       every: "Every",
+    },
+    files: {
+      title: "Files",
+      noFiles: "No files",
+      dragDrop: "Drag files here or click to select",
+      orClickToSelect: "or click to select",
+      selectFile: "Select File",
+    },
+    comments: {
+      title: "Comments",
+      noComments: "No comments",
+      placeholder: "Write a comment...",
+      send: "Send",
+    },
+    calendarSync: {
+      sync: "Sync",
+    },
+    checklist: {
+      addItem: "Add item",
+    },
+    infoNote: {
+      addFilesAndComments: "To attach comments and add relevant files, open the newly created task"
     },
   },
   // Approvals module

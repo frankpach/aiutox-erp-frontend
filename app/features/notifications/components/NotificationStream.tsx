@@ -299,7 +299,7 @@ export function NotificationStream({ autoConnect = false }: NotificationStreamPr
                   {notifications.map((notification, index) => (
                     <div key={`${notification.id}-${index}`} className="border-l-4 border-gray-300 pl-4">
                       <div className="flex items-start gap-3 mb-2">
-                        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-blue-500 mt-2"></div>
+                        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-blue-500 mt-2" />
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="font-medium text-gray-900">

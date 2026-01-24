@@ -90,8 +90,8 @@ export function MultiSelect<T extends string>({
                   className="rounded-sm px-1 font-normal"
                 >
                   {options.find((o) => o.value === item)?.label}
-                  <button
-                    className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  <span
+                    className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 cursor-pointer"
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
                         handleUnselect(item);
@@ -108,7 +108,7 @@ export function MultiSelect<T extends string>({
                     }}
                   >
                     <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
-                  </button>
+                  </span>
                 </Badge>
               ))}
             </div>

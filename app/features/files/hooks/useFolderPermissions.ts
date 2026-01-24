@@ -9,8 +9,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "~/stores/authStore";
 import { useHasPermission } from "~/hooks/usePermissions";
-import { getFolderPermissions, getFolder, type FolderPermission } from "../api/folders.api";
-import type { Folder } from "../api/folders.api";
+import { getFolderPermissions, type FolderPermission } from "../api/folders.api";
 
 export interface FolderPermissions {
   canView: boolean;
@@ -53,20 +52,20 @@ export function useFolderPermissions(
   });
 
   // Get folder info if not provided
-  const { data: folderResponse } = useQuery({
-    queryKey: ["folder", folderId],
-    queryFn: () => {
-      if (!folderId) throw new Error("Folder ID is required");
-      return getFolder(folderId);
-    },
-    enabled: !!folderId && !folder,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-  });
+  // const { data: folderResponse } = useQuery({
+  //   queryKey: ["folder", folderId],
+  //   queryFn: () => {
+  //     if (!folderId) throw new Error("Folder ID is required");
+  //     return getFolder(folderId);
+  //   },
+  //   enabled: !!folderId && !folder,
+  //   staleTime: 1000 * 60 * 5, // 5 minutes
+  // });
 
-  const folderData = folder || folderResponse?.data;
-  const permissions: FolderPermission[] = permissionsResponse?.data || [];
+  const folderData = folder;
 
   return useMemo(() => {
+    const permissions: FolderPermission[] = permissionsResponse?.data || [];
     if (!folderId || !user) {
       return {
         canView: false,
@@ -141,7 +140,7 @@ export function useFolderPermissions(
     folderId,
     user,
     folderData,
-    permissions,
+    permissionsResponse?.data,
     hasFoldersView,
     hasFoldersManage,
   ]);

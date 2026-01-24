@@ -25,7 +25,7 @@ export default function UnauthorizedPage() {
       title="Acceso Denegado"
       message="No tienes permisos para acceder a esta página. Si crees que esto es un error, contacta al administrador del sistema."
       actionLabel="Volver"
-      actionOnClick={() => navigate(-1)}
+      actionOnClick={() => void navigate(-1)}
     />
   );
 }

@@ -21,12 +21,12 @@ import {
   useRenderTemplate,
   useTemplateVersions,
 } from "~/features/templates/hooks/useTemplates";
-import { Template, TemplateRenderContext, RenderFormat } from "~/features/templates/types/template.types";
+import type { Template, TemplateCreate, TemplateUpdate, TemplateRenderContext, RenderFormat } from "~/features/templates/types/template.types";
 
 export default function TemplatesPage() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("list");
-  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [_showCreateForm, _setShowCreateForm] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
   const [previewTemplate, setPreviewTemplate] = useState<Template | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
@@ -51,11 +51,11 @@ export default function TemplatesPage() {
   const categories = categoriesData?.data || [];
   const versions = versionsData?.data || [];
 
-  const handleCreate = (data: any) => {
-    createTemplateMutation.mutate(data, {
+  const handleCreate = (data: unknown) => {
+    createTemplateMutation.mutate(data as TemplateCreate, {
       onSuccess: () => {
-        setShowCreateForm(false);
-        refetch();
+        _setShowCreateForm(false);
+        void refetch();
       },
     });
   };
@@ -64,14 +64,14 @@ export default function TemplatesPage() {
     setEditingTemplate(template);
   };
 
-  const handleUpdate = (data: any) => {
+  const handleUpdate = (data: unknown) => {
     if (editingTemplate) {
       updateTemplateMutation.mutate(
-        { id: editingTemplate.id, payload: data },
+        { id: editingTemplate.id, payload: data as TemplateUpdate },
         {
           onSuccess: () => {
             setEditingTemplate(null);
-            refetch();
+            void refetch();
           },
         }
       );
@@ -82,7 +82,7 @@ export default function TemplatesPage() {
     if (confirm(t("templates.confirmDelete"))) {
       deleteTemplateMutation.mutate(template.id, {
         onSuccess: () => {
-          refetch();
+          void refetch();
         },
       });
     }
@@ -98,7 +98,7 @@ export default function TemplatesPage() {
         { id: previewTemplate.id, payload: { context, format } },
         {
           onSuccess: (response) => {
-            console.log("Template rendered:", response.data);
+            console.warn("Template rendered:", response.data);
           },
         }
       );
@@ -124,10 +124,10 @@ export default function TemplatesPage() {
             {t("templates.title")}
           </h2>
           <div className="flex space-x-2">
-            <Button onClick={refetch}>
+            <Button onClick={() => void refetch()}>
               {t("common.refresh")}
             </Button>
-            <Button onClick={() => setShowCreateForm(true)}>
+            <Button onClick={() => _setShowCreateForm(true)}>
               {t("templates.create")}
             </Button>
           </div>
@@ -154,24 +154,24 @@ export default function TemplatesPage() {
             <TemplateList
               templates={templates}
               loading={isLoading}
-              onRefresh={refetch}
+              onRefresh={() => void refetch()}
               onEdit={handleEdit}
               onDelete={handleDelete}
               onPreview={handlePreview}
               onRender={handleRender}
               onViewVersions={handleViewVersions}
-              onCreate={() => setShowCreateForm(true)}
+              onCreate={() => _setShowCreateForm(true)}
             />
           </TabsContent>
 
           <TabsContent value="form" className="mt-6">
             <div className="max-w-2xl mx-auto">
               <TemplateForm
-                template={editingTemplate}
+                template={editingTemplate || undefined}
                 categories={categories}
                 onSubmit={editingTemplate ? handleUpdate : handleCreate}
                 onCancel={() => {
-                  setShowCreateForm(false);
+                  _setShowCreateForm(false);
                   setEditingTemplate(null);
                 }}
                 loading={createTemplateMutation.isPending || updateTemplateMutation.isPending}
@@ -196,11 +196,11 @@ export default function TemplatesPage() {
                 loading={isLoading}
                 onRestore={(version) => {
                   // Handle version restore
-                  console.log("Restore version:", version);
+                  console.warn("Restore version:", version);
                 }}
                 onCompare={(v1, v2) => {
                   // Handle version comparison
-                  console.log("Compare versions:", v1, v2);
+                  console.warn("Compare versions:", v1, v2);
                 }}
               />
             )}

@@ -4,11 +4,15 @@
  */
 
 import { useMemo } from "react";
+import { Link } from "react-router";
 import { PageLayout } from "~/components/layout/PageLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
+import { Button } from "~/components/ui/button";
 import { useTranslation } from "~/lib/i18n/useTranslation";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Settings01Icon } from "@hugeicons/core-free-icons";
 import {
   useTaskModuleSettings,
   useTaskModuleSettingsMutation,
@@ -65,6 +69,21 @@ export default function TaskSettingsPage() {
       loading={isLoading}
     >
       <div className="space-y-6">
+        {/* Quick Actions Card - Sprint 2.2 */}
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("tasks.settings.quickActions") || "Acciones Rápidas"}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Link to="/tasks/status-customizer">
+              <Button variant="outline" className="w-full justify-start">
+                <HugeiconsIcon icon={Settings01Icon} size={20} className="mr-2" />
+                {t("tasks.statusCustomizer.title") || "Personalizar Estados de Tareas"}
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>{t("tasks.settings.sectionTitle")}</CardTitle>

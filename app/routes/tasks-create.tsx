@@ -41,15 +41,15 @@ export default function CreateTaskPage() {
     e.preventDefault();
     try {
       // TODO: Implementar API call para crear tarea
-      console.log("Creating task:", formData);
-      navigate("/tasks");
+      console.warn("Creating task:", formData);
+      void navigate("/tasks");
     } catch (error) {
       console.error("Error creating task:", error);
     }
   };
 
   const handleCancel = () => {
-    navigate("/tasks");
+    void navigate("/tasks");
   };
 
   const handleChange = (field: string, value: string) => {
@@ -71,7 +71,7 @@ export default function CreateTaskPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={(e) => void handleSubmit(e)} className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="title">Título de la Tarea</Label>
                   <Input

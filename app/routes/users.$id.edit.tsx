@@ -26,7 +26,7 @@ export function meta(_args: Route.MetaArgs) {
 export default function UserEditPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t: _ } = useTranslation();
   const { user, loading, error } = useUser(id || null);
   const { mutateAsync: updateUserAsync, isPending: updating } = useUpdateUser();
   const [isModalOpen, setIsModalOpen] = useState(true);
@@ -37,7 +37,7 @@ export default function UserEditPage() {
       await updateUserAsync({ userId: id, data });
       showToast("Usuario actualizado exitosamente", "success");
       setIsModalOpen(false);
-      navigate(`/users/${id}`);
+      void navigate(`/users/${id}`);
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Error al actualizar el usuario";
@@ -48,7 +48,7 @@ export default function UserEditPage() {
 
   const handleClose = () => {
     setIsModalOpen(false);
-    navigate(`/users/${id}`);
+    void navigate(`/users/${id}`);
   };
 
   return (

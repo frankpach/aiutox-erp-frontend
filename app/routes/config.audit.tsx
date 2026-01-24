@@ -27,7 +27,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "~/components/ui/dialog";
 import { ScrollArea } from "~/components/ui/scroll-area";
 
@@ -274,14 +273,14 @@ export default function AuditConfigPage() {
             <ConfigFormField
               label={t("config.audit.filterDateFrom")}
               id="filter_date_from"
-              type="date"
+              type="text"
               value={filters.date_from}
               onChange={(value) => setFilters({ ...filters, date_from: value })}
             />
             <ConfigFormField
               label={t("config.audit.filterDateTo")}
               id="filter_date_to"
-              type="date"
+              type="text"
               value={filters.date_to}
               onChange={(value) => setFilters({ ...filters, date_to: value })}
             />
@@ -312,7 +311,7 @@ export default function AuditConfigPage() {
             <Button variant="outline" onClick={handleClearFilters}>
               {t("config.audit.clearFilters")}
             </Button>
-            <Button onClick={handleExport}>
+            <Button onClick={() => void handleExport()}>
               {t("config.audit.exportLogs")}
             </Button>
           </div>

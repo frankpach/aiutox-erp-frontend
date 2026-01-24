@@ -6,13 +6,12 @@
 import { useState } from "react";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 import { PageLayout } from "~/components/layout/PageLayout";
-import { Button } from "~/components/ui/button";
+// import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { PubSubDashboard } from "~/features/pubsub/components/PubSubDashboard";
 import { PubSubStreamView } from "~/features/pubsub/components/PubSubStreamView";
 import { PubSubGroupView } from "~/features/pubsub/components/PubSubGroupView";
 import { 
-  usePubSubStats, 
   usePubSubStreams 
 } from "~/features/pubsub/hooks/usePubSub";
 import type { PubSubStream } from "~/features/pubsub/types/pubsub.types";
@@ -24,7 +23,7 @@ export default function PubSubPage() {
   const [selectedGroup, setSelectedGroup] = useState<{ streamName: string; groupName: string } | null>(null);
 
   // Queries
-  const { data: streams, isLoading: streamsLoading } = usePubSubStreams();
+  const { data: _streams, isLoading: _streamsLoading } = usePubSubStreams();
 
   const handleStreamView = (stream: PubSubStream) => {
     setSelectedStream(stream.name);
@@ -76,7 +75,7 @@ export default function PubSubPage() {
               }}
               onConsumerView={(streamName, groupName, consumerName) => {
                 // Could open consumer detail view in the future
-                console.log("View consumer:", streamName, groupName, consumerName);
+                console.warn("View consumer:", streamName, groupName, consumerName);
               }}
             />
           ) : null

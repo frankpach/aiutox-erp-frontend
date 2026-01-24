@@ -92,7 +92,7 @@ export default function IntegrationsConfigPage() {
     mutationFn: ({ integrationId, config }: { integrationId: string; config: Record<string, unknown> }) =>
       activateIntegration(integrationId, { config }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["integrations"] });
+      void queryClient.invalidateQueries({ queryKey: ["integrations"] });
       showToast(t("config.integrations.activateSuccess"), "success");
       setConfigDialogOpen(false);
       setSelectedIntegration(null);
@@ -106,7 +106,7 @@ export default function IntegrationsConfigPage() {
   const deactivateMutation = useMutation({
     mutationFn: (integrationId: string) => deactivateIntegration(integrationId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["integrations"] });
+      void queryClient.invalidateQueries({ queryKey: ["integrations"] });
       showToast(t("config.integrations.deactivateSuccess"), "success");
     },
     onError: (error: Error) => {
@@ -131,7 +131,7 @@ export default function IntegrationsConfigPage() {
   const deleteMutation = useMutation({
     mutationFn: (integrationId: string) => deleteIntegration(integrationId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["integrations"] });
+      void queryClient.invalidateQueries({ queryKey: ["integrations"] });
       showToast(t("config.integrations.deleteSuccess"), "success");
       setDeleteDialogOpen(false);
       setIntegrationToDelete(null);
@@ -144,7 +144,7 @@ export default function IntegrationsConfigPage() {
   const createMutation = useMutation({
     mutationFn: (data: IntegrationCreate) => createIntegration(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["integrations"] });
+      void queryClient.invalidateQueries({ queryKey: ["integrations"] });
       showToast(t("config.integrations.createSuccess"), "success");
       setConfigDialogOpen(false);
       setSelectedIntegration(null);

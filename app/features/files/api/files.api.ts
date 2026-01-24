@@ -13,7 +13,6 @@ import type {
   File,
   FileUpdate,
   FileVersion,
-  FileVersionCreate,
   FilePermission,
   FilePermissionRequest,
   FilesListParams,
@@ -37,7 +36,7 @@ export async function uploadFile(
   }
 ): Promise<StandardResponse<File>> {
   const formData = new FormData();
-  formData.append("file", file);
+  formData.append("file", file as Blob);
 
   if (params?.entity_type) {
     formData.append("entity_type", params.entity_type);
@@ -54,10 +53,6 @@ export async function uploadFile(
   if (params?.permissions && params.permissions.length > 0) {
     formData.append("permissions", JSON.stringify(params.permissions));
   }
-  if (params?.tag_ids && params.tag_ids.length > 0) {
-    // Note: Backend expects tag_ids as query params, but we'll add them after upload
-    // For now, we'll add tags after upload using the addFileTags function
-  }
 
   const response = await apiClient.post<StandardResponse<File>>(
     "/files/upload",
@@ -66,6 +61,7 @@ export async function uploadFile(
       headers: {
         "Content-Type": "multipart/form-data",
       },
+      timeout: 60000, // Aumentar timeout a 60 segundos
       onUploadProgress: (progressEvent) => {
         if (params?.onProgress && progressEvent.total) {
           const progress = Math.round(
@@ -226,7 +222,7 @@ export async function createFileVersion(
   }
 ): Promise<StandardResponse<FileVersion>> {
   const formData = new FormData();
-  formData.append("file", file);
+  formData.append("file", file as Blob);
   if (params?.change_description) {
     formData.append("change_description", params.change_description);
   }

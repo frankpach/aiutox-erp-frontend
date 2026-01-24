@@ -233,3 +233,44 @@ body {
 .calendar-grid {
   height: 100%;
 }
+
+/* Development tools z-index fix - Ensure buttons appear above modals */
+[data-react-devtools-id] {
+  z-index: 999999 !important;
+}
+
+/* React DevTools and other dev toolbars */
+[class*="react-devtools"],
+[class*="devtools"],
+[class*="__react-devtools"] {
+  z-index: 999999 !important;
+}
+
+/* Generic high z-index for any development-related elements */
+[class*="dev"],
+[class*="debug"],
+[class*="inspect"],
+[data-testid*="dev"],
+[data-testid*="debug"] {
+  z-index: 999999 !important;
+}
+
+/* Force high z-index on any fixed element that might be a dev tool */
+body > div:last-child,
+body > button:last-child,
+body > div[style*="fixed"] {
+  z-index: 999999 !important;
+}
+
+/* Generic high z-index for development overlays */
+.dev-tools-overlay,
+.dev-toolbar,
+.debug-panel {
+  z-index: 999999 !important;
+}
+
+/* Ultimate fallback - any button with position fixed */
+button[style*="position: fixed"],
+button[style*="position:fixed"] {
+  z-index: 999999 !important;
+}

@@ -188,7 +188,7 @@ export function FilterManagementModal({
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  onClick={() => handleToggleShare(filter)}
+                                  onClick={() => void handleToggleShare(filter)}
                                   title={filter.is_shared ? t("savedFilters.unshare") : t("savedFilters.share")}
                                 >
                                   {filter.is_shared ? (
@@ -202,7 +202,7 @@ export function FilterManagementModal({
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  onClick={() => handleDelete(filter.id)}
+                                  onClick={() => void handleDelete(filter.id)}
                                   title="Eliminar"
                                 >
                                   <Trash2 className="h-4 w-4 text-destructive" />
@@ -243,7 +243,7 @@ export function FilterManagementModal({
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  onClick={() => handleDelete(filter.id)}
+                                  onClick={() => void handleDelete(filter.id)}
                                   title={t("savedFilters.deleteOnlyAdmins")}
                                 >
                                   <Trash2 className="h-4 w-4 text-destructive" />
@@ -286,7 +286,7 @@ export function FilterManagementModal({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t("savedFilters.cancel")}</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction onClick={() => void confirmDelete()} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               {t("savedFilters.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -7,7 +7,7 @@ import { useState } from "react";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 import { PageLayout } from "~/components/layout/PageLayout";
 import { Button } from "~/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
+import { Dialog, DialogContent } from "~/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { ReportList } from "~/features/reporting/components/ReportList";
 import { ReportBuilder } from "~/features/reporting/components/ReportBuilder";
@@ -23,7 +23,7 @@ import {
   useExecuteReport,
   useExportReport,
 } from "~/features/reporting/hooks/useReporting";
-import { 
+import type { 
   Report, 
   ReportCreate, 
   ReportUpdate, 
@@ -69,7 +69,7 @@ export default function ReportingPage() {
     if (confirm(t("reporting.confirmDelete"))) {
       deleteReportMutation.mutate(report.id, {
         onSuccess: () => {
-          refetchReports();
+          void refetchReports();
         },
       });
     }
@@ -98,7 +98,7 @@ export default function ReportingPage() {
 
   const handleExportReport = (report: Report) => {
     // This would open export dialog
-    console.log("Export report:", report);
+    console.warn("Export report:", report);
   };
 
   const handleReportSubmit = (data: ReportCreate | ReportUpdate) => {
@@ -110,7 +110,7 @@ export default function ReportingPage() {
           onSuccess: () => {
             setShowBuilder(false);
             setSelectedReport(null);
-            refetchReports();
+            void refetchReports();
           },
         }
       );
@@ -120,7 +120,7 @@ export default function ReportingPage() {
         onSuccess: () => {
           setShowBuilder(false);
           setSelectedReport(null);
-          refetchReports();
+          void refetchReports();
         },
       });
     }
@@ -266,11 +266,11 @@ export default function ReportingPage() {
                     result={currentExecution?.result}
                     loading={executeReportMutation.isPending}
                     onExecute={handleExecuteWithParams}
-                    onExport={handleExport}
+                    onExport={() => currentExecution && void handleExport(currentExecution.id as "pdf")}
                     onRefresh={() => {
                       if (currentExecution) {
                         // Refresh execution status
-                        console.log("Refresh execution");
+                        console.warn("Refresh execution");
                       }
                     }}
                   />
@@ -334,10 +334,10 @@ export default function ReportingPage() {
                 result={currentExecution?.result}
                 loading={executeReportMutation.isPending}
                 onExecute={handleExecuteWithParams}
-                onExport={handleExport}
+                onExport={() => currentExecution && void handleExport(currentExecution.id as "pdf")}
                 onRefresh={() => {
                   if (currentExecution) {
-                    console.log("Refresh execution");
+                    console.warn("Refresh execution");
                   }
                 }}
               />

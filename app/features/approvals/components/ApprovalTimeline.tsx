@@ -84,7 +84,7 @@ export function ApprovalTimeline({
 
 function TimelineItem({ item }: { item: ApprovalTimelineItem }) {
   const config =
-    actionConfig[item.action_type as keyof typeof actionConfig] ||
+    actionConfig[item.action_type] ||
     actionConfig.created;
   const date = new Date(item.acted_at);
   const formattedDate = date.toLocaleDateString("es-ES", {

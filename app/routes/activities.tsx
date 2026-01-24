@@ -14,22 +14,23 @@ import { ActivityTimeline } from "~/features/activities/components/ActivityTimel
 import { ActivityForm } from "~/features/activities/components/ActivityForm";
 import { ActivityFilters } from "~/features/activities/components/ActivityFilters";
 import { useActivities, useCreateActivity, useUpdateActivity, useDeleteActivity } from "~/features/activities/hooks/useActivities";
-import { Activity, ActivityType, ActivityFilters as ActivityFiltersType } from "~/features/activities/types/activity.types";
+import type { Activity, ActivityCreate, ActivityUpdate, ActivityFilters as ActivityFiltersType } from "~/features/activities/types/activity.types";
 
 export default function ActivitiesPage() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("timeline");
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
+  const [_showCreateForm, _setShowCreateForm] = useState(false);
+  const [editingActivity, setEditingActivity] = useState<Activity | undefined>(undefined);
   const [filters, setFilters] = useState<ActivityFiltersType>({
     activity_types: [],
+    entity_types: [],
     date_from: "",
     date_to: "",
     search: "",
   });
 
   // Query hooks
-  const { data: activitiesData, loading, error, refetch } = useActivities({
+  const { data: activitiesData, isLoading, error, refetch } = useActivities({
     ...filters,
     page: 1,
     page_size: 20,
@@ -39,27 +40,35 @@ export default function ActivitiesPage() {
   const updateActivityMutation = useUpdateActivity();
   const deleteActivityMutation = useDeleteActivity();
 
-  const handleCreateActivity = (data: any) => {
+  const handleCreateActivity = (data: ActivityCreate) => {
     createActivityMutation.mutate(data, {
       onSuccess: () => {
-        setShowCreateForm(false);
-        refetch();
+        _setShowCreateForm(false);
+        void refetch();
       },
     });
   };
 
-  const handleUpdateActivity = (data: any) => {
+  const handleUpdateActivity = (data: ActivityUpdate) => {
     if (!editingActivity) return;
     
     updateActivityMutation.mutate(
       { id: editingActivity.id, payload: data },
       {
         onSuccess: () => {
-          setEditingActivity(null);
-          refetch();
+          setEditingActivity(undefined);
+          void refetch();
         },
       }
     );
+  };
+
+  const handleSubmit = (data: ActivityCreate | ActivityUpdate) => {
+    if (editingActivity) {
+      handleUpdateActivity(data as ActivityUpdate);
+    } else {
+      handleCreateActivity(data as ActivityCreate);
+    }
   };
 
   const handleDeleteActivity = (activity: Activity) => {
@@ -67,7 +76,7 @@ export default function ActivitiesPage() {
     
     deleteActivityMutation.mutate(activity.id, {
       onSuccess: () => {
-        refetch();
+        void refetch();
       },
     });
   };
@@ -77,27 +86,28 @@ export default function ActivitiesPage() {
   };
 
   const handleApplyFilters = () => {
-    refetch();
+    void refetch();
   };
 
   const handleResetFilters = () => {
     setFilters({
       activity_types: [],
+      entity_types: [],
       date_from: "",
       date_to: "",
       search: "",
     });
-    refetch();
+    void refetch();
   };
 
   const activities = activitiesData?.data || [];
-  const total = activitiesData?.total || 0;
+  const total = activitiesData?.meta?.total || 0;
 
   return (
     <PageLayout
       title={t("activities.title")}
       description={t("activities.description")}
-      loading={loading}
+      loading={isLoading}
       error={error}
     >
       <div className="space-y-6">
@@ -107,7 +117,7 @@ export default function ActivitiesPage() {
             <Badge variant="secondary">
               {total} {t("activities.activities")}
             </Badge>
-            <Button onClick={() => setShowCreateForm(true)}>
+            <Button onClick={() => _setShowCreateForm(true)}>
               {t("activities.createActivity")}
             </Button>
           </div>
@@ -119,7 +129,7 @@ export default function ActivitiesPage() {
           onFiltersChange={setFilters}
           onApply={handleApplyFilters}
           onReset={handleResetFilters}
-          loading={loading}
+          loading={isLoading}
         />
 
         {/* Tabs */}
@@ -139,8 +149,8 @@ export default function ActivitiesPage() {
           <TabsContent value="timeline" className="mt-6">
             <ActivityTimeline
               activities={activities}
-              loading={loading}
-              onRefresh={refetch}
+              loading={isLoading}
+              onRefresh={() => void refetch()}
             />
           </TabsContent>
 
@@ -160,7 +170,7 @@ export default function ActivitiesPage() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {activities.map((activity) => (
+                    {activities.map((activity: Activity) => (
                       <div key={activity.id} className="flex items-center justify-between p-4 border rounded-lg">
                         <div className="flex-1">
                           <div className="flex items-center space-x-3">
@@ -204,10 +214,10 @@ export default function ActivitiesPage() {
             <div className="max-w-2xl mx-auto">
               <ActivityForm
                 activity={editingActivity}
-                onSubmit={editingActivity ? handleUpdateActivity : handleCreateActivity}
+                onSubmit={handleSubmit}
                 onCancel={() => {
-                  setShowCreateForm(false);
-                  setEditingActivity(null);
+                  _setShowCreateForm(false);
+                  setEditingActivity(undefined);
                 }}
                 loading={createActivityMutation.isPending || updateActivityMutation.isPending}
               />

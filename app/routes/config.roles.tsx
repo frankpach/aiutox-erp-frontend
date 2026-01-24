@@ -6,11 +6,12 @@
  */
 
 import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 import { showToast } from "~/components/common/Toast";
 import { listRoles } from "~/features/users/api/roles.api";
 import { useUsers } from "~/features/users/hooks/useUsers";
+import type { User } from "~/features/users/types/user.types";
 import { ConfigPageLayout } from "~/components/config/ConfigPageLayout";
 import { ConfigLoadingState } from "~/components/config/ConfigLoadingState";
 import { ConfigErrorState } from "~/components/config/ConfigErrorState";
@@ -38,13 +39,6 @@ import { HugeiconsIcon } from "@hugeicons/react";
 type GlobalRole = "owner" | "admin" | "manager" | "staff" | "viewer";
 
 const SYSTEM_ROLES: GlobalRole[] = ["owner", "admin"];
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  roles?: string[];
-}
 
 export function meta() {
   // Note: meta() runs at build time, so we can't use useTranslation() here
@@ -81,7 +75,7 @@ export default function RolesConfigPage() {
       if (module && !grouped[module]) {
         grouped[module] = [];
       }
-      if (module) {
+      if (module && grouped[module]) {
         grouped[module].push(perm);
       }
     });
@@ -117,7 +111,7 @@ export default function RolesConfigPage() {
 
   // Usuarios con el rol seleccionado (simulado - debería venir del backend)
   const usersWithRole: User[] = (usersData || []).filter((u) =>
-    u.roles?.includes(selectedRole || "")
+    u.roles?.some(r => r.role === selectedRole)
   );
 
   // Columnas para la tabla de usuarios
@@ -127,7 +121,7 @@ export default function RolesConfigPage() {
       header: t("config.roles.users"),
       cell: (user) => (
         <div>
-          <div className="font-medium">{user.name}</div>
+          <div className="font-medium">{user.full_name || user.email}</div>
           <div className="text-sm text-muted-foreground">{user.email}</div>
         </div>
       ),
@@ -141,7 +135,7 @@ export default function RolesConfigPage() {
           size="sm"
           onClick={() => {
             // TODO: Implementar remover rol
-            showToast(`${t("config.roles.removeRole")} ${user.name}`, "info");
+            showToast(`${t("config.roles.removeRole")} ${user.full_name || user.email}`, "info");
           }}
         >
           {t("config.roles.removeRole")}
@@ -300,14 +294,14 @@ export default function RolesConfigPage() {
                                       className="flex items-center justify-between p-3 border rounded hover:bg-muted/50 transition-colors"
                                     >
                                       <div>
-                                        <p className="font-medium">{user.name}</p>
+                                        <p className="font-medium">{user.full_name || user.email}</p>
                                         <p className="text-sm text-muted-foreground">{user.email}</p>
                                       </div>
                                       <Button
                                         size="sm"
                                         onClick={() => {
                                           // TODO: Implementar asignar rol
-                                          showToast(`${t("config.roles.roleAssignedTo")} ${user.name}`, "success");
+                                          showToast(`${t("config.roles.roleAssignedTo")} ${user.full_name || user.email}`, "success");
                                           setAssignDialogOpen(false);
                                         }}
                                       >

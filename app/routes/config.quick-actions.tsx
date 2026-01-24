@@ -11,14 +11,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/com
 import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
 import { Badge } from "~/components/ui/badge";
-import { Separator } from "~/components/ui/separator";
-import { useQuickActions, useGlobalQuickActions } from "~/hooks/useQuickActions";
+// import { Separator } from "~/components/ui/separator";
+import { useQuickActions } from "~/hooks/useQuickActions";
 import { quickActionsRegistry, type QuickAction } from "~/lib/quickActions/registry";
 
 export default function QuickActionsConfig() {
   const { t } = useTranslation();
   const allQuickActions = useQuickActions(20); // Obtener todas las acciones posibles
-  const globalQuickActions = useGlobalQuickActions();
   
   const [enabledActions, setEnabledActions] = useState<Set<string>>(new Set());
   const [maxVisible, setMaxVisible] = useState(5);
@@ -56,13 +55,15 @@ export default function QuickActionsConfig() {
     if (newIndex < 0 || newIndex >= customOrder.length) return;
 
     const newOrder = [...customOrder];
-    [newOrder[currentIndex], newOrder[newIndex]] = [newOrder[newIndex], newOrder[currentIndex]];
+    const temp = newOrder[currentIndex]!;
+    newOrder[currentIndex] = newOrder[newIndex]!;
+    newOrder[newIndex] = temp;
     setCustomOrder(newOrder);
   };
 
   const savePreferences = () => {
     // TODO: Guardar en API/user preferences
-    console.log('Saving preferences:', {
+    console.warn('Saving preferences:', {
       enabledActions: Array.from(enabledActions),
       maxVisible,
       customOrder
@@ -142,7 +143,7 @@ export default function QuickActionsConfig() {
                       onCheckedChange={() => toggleAction(action.id)}
                     />
                     <div>
-                      <div className="font-medium">{t(action.label as any)}</div>
+                      <div className="font-medium">{t(action.label as `quickActions.${string}`)}</div>
                       <div className="text-sm text-muted-foreground">
                         {action.global ? 'Global' : `Contextual: ${action.context?.join(', ')}`}
                       </div>
@@ -178,7 +179,7 @@ export default function QuickActionsConfig() {
                   <div key={action.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center space-x-3">
                       <span className="text-sm text-muted-foreground w-6">#{index + 1}</span>
-                      <span className="font-medium">{t(action.label as any)}</span>
+                      <span className="font-medium">{t(action.label as `quickActions.${string}`)}</span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Button

@@ -100,7 +100,7 @@ export function useUser(userId: string | null) {
   return {
     user: response?.data || null,
     loading,
-    error: error as Error | null,
+    error: error,
     refresh: () => refetch(),
   };
 }
@@ -130,7 +130,7 @@ export function useCreateUser() {
       }
     },
     loading: mutation.isPending,
-    error: mutation.error as Error | null,
+    error: mutation.error,
   };
 }
 
@@ -202,7 +202,7 @@ export function useUpdateUser() {
     },
     // Keep loading as alias for isPending for backward compatibility
     loading: mutation.isPending,
-    error: mutation.error as Error | null,
+    error: mutation.error,
   };
 }
 
@@ -283,7 +283,7 @@ export function useUpdateOwnProfile() {
     // Expose isPending for consistency with React Query naming
     isPending: mutation.isPending,
     loading: mutation.isPending,
-    error: mutation.error as Error | null,
+    error: mutation.error,
   };
 }
 
@@ -314,7 +314,7 @@ export function useDeleteUser() {
       }
     },
     loading: mutation.isPending,
-    error: mutation.error as Error | null,
+    error: mutation.error,
   };
 }
 
@@ -349,6 +349,6 @@ export function useBulkUsersAction() {
       }
     },
     loading: mutation.isPending,
-    error: mutation.error as Error | null,
+    error: mutation.error,
   };
 }

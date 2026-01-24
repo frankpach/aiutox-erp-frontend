@@ -3,7 +3,7 @@
  * Quick task creation form for rapid task capture
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 import { Button } from "~/components/ui/button";
@@ -36,8 +36,9 @@ import { createAssignment, createChecklistItem } from "../api/tasks.api";
 import { useAuthStore } from "~/stores/authStore";
 import { MultiSelect } from "~/components/ui/multi-select";
 import { useTags } from "~/features/tags/hooks/useTags";
+import { FileUploader } from "./FileUploader";
+import { CommentThread } from "./CommentThread";
 import type { TaskCreate, TaskStatus, TaskPriority } from "../types/task.types";
-import { cn } from "~/lib/utils";
 
 interface TaskQuickAddProps {
   onTaskCreated?: () => void;
@@ -118,6 +119,7 @@ export function TaskQuickAdd({
   >([]);
   const [mode, setMode] = useState<TaskFormMode>(defaultMode);
   const [formError, setFormError] = useState<string | null>(null);
+  const [createdTaskId, setCreatedTaskId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isOpen || !initialDueDate || mode !== "task") {
@@ -177,6 +179,7 @@ export function TaskQuickAdd({
     setChecklistItems([]);
     setMode(defaultMode);
     setFormError(null);
+    setCreatedTaskId(null);
   };
 
   const handleClose = (openState: boolean) => {
@@ -279,8 +282,9 @@ export function TaskQuickAdd({
         );
       }
 
-      resetFormState();
-      handleClose(false);
+      setCreatedTaskId(taskId);
+      // No cerrar el modal inmediatamente para permitir agregar archivos y comentarios
+      // handleClose(false);
       onTaskCreated?.();
     } catch (error) {
       console.error("Error al crear tarea:", error);
@@ -290,16 +294,34 @@ export function TaskQuickAdd({
   const isLoading = createTask.isPending;
   const isEventMode = mode === "event";
 
-  const modeTabs = useMemo(
-    () => [
-      { key: "task" as TaskFormMode, label: t("tasks.type.task") || "Tarea" },
-      {
-        key: "event" as TaskFormMode,
-        label: t("tasks.type.event") || "Evento",
-      },
-    ],
-    [t]
-  );
+  const handleAllDayToggle = (isAllDay: boolean) => {
+    setFormData((prev) => {
+      if (isAllDay) {
+        // Set to all day (remove time component)
+        const startDate = prev.start_at ? new Date(prev.start_at) : new Date();
+        const endDate = prev.end_at ? new Date(prev.end_at) : new Date();
+        return {
+          ...prev,
+          all_day: true,
+          start_at: format(startDate, "yyyy-MM-dd"),
+          end_at: format(endDate, "yyyy-MM-dd"),
+        };
+      } else {
+        // Set to specific time (add current time)
+        const now = new Date();
+        const startDate = prev.start_at ? new Date(prev.start_at) : new Date();
+        const endDate = prev.end_at ? new Date(prev.end_at) : new Date();
+        startDate.setHours(now.getHours(), now.getMinutes(), 0, 0);
+        endDate.setHours(now.getHours() + 1, now.getMinutes(), 0, 0);
+        return {
+          ...prev,
+          all_day: false,
+          start_at: format(startDate, "yyyy-MM-dd'T'HH:mm"),
+          end_at: format(endDate, "yyyy-MM-dd'T'HH:mm"),
+        };
+      }
+    });
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -311,51 +333,69 @@ export function TaskQuickAdd({
           </Button>
         </DialogTrigger>
       )}
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{t("tasks.quickAdd")}</DialogTitle>
+          <DialogTitle>
+            {createdTaskId 
+              ? (mode === "task" ? t("tasks.createdSuccess") : t("events.createdSuccess"))
+              : mode === "task" 
+                ? t("tasks.quickAdd") 
+                : mode === "event" 
+                  ? t("events.newEvent") 
+                  : mode === "task" ? "Nueva Tarea" : "Nuevo Evento"
+            }
+          </DialogTitle>
           <DialogDescription>
-            {t("tasks.quickAddDescription")}
+            {createdTaskId 
+              ? t("tasks.addFilesAndComments")
+              : t("tasks.quickAddDescription")
+            }
           </DialogDescription>
         </DialogHeader>
-        <form
-          onSubmit={(event) => {
-            void handleSubmit(event);
-          }}
-          className="space-y-4"
-        >
-          <div className="space-y-2">
-            <Label className="text-xs uppercase tracking-wide text-muted-foreground">
-              {t("tasks.type.title") || "Tipo"}
-            </Label>
-            <div className="inline-flex rounded-xl bg-muted/60 p-1 text-sm font-medium">
-              {modeTabs.map((tab) => (
-                <button
-                  key={tab.key}
-                  type="button"
-                  onClick={() => {
-                    if (mode === tab.key) return;
-                    setMode(tab.key);
-                    setFormError(null);
-                    setFormData((prev) => ({
-                      ...prev,
-                      ...(tab.key === "task"
-                        ? { start_at: "", end_at: "", all_day: false }
-                        : { due_date: "" }),
-                    }));
-                  }}
-                  className={cn(
-                    "flex-1 rounded-lg px-3 py-1 transition",
-                    mode === tab.key
-                      ? "bg-background text-foreground shadow"
-                      : "text-muted-foreground"
-                  )}
-                >
-                  {tab.label}
-                </button>
-              ))}
+        
+        {/* Formulario - Solo antes de crear */}
+        {!createdTaskId && (
+          <>
+            <div className="flex gap-2 mb-4">
+              <Button
+                type="button"
+                variant={mode === "task" ? "default" : "outline"}
+                onClick={() => {
+                  setMode("task");
+                  setFormError(null);
+                  setFormData((prev) => ({
+                    ...prev,
+                    start_at: "",
+                    end_at: "",
+                    all_day: false,
+                  }));
+                }}
+                className="flex-1"
+              >
+                {t("tasks.type.task") || "Tarea"}
+              </Button>
+              <Button
+                type="button"
+                variant={mode === "event" ? "default" : "outline"}
+                onClick={() => {
+                  setMode("event");
+                  setFormError(null);
+                  setFormData((prev) => ({
+                    ...prev,
+                    due_date: "",
+                  }));
+                }}
+                className="flex-1"
+              >
+                {t("tasks.type.event") || "Evento"}
+              </Button>
             </div>
-          </div>
+            <form
+              onSubmit={(event) => {
+                void handleSubmit(event);
+              }}
+              className="space-y-4"
+            >
 
           <div>
             <label
@@ -471,9 +511,7 @@ export function TaskQuickAdd({
                 <Switch
                   id="quick-all-day"
                   checked={Boolean(formData.all_day)}
-                  onCheckedChange={(checked) =>
-                    setFormData({ ...formData, all_day: checked })
-                  }
+                  onCheckedChange={handleAllDayToggle}
                 />
               </div>
 
@@ -487,7 +525,7 @@ export function TaskQuickAdd({
                   </label>
                   <Input
                     id="quick-start-at"
-                    type="datetime-local"
+                    type={formData.all_day ? "date" : "datetime-local"}
                     value={formData.start_at ?? ""}
                     onChange={(e) =>
                       setFormData({ ...formData, start_at: e.target.value })
@@ -504,7 +542,7 @@ export function TaskQuickAdd({
                   </label>
                   <Input
                     id="quick-end-at"
-                    type="datetime-local"
+                    type={formData.all_day ? "date" : "datetime-local"}
                     value={formData.end_at ?? ""}
                     onChange={(e) =>
                       setFormData({ ...formData, end_at: e.target.value })
@@ -590,41 +628,52 @@ export function TaskQuickAdd({
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              {t("tasks.checklist.title")}
-            </label>
-            <div className="space-y-2">
-              {checklistItems.map((item) => (
-                <div key={item.id} className="flex gap-2">
-                  <Input
-                    value={item.title}
-                    onChange={(e) =>
-                      handleChecklistItemChange(item.id, e.target.value)
-                    }
-                    placeholder="Item de checklist..."
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    onClick={() => handleRemoveChecklistItem(item.id)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleAddChecklistItem}
-                className="w-full"
-              >
-                + Agregar item
-              </Button>
+          {/* Checklist - Solo para tareas */}
+          {mode === "task" && (
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                {t("tasks.checklist.title")}
+              </label>
+              <div className="space-y-2">
+                {checklistItems.map((item) => (
+                  <div key={item.id} className="flex gap-2">
+                    <Input
+                      value={item.title}
+                      onChange={(e) =>
+                        handleChecklistItemChange(item.id, e.target.value)
+                      }
+                      placeholder="Item de checklist..."
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleRemoveChecklistItem(item.id)}
+                    >
+                      <X size={16} />
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleAddChecklistItem}
+                  className="w-full"
+                >
+                  {t("tasks.checklist.addItem") || "Agregar item"}
+                </Button>
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Info Note - Solo para tareas */}
+          {mode === "task" && (
+            <div className="pt-4 border-t">
+              <div className="text-xs text-muted-foreground text-center p-3 bg-muted/20 rounded">
+                {t('tasks.infoNote.addFilesAndComments') || "Para anexar comentarios y agregar archivos relevantes abra la tarea recién creada"}
+              </div>
+            </div>
+          )}
 
           {formError && <p className="text-sm text-destructive">{formError}</p>}
 
@@ -638,10 +687,44 @@ export function TaskQuickAdd({
               {t("common.cancel")}
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? t("common.saving") : t("tasks.createTask")}
+              {isLoading ? t("common.saving") : t("common.save")}
             </Button>
           </DialogFooter>
         </form>
+          </>
+        )}
+
+        {/* Files and Comments - Después de crear */}
+        {createdTaskId && mode === 'task' && (
+          <div className="space-y-4 pt-4 border-t">
+            <FileUploader 
+              taskId={createdTaskId} 
+              onUploadComplete={() => {
+                // Refrescar automáticamente al subir
+              }}
+            />
+            <CommentThread taskId={createdTaskId} showTitle />
+          </div>
+        )}
+
+        {/* Mensaje para eventos */}
+        {createdTaskId && mode === 'event' && (
+          <div className="pt-4 border-t text-center text-muted-foreground">
+            <p>Los archivos y comentarios para eventos estarán disponibles próximamente.</p>
+          </div>
+        )}
+
+        {/* Botón de cerrar - Solo después de crear */}
+        {createdTaskId && (
+          <div className="pt-4 border-t">
+            <Button
+              onClick={() => handleClose(false)}
+              className="w-full"
+            >
+              {t("common.close") || "Cerrar"}
+            </Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

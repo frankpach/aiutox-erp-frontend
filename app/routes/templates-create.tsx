@@ -13,7 +13,7 @@ export default function CreateTemplatePage() {
 
   const handleSubmit = () => {
     // TODO: Implementar creación de plantilla
-    navigate("/templates");
+    void navigate("/templates");
   };
 
   return (
@@ -32,10 +32,10 @@ export default function CreateTemplatePage() {
                 Formulario de creación de plantilla en desarrollo...
               </p>
               <div className="flex gap-4 justify-center mt-6">
-                <Button onClick={handleSubmit}>
+                <Button onClick={() => void handleSubmit()}>
                   Crear Plantilla
                 </Button>
-                <Button variant="outline" onClick={() => navigate("/templates")}>
+                <Button variant="outline" onClick={() => void navigate("/templates")}>
                   Cancelar
                 </Button>
               </div>

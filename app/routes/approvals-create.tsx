@@ -14,6 +14,8 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import { useCreateApprovalFlow } from "~/features/approvals/hooks/useApprovals";
+import type { ApprovalFlowCreate } from "~/features/approvals/types/approval.types";
+
 import { ApprovalFlowForm } from "~/features/approvals/components/ApprovalFlowForm";
 
 export default function CreateApprovalFlowPage() {
@@ -21,17 +23,17 @@ export default function CreateApprovalFlowPage() {
   const navigate = useNavigate();
   const createApprovalFlow = useCreateApprovalFlow();
 
-  const handleSubmit = async (data: any) => {
+  const handleSubmit = async (data: ApprovalFlowCreate) => {
     try {
       await createApprovalFlow.mutateAsync(data);
-      navigate("/approvals");
+      void navigate("/approvals");
     } catch (error) {
       console.error("Error creating approval:", error);
     }
   };
 
   const handleCancel = () => {
-    navigate("/approvals");
+    void navigate("/approvals");
   };
 
   return (

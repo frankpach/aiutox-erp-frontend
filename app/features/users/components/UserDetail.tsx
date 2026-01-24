@@ -27,7 +27,7 @@ import { UserRolesManager } from "./UserRolesManager";
 import { UserPermissionsManager } from "./UserPermissionsManager";
 import { PermissionDelegationModal } from "./PermissionDelegationModal";
 import { useAuthStore } from "~/stores/authStore";
-import type { User, UserUpdate } from "../types/user.types";
+import type { UserUpdate } from "../types/user.types";
 
 /**
  * UserDetail component
@@ -39,7 +39,7 @@ export function UserDetail() {
   const { t } = useTranslation();
 
   const { user, loading, refresh } = useUser(id || null);
-  const { mutateAsync: updateUserAsync, isPending: updating, error: updateError } = useUpdateUser();
+  const { mutateAsync: updateUserAsync, isPending: updating } = useUpdateUser();
   const { remove, loading: deleting } = useDeleteUser();
 
   const [editing, setEditing] = useState(false);
@@ -48,15 +48,15 @@ export function UserDetail() {
 
   const handleUpdate = async (data: UserUpdate) => {
     if (!id) return;
-    console.log("[UserDetail] handleUpdate called:", { id, data });
+    console.error("[UserDetail] handleUpdate called:", { id, data });
     try {
       const result = await updateUserAsync({ userId: id, data });
-      console.log("[UserDetail] update result:", result);
+      console.error("[UserDetail] update result:", result);
       if (result && result.data) {
-        console.log("[UserDetail] Update successful, closing form");
+        console.error("[UserDetail] Update successful, closing form");
         showToast(t("users.updateSuccess") || "Usuario actualizado exitosamente", "success");
         setEditing(false);
-        refresh();
+        void refresh();
       } else {
         console.error("[UserDetail] Update returned null or no data");
         showToast(t("users.updateError") || "Error al actualizar el usuario", "error");
@@ -79,7 +79,7 @@ export function UserDetail() {
     if (success) {
       showToast(t("users.deleteSuccess") || "Usuario eliminado exitosamente", "success");
       // Redirect to users list
-      navigate("/users");
+      void navigate("/users");
     } else {
       showToast(t("users.deleteError") || "Error al eliminar el usuario", "error");
     }
@@ -138,7 +138,7 @@ export function UserDetail() {
           </Button>
           <Button
             variant="destructive"
-            onClick={handleDelete}
+            onClick={() => void handleDelete()}
             disabled={deleting}
             size="sm"
             className="w-full sm:w-auto"
@@ -153,7 +153,7 @@ export function UserDetail() {
       <ConfirmDialog
         open={deleteConfirm}
         onClose={() => setDeleteConfirm(false)}
-        onConfirm={confirmDelete}
+        onConfirm={() => void confirmDelete()}
         title={t("users.confirmDeleteTitle") || "Eliminar Usuario"}
         description={
           user
@@ -258,17 +258,17 @@ export function UserDetail() {
 
           {/* Organizations Tab */}
           <TabsContent value="organizations">
-            <UserOrganizations user={user} onUpdate={refresh} />
+            <UserOrganizations user={user} onUpdate={() => void refresh()} />
           </TabsContent>
 
           {/* Contact Methods Tab */}
           <TabsContent value="contact-methods">
-            <UserContactMethods user={user} onUpdate={refresh} />
+            <UserContactMethods user={user} onUpdate={() => void refresh()} />
           </TabsContent>
 
           {/* Roles Tab */}
           <TabsContent value="roles">
-            <UserRolesManager user={user} onUpdate={refresh} />
+            <UserRolesManager user={user} onUpdate={() => void refresh()} />
           </TabsContent>
 
           {/* Permissions Tab */}
@@ -290,7 +290,7 @@ export function UserDetail() {
                   {t("users.delegatePermission") || "Delegar Permiso"}
                 </Button>
               </div>
-              <UserPermissionsManager user={user} onUpdate={refresh} />
+              <UserPermissionsManager user={user} onUpdate={() => void refresh()} />
             </div>
           </TabsContent>
 
@@ -320,7 +320,7 @@ export function UserDetail() {
           open={showDelegationModal}
           onClose={() => setShowDelegationModal(false)}
           currentUserId={currentUser.id}
-          onSuccess={refresh}
+          onSuccess={() => void refresh()}
         />
       )}
     </div>

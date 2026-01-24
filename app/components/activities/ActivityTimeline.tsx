@@ -60,7 +60,7 @@ export function ActivityTimeline({
   const deleteMutation = useMutation({
     mutationFn: (activityId: string) => deleteActivity(activityId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["activities"] });
+      void queryClient.invalidateQueries({ queryKey: ["activities"] });
       toast.success(t("config.activities.deleteConfirm"));
       setDeleteDialogOpen(false);
       setActivityToDelete(null);

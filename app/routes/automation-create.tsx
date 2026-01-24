@@ -13,7 +13,7 @@ export default function CreateAutomationPage() {
 
   const handleSubmit = () => {
     // TODO: Implementar creación de automatización
-    navigate("/automation");
+    void navigate("/automation");
   };
 
   return (
@@ -32,10 +32,10 @@ export default function CreateAutomationPage() {
                 Formulario de creación de automatización en desarrollo...
               </p>
               <div className="flex gap-4 justify-center mt-6">
-                <Button onClick={handleSubmit}>
+                <Button onClick={() => void handleSubmit()}>
                   Crear Regla
                 </Button>
-                <Button variant="outline" onClick={() => navigate("/automation")}>
+                <Button variant="outline" onClick={() => void navigate("/automation")}>
                   Cancelar
                 </Button>
               </div>

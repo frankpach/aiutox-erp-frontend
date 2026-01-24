@@ -8,7 +8,7 @@ import { useAuthStore } from "~/stores/authStore";
  * Muestra copyright, versión de la aplicación y tenant actual.
  */
 
-export const Footer = memo(function Footer() {
+export const Footer = memo(() => {
   const currentYear = new Date().getFullYear();
   const version = "0.0.126";
   const { t } = useTranslation();

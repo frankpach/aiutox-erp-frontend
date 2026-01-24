@@ -71,7 +71,7 @@ export default function ResetPasswordPage() {
       setIsSuccess(true);
       // Redirect to login after 2 seconds
       setTimeout(() => {
-        navigate("/login?message=password-reset-success", { replace: true });
+        void navigate("/login?message=password-reset-success", { replace: true });
       }, 2000);
     } catch (error) {
       // Handle error
@@ -151,7 +151,7 @@ export default function ResetPasswordPage() {
 
   return (
     <PublicLayout title="Restablecer Contraseña">
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={(e) => void handleSubmit(onSubmit)(e)} className="space-y-6">
         {/* Error Message */}
         {error && (
           <div className="rounded-md bg-red-50 border border-red-200 p-4">

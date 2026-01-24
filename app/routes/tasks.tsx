@@ -8,13 +8,13 @@ import { useTranslation } from "~/lib/i18n/useTranslation";
 import { ProtectedRoute } from "~/components/auth/ProtectedRoute";
 import { PageLayout } from "~/components/layout/PageLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { TaskList } from "~/features/tasks/components/TaskList";
+import { TaskAdvancedFilter } from "~/features/tasks/components/TaskList";
 import { TaskCalendar } from "~/features/tasks/components/TaskCalendar";
 import { TaskInbox } from "~/features/tasks/components/TaskInbox";
 import { TaskQuickAdd } from "~/features/tasks/components/TaskQuickAdd";
 import { TaskEdit } from "~/features/tasks/components/TaskEdit";
-import { TaskAgendaView } from "~/features/tasks/components/TaskAgendaView";
 import { BoardViewWrapper } from "~/features/tasks/components/BoardViewWrapper";
 import { showToast } from "~/components/common/Toast";
 import {
@@ -55,12 +55,7 @@ export default function TasksPage() {
         label: t("tasks.tabs.calendar"),
         enabled: settings?.calendar_enabled ?? true,
       },
-      {
-        value: "agenda",
-        label: t("tasks.tabs.agenda") || "Agenda",
-        enabled: settings?.calendar_enabled ?? true,
-      },
-      {
+            {
         value: "stats",
         label: t("tasks.tabs.stats"),
         enabled: settings?.stats_enabled ?? true,
@@ -93,22 +88,9 @@ export default function TasksPage() {
     page_size: 20,
   });
 
-  const updateTaskMutation = useUpdateTask();
+  // @ts-expect-error - Will be used when task editing is implemented
+  const _updateTaskMutation = useUpdateTask();
   const deleteTaskMutation = useDeleteTask();
-
-  const handleUpdateTask = (data: Partial<Task>) => {
-    if (!editingTask) return;
-
-    updateTaskMutation.mutate(
-      { id: editingTask.id, payload: data },
-      {
-        onSuccess: () => {
-          setEditingTask(null);
-          void refetch();
-        },
-      }
-    );
-  };
 
   const handleDeleteTask = (task: Task) => {
     if (window.confirm(t("tasks.deleteConfirm"))) {
@@ -157,7 +139,7 @@ export default function TasksPage() {
               }
             }}
             onTaskUpdated={() => {
-              setEditingTask(null);
+              // No cerrar el modal automáticamente, solo refrescar los datos
               void refetch();
             }}
           />
@@ -193,17 +175,12 @@ export default function TasksPage() {
               <TabsContent value="list" className="mt-6">
                 {/* Task List */}
                 <CardContent className="space-y-4">
-                  <TaskList
+                  <TaskAdvancedFilter
                     tasks={tasks}
                     loading={loading}
                     onRefresh={() => void refetch()}
-                    onTaskSelect={handleEditTask}
-                    onTaskEdit={handleUpdateTask}
                     onTaskDelete={handleDeleteTask}
                     onTaskCreate={() => setIsQuickAddOpen(true)}
-                    onTaskComplete={(_taskId, _itemId) => {
-                      // Handle checklist item completion
-                    }}
                   />
                 </CardContent>
               </TabsContent>
@@ -238,38 +215,32 @@ export default function TasksPage() {
               </TabsContent>
             )}
 
-            {settings?.calendar_enabled !== false && (
-              <TabsContent value="agenda" className="mt-6">
-                {/* Task Agenda */}
-                <CardContent className="space-y-4">
-                  <TaskAgendaView
-                    tasks={tasks}
-                    loading={loading}
-                    onTaskClick={handleEditTask}
-                    _onTaskCreate={() => setIsQuickAddOpen(true)}
-                  />
-                </CardContent>
-              </TabsContent>
-            )}
-
+            
             {settings?.stats_enabled !== false && (
               <TabsContent value="stats" className="mt-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>{t("tasks.stats.title")}</CardTitle>
+                <Card className="bg-linear-to-br from-primary/5 via-card to-secondary/5 border-primary/20">
+                  <CardHeader className="bg-linear-to-r from-primary/10 to-secondary/10 border-b border-primary/10 p-4">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <div className="h-4 w-4 rounded-full bg-linear-to-r from-primary to-secondary" />
+                      {t("tasks.stats.title")}
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="p-4">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="space-y-4">
-                        <div className="text-2xl font-bold text-center">
-                          {total}
+                      <div className="space-y-3">
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-linear-to-r from-primary/20 to-secondary/20 rounded-lg blur-lg" />
+                          <div className="relative bg-linear-to-r from-primary to-secondary text-transparent bg-clip-text text-3xl font-bold text-center">
+                            {total}
+                          </div>
                         </div>
-                        <div className="text-sm text-muted-foreground text-center">
+                        <div className="text-xs font-medium text-center text-foreground/80">
                           {t("tasks.stats.total")}
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <div className="text-sm font-medium">
+                        <div className="text-xs font-medium flex items-center gap-2">
+                          <div className="h-1.5 w-1.5 rounded-full bg-primary" />
                           {t("tasks.stats.byStatus.title")}
                         </div>
                         <div className="space-y-2">
@@ -286,23 +257,33 @@ export default function TasksPage() {
                             ).length,
                             on_hold: tasks.filter((t) => t.status === "on_hold")
                               .length,
-                          }).map(([status, count]) => (
-                            <div
-                              key={status}
-                              className="flex justify-between items-center"
-                            >
-                              <span className="text-sm">
-                                {t(`tasks.statuses.${status}`)}
-                              </span>
-                              <span className="text-2xl font-bold">
-                                {count}
-                              </span>
-                            </div>
-                          ))}
+                          }).map(([status, count]) => {
+                            const statusColors = {
+                              todo: "bg-gray-500/10 text-gray-700 border-gray-500/20",
+                              in_progress: "bg-blue-500/10 text-blue-700 border-blue-500/20",
+                              done: "bg-green-500/10 text-green-700 border-green-500/20",
+                              cancelled: "bg-red-500/10 text-red-700 border-red-500/20",
+                              on_hold: "bg-yellow-500/10 text-yellow-700 border-yellow-500/20",
+                            };
+                            return (
+                              <div
+                                key={status}
+                                className="flex justify-between items-center p-1.5 rounded-md bg-muted/30 hover:bg-muted/50 transition-colors"
+                              >
+                                <Badge variant="outline" className={`text-xs ${statusColors[status as keyof typeof statusColors]}`}>
+                                  {t(`tasks.statuses.${status}`)}
+                                </Badge>
+                                <span className="text-lg font-bold text-foreground">
+                                  {count}
+                                </span>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
-                      <div className="space-y-4">
-                        <div className="text-sm font-medium">
+                      <div className="space-y-2">
+                        <div className="text-xs font-medium flex items-center gap-2">
+                          <div className="h-1.5 w-1.5 rounded-full bg-secondary" />
                           {t("tasks.stats.byPriority.title")}
                         </div>
                         <div className="space-y-2">
@@ -315,19 +296,27 @@ export default function TasksPage() {
                               .length,
                             urgent: tasks.filter((t) => t.priority === "urgent")
                               .length,
-                          }).map(([priority, count]) => (
-                            <div
-                              key={priority}
-                              className="flex justify-between items-center"
-                            >
-                              <span className="text-sm">
-                                {t(`tasks.priorities.${priority}`)}
-                              </span>
-                              <span className="text-2xl font-bold">
-                                {count}
-                              </span>
-                            </div>
-                          ))}
+                          }).map(([priority, count]) => {
+                            const priorityColors = {
+                              low: "bg-green-500/10 text-green-700 border-green-500/20",
+                              medium: "bg-yellow-500/10 text-yellow-700 border-yellow-500/20",
+                              high: "bg-orange-500/10 text-orange-700 border-orange-500/20",
+                              urgent: "bg-red-500/10 text-red-700 border-red-500/20",
+                            };
+                            return (
+                              <div
+                                key={priority}
+                                className="flex justify-between items-center p-1.5 rounded-md bg-muted/30 hover:bg-muted/50 transition-colors"
+                              >
+                                <Badge variant="outline" className={`text-xs ${priorityColors[priority as keyof typeof priorityColors]}`}>
+                                  {t(`tasks.priorities.${priority}`)}
+                                </Badge>
+                                <span className="text-lg font-bold text-foreground">
+                                  {count}
+                                </span>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     </div>

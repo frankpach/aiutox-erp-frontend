@@ -59,7 +59,7 @@ export function AutomationExecutionList({ ruleId, onBack }: AutomationExecutionL
         } as const;
         
         return (
-          <Badge variant={statusColors[execution.status as keyof typeof statusColors]}>
+          <Badge variant={statusColors[execution.status]}>
             {t(`automation.executions.status.${execution.status}`)}
           </Badge>
         );

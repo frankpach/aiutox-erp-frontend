@@ -6,19 +6,24 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
+interface QuickAction {
+  id: string;
+  [key: string]: unknown;
+}
+
 interface QuickActionsStore {
   // Estado
-  actions: Map<string, any>;
+  actions: Map<string, QuickAction>;
   isInitialized: boolean;
   lastUpdate: number;
   
   // Acciones
-  registerAction: (action: any) => void;
+  registerAction: (action: QuickAction) => void;
   unregisterAction: (id: string) => void;
   clearActions: () => void;
-  initializeActions: (actions: any[]) => void;
-  getAllActions: () => any[];
-  getAction: (id: string) => any | undefined;
+  initializeActions: (actions: QuickAction[]) => void;
+  getAllActions: () => QuickAction[];
+  getAction: (id: string) => QuickAction | undefined;
   getActionsCount: () => number;
   
   // Notificaciones

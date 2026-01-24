@@ -96,6 +96,31 @@ export interface TaskListParams {
   priority?: TaskPriority;
 }
 
+// Task template types
+export interface TaskTemplate {
+  id: string;
+  tenant_id: string;
+  name: string;
+  description: string;
+  category?: string;
+  estimated_hours?: number;
+  default_status_id?: string;
+  checklist_items?: ChecklistItem[];
+  usage_count?: number;
+  created_by_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TaskTemplateCreate {
+  name: string;
+  description: string;
+  category?: string;
+  estimated_hours?: number;
+  default_status_id?: string;
+  checklist_items?: ChecklistItem[];
+}
+
 // Task assignment types
 export interface TaskAssignment {
   id: string;

@@ -175,7 +175,7 @@ export function UserRolesManager({
                   <div className="flex items-center gap-2">
                     <p className="font-medium">
                       {isCustomRole
-                        ? customRole!.name
+                        ? customRole.name
                         : userRole.role.charAt(0).toUpperCase() +
                           userRole.role.slice(1)}
                     </p>
@@ -185,15 +185,15 @@ export function UserRolesManager({
                     {roleInfo && (
                       <span className="text-xs text-muted-foreground">
                         ({isCustomRole
-                          ? customRole!.permissions.length
+                          ? customRole.permissions.length
                           : roleInfo.permissions.length}{" "}
                         {t("users.permissions") || "permisos"})
                       </span>
                     )}
                   </div>
-                  {isCustomRole && customRole!.description && (
+                  {isCustomRole && customRole.description && (
                     <p className="text-sm text-muted-foreground">
-                      {customRole!.description}
+                      {customRole.description}
                     </p>
                   )}
                   {userRole.granted_by && (
@@ -207,7 +207,7 @@ export function UserRolesManager({
                   size="sm"
                   variant="ghost"
                   onClick={() =>
-                    handleRemoveRole(userRole.role as GlobalRole)
+                    handleRemoveRole(userRole.role)
                   }
                   disabled={removing}
                 >

@@ -6,7 +6,7 @@
 import { useState } from "react";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 import { PageLayout } from "~/components/layout/PageLayout";
-import { Button } from "~/components/ui/button";
+// import { Button } from "~/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { ProductList } from "~/features/products/components/ProductList";
@@ -15,7 +15,7 @@ import { ProductForm } from "~/features/products/components/ProductForm";
 import { ProductVariants } from "~/features/products/components/ProductVariants";
 import { ProductBarcodes } from "~/features/products/components/ProductBarcodes";
 import { 
-  useProduct, 
+//  useProduct, 
   useCreateProduct, 
   useUpdateProduct, 
   useDeleteProduct 
@@ -57,14 +57,14 @@ export default function ProductsPage() {
     setCurrentTab("variants");
   };
 
-  const handleManageBarcodes = (product: Product) => {
-    setBarcodesProductId(product.id);
+  const handleManageBarcodes = (_product: Product) => {
+    setBarcodesProductId(_product.id);
     setCurrentTab("barcodes");
   };
 
-  const handleDeleteProduct = async (product: Product) => {
+  const _handleDeleteProduct = async (_product: Product) => {
     try {
-      await deleteProductMutation.mutateAsync(product.id);
+      await deleteProductMutation.mutateAsync(_product.id);
       // Success will be handled by the mutation
     } catch (error) {
       console.error("Failed to delete product:", error);

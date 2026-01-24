@@ -4,16 +4,7 @@
  */
 
 import type { SavedFilter } from "../types/savedFilter.types";
-
-// Import User type from authStore to ensure consistency
-// Note: We need to extract the User type from the store
-// For now, using a compatible interface
-interface User {
-  id: string;
-  email: string;
-  roles?: string[];
-  permissions?: string[];
-}
+import type { User } from "~/features/users/types/user.types";
 
 /**
  * Check if user can edit a filter
@@ -36,7 +27,7 @@ export function canEditFilter(filter: SavedFilter, currentUser: User | null): bo
 export function canDeleteFilter(
   filter: SavedFilter,
   currentUser: User | null,
-  module: string
+  _module: string
 ): boolean {
   if (!currentUser) return false;
 
@@ -46,25 +37,26 @@ export function canDeleteFilter(
   }
 
   // Check for admin roles
-  const roles = currentUser.roles || [];
-  const permissions = currentUser.permissions || [];
+  const userRoles = currentUser.roles || [];
+  const roleNames = userRoles.map(ur => ur.role);
 
   // Super user / Owner
-  if (roles.includes("owner") || roles.includes("super_user")) {
+  if (roleNames.includes("owner")) {
     return true;
   }
 
   // Admin of organization
-  if (roles.includes("admin")) {
+  if (roleNames.includes("admin")) {
     return true;
   }
 
   // Admin of module (would need module-specific role check)
   // For now, checking for module admin permission pattern
   // This would need to be enhanced based on actual RBAC implementation
-  if (permissions.includes(`${module}.manage`) || permissions.includes(`${module}.admin`)) {
-    return true;
-  }
+  // TODO: Implement module-specific role checking
+  // if (moduleRoles.some(mr => mr.role.includes("admin"))) {
+  //   return true;
+  // }
 
   return false;
 }
@@ -82,8 +74,10 @@ export function canShareFilter(filter: SavedFilter, currentUser: User | null): b
  */
 export function canViewFilters(currentUser: User | null): boolean {
   if (!currentUser) return false;
-  const permissions = currentUser.permissions || [];
-  return permissions.includes("views.view");
+  const userRoles = currentUser.roles || [];
+  const roleNames = userRoles.map(ur => ur.role);
+  // All authenticated users can view filters
+  return roleNames.length > 0;
 }
 
 /**
@@ -91,8 +85,10 @@ export function canViewFilters(currentUser: User | null): boolean {
  */
 export function canManageFilters(currentUser: User | null): boolean {
   if (!currentUser) return false;
-  const permissions = currentUser.permissions || [];
-  return permissions.includes("views.manage");
+  const userRoles = currentUser.roles || [];
+  const roleNames = userRoles.map(ur => ur.role);
+  // Admin and above can manage filters
+  return roleNames.includes("admin") || roleNames.includes("owner") || roleNames.includes("manager");
 }
 
 /**
@@ -100,8 +96,10 @@ export function canManageFilters(currentUser: User | null): boolean {
  */
 export function canShareFilters(currentUser: User | null): boolean {
   if (!currentUser) return false;
-  const permissions = currentUser.permissions || [];
-  return permissions.includes("views.share");
+  const userRoles = currentUser.roles || [];
+  const roleNames = userRoles.map(ur => ur.role);
+  // Admin and above can share filters
+  return roleNames.includes("admin") || roleNames.includes("owner") || roleNames.includes("manager");
 }
 
 

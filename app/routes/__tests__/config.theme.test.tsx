@@ -112,6 +112,8 @@ describe("ThemeConfigPage", () => {
 
   const defaultMockUseThemeConfig = {
     theme: mockTheme,
+    themeLight: mockTheme,
+    themeDark: mockTheme,
     isLoading: false,
     isUpdating: false,
     error: null,
@@ -126,7 +128,7 @@ describe("ThemeConfigPage", () => {
       defaultMockUseThemeConfig
     );
     // Mock apiClient.get for useTranslation hook (general config query)
-    (apiClient.get as any).mockResolvedValue({
+    (apiClient.get as ReturnType<typeof vi.fn>).mockResolvedValue({
       data: {
         success: true,
         data: {
@@ -150,9 +152,11 @@ describe("ThemeConfigPage", () => {
       },
     });
 
-    return ({ children }: { children: React.ReactNode }) => (
+    const Wrapper = ({ children }: { children: React.ReactNode }) => (
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     );
+    Wrapper.displayName = "QueryClientWrapper";
+    return Wrapper;
   };
 
   const renderWithRouter = () => {
@@ -319,8 +323,8 @@ describe("ThemeConfigPage", () => {
 
       await user.click(screen.getByRole("tab", { name: "Logos" }));
 
-      const logoInput = screen.getByLabelText("Logo Principal") as HTMLInputElement;
-      expect(logoInput.value).toBe("/assets/logos/logo.png");
+      const logoInput = screen.getByLabelText("Logo Principal");
+      expect((logoInput as HTMLInputElement).value).toBe("/assets/logos/logo.png");
     });
 
     it("should update logo value on change", async () => {
@@ -329,11 +333,11 @@ describe("ThemeConfigPage", () => {
 
       await user.click(screen.getByRole("tab", { name: "Logos" }));
 
-      const logoInput = screen.getByLabelText("Logo Principal") as HTMLInputElement;
+      const logoInput = screen.getByLabelText("Logo Principal");
       await user.clear(logoInput);
       await user.type(logoInput, "/assets/logos/custom-logo.png");
 
-      expect(logoInput.value).toBe("/assets/logos/custom-logo.png");
+      expect((logoInput as HTMLInputElement).value).toBe("/assets/logos/custom-logo.png");
     });
   });
 

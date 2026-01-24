@@ -148,7 +148,7 @@ export function BoardView({
   }
 
   return (
-    <div className="h-full flex gap-4 overflow-x-auto pb-4">
+    <div className="h-full flex gap-3 overflow-x-auto pb-4">
       {sortedStatuses.map((status) => {
         const statusTasks = tasksByStatus.get(status.id) || [];
         const isClosedType = status.type === "closed";
@@ -157,7 +157,7 @@ export function BoardView({
           <div
             key={status.id}
             className={cn(
-              "flex min-w-[320px] max-h-[600px] flex-col rounded-lg transition-all",
+              "flex min-w-[280px] max-h-[600px] flex-col rounded-lg transition-all",
               dragOverStatus === status.id &&
                 "bg-primary/5 ring-2 ring-primary/20"
             )}
@@ -166,8 +166,8 @@ export function BoardView({
             onDrop={(e) => handleDrop(e, status.id)}
           >
             {/* Column header */}
-            <Card className="mb-3 border-border/60">
-              <CardHeader className="p-4">
+            <Card className="mb-2 border-border/60">
+              <CardHeader className="p-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div
@@ -186,7 +186,7 @@ export function BoardView({
             </Card>
 
             {/* Tasks list */}
-            <div className="flex-1 space-y-2 overflow-y-auto min-h-[400px]">
+            <div className="flex-1 space-y-1.5 overflow-y-auto min-h-[400px]">
               {statusTasks.map((task) => (
                 <Card
                   key={task.id}
@@ -199,21 +199,21 @@ export function BoardView({
                   )}
                   onClick={() => onTaskClick?.(task)}
                 >
-                  <CardContent className="p-4">
+                  <CardContent className="p-3">
                     {/* Task title */}
-                    <h4 className="mb-2 font-medium text-foreground line-clamp-2">
+                    <h4 className="mb-1.5 font-medium text-foreground line-clamp-2 text-sm">
                       {task.title}
                     </h4>
 
                     {/* Task description */}
                     {task.description && (
-                      <p className="mb-3 text-sm text-muted-foreground line-clamp-2">
+                      <p className="mb-2 text-xs text-muted-foreground line-clamp-2">
                         {task.description}
                       </p>
                     )}
 
                     {/* Task metadata */}
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-1.5">
                       {/* Priority badge */}
                       <Badge
                         variant="outline"
@@ -271,7 +271,7 @@ export function BoardView({
                   className="w-full justify-start text-muted-foreground hover:text-foreground"
                   onClick={() => onCreateTask?.(status.id)}
                 >
-                  + {t("tasks.createTask")}
+                  + {t("tasks.createActivity") || "Crear Actividad"}
                 </Button>
               )}
 

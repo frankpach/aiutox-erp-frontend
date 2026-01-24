@@ -32,9 +32,12 @@ import type {
 
 interface ApprovalFlowFormProps {
   flowId?: string;
+  onSubmit?: (data: ApprovalFlowCreate) => Promise<void>;
+  onCancel?: () => void;
+  isLoading?: boolean;
 }
 
-export function ApprovalFlowForm({ flowId }: ApprovalFlowFormProps) {
+export function ApprovalFlowForm({ flowId, onSubmit, onCancel, isLoading: externalLoading }: ApprovalFlowFormProps) {
   const navigate = useNavigate();
   const createFlow = useCreateApprovalFlow();
   const updateFlow = useUpdateApprovalFlow();
@@ -65,7 +68,7 @@ export function ApprovalFlowForm({ flowId }: ApprovalFlowFormProps) {
     }
   }, [isEditing, flowResponse]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (isEditing) {
@@ -76,7 +79,7 @@ export function ApprovalFlowForm({ flowId }: ApprovalFlowFormProps) {
       };
 
       if (flowId) {
-        void updateFlow
+        await updateFlow
           .mutateAsync({ id: flowId, data: updateData })
           .then(() => {
             void navigate("/approvals");
@@ -94,14 +97,18 @@ export function ApprovalFlowForm({ flowId }: ApprovalFlowFormProps) {
         is_active: formData.is_active,
       };
 
-      void createFlow
-        .mutateAsync(createData)
-        .then(() => {
-          void navigate("/approvals");
-        })
-        .catch((error) => {
-          console.error("Error creating flow:", error);
-        });
+      if (onSubmit) {
+        await onSubmit(createData);
+      } else {
+        await createFlow
+          .mutateAsync(createData)
+          .then(() => {
+            void navigate("/approvals");
+          })
+          .catch((error) => {
+            console.error("Error creating flow:", error);
+          });
+      }
     }
   };
 
@@ -128,7 +135,9 @@ export function ApprovalFlowForm({ flowId }: ApprovalFlowFormProps) {
       ]}
     >
       <div className="max-w-4xl mx-auto">
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={(e) => {
+          void handleSubmit(e);
+        }} className="space-y-6">
           {/* Basic Information */}
           <Card>
             <CardHeader>
@@ -233,17 +242,17 @@ export function ApprovalFlowForm({ flowId }: ApprovalFlowFormProps) {
             <Button
               type="button"
               variant="outline"
-              onClick={() => void navigate("/approvals")}
+              onClick={onCancel || (() => void navigate("/approvals"))}
             >
               <HugeiconsIcon icon={ArrowLeftIcon} size={16} className="mr-2" />
               Cancelar
             </Button>
             <Button
               type="submit"
-              disabled={createFlow.isPending || updateFlow.isPending}
+              disabled={externalLoading || createFlow.isPending || updateFlow.isPending}
             >
               <HugeiconsIcon icon={DownloadIcon} size={16} className="mr-2" />
-              {createFlow.isPending || updateFlow.isPending
+              {externalLoading || createFlow.isPending || updateFlow.isPending
                 ? "Guardando..."
                 : isEditing
                   ? "Actualizar Flujo"

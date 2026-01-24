@@ -15,8 +15,8 @@ import { Switch } from "~/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
-import { SavedFilters } from "~/features/views/components/SavedFilters";
-import { FilterManagementModal } from "~/features/views/components/FilterManagementModal";
+// import { FilterManagementModal } from "~/features/views/components/FilterManagementModal";
+// import { SavedFilters } from "~/features/views/components/SavedFilters";
 import { useSavedFilters } from "~/features/views/hooks/useSavedFilters";
 import type { SavedFilter, SavedFilterCreate, SavedFilterUpdate } from "~/features/views/types/savedFilter.types";
 
@@ -50,24 +50,24 @@ export default function ViewsFiltersPage() {
   const handleDeleteFilter = (filter: SavedFilter) => {
     if (!confirm(t("views.filters.deleteConfirm"))) return;
     
-    removeFilter(filter.id).then((success) => {
+    void removeFilter(filter.id).then((success) => {
       if (success) {
-        refreshFilters();
+        void refreshFilters();
       }
     });
   };
 
   const handleFilterSubmit = (data: SavedFilterCreate | SavedFilterUpdate) => {
     if (showCreateDialog) {
-      createFilter(data as SavedFilterCreate).then(() => {
+      void createFilter(data as SavedFilterCreate).then(() => {
         setShowCreateDialog(false);
-        refreshFilters();
+        void refreshFilters();
       });
     } else if (showEditDialog && selectedFilter) {
-      updateFilter(selectedFilter.id, data as SavedFilterUpdate).then(() => {
+      void updateFilter(selectedFilter.id, data as SavedFilterUpdate).then(() => {
         setShowEditDialog(false);
         setSelectedFilter(null);
-        refreshFilters();
+        void refreshFilters();
       });
     }
   };
@@ -133,12 +133,57 @@ export default function ViewsFiltersPage() {
           </Button>
         </div>
 
-        <SavedFilters
-          filters={filteredFilters}
-          loading={loading}
-          onEdit={handleEditFilter}
-          onDelete={handleDeleteFilter}
-        />
+        <div className="grid gap-4">
+          {filteredFilters.map((filter) => (
+            <Card key={filter.id}>
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle className="text-lg">{filter.name}</CardTitle>
+                    {filter.description && (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {filter.description}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Badge variant={filter.is_default ? "default" : "secondary"}>
+                      {filter.is_default ? t("views.filters.default") : t("views.filters.custom")}
+                    </Badge>
+                    {filter.is_shared && (
+                      <Badge variant="outline">
+                        {t("views.filters.shared")}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="flex justify-between items-center">
+                  <div className="text-sm text-muted-foreground">
+                    {t("views.filters.module")}: {filter.module}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEditFilter(filter)}
+                    >
+                      {t("common.edit")}
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDeleteFilter(filter)}
+                    >
+                      {t("common.delete")}
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
 
         {/* Create Filter Dialog */}
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
@@ -208,7 +253,7 @@ function FilterForm({ filter, onSubmit, onCancel, loading = false }: FilterFormP
       };
 
       onSubmit(data);
-    } catch (err) {
+    } catch {
       alert(t("views.filters.invalidJson"));
     }
   };

@@ -8,22 +8,22 @@ import { useNavigate } from "react-router";
 import { PageLayout } from "~/components/layout/PageLayout";
 import { UserFormModal } from "~/features/users/components/UserFormModal";
 import { useCreateUser } from "~/features/users/hooks/useUsers";
-import type { UserCreate } from "~/features/users/types/user.types";
+import type { UserCreate, UserUpdate as _UserUpdate } from "~/features/users/types/user.types";
 import { showToast } from "~/components/common/Toast";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 
 export default function CreateUserPage() {
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t: _ } = useTranslation();
   const { create, loading } = useCreateUser();
   const [isModalOpen, setIsModalOpen] = useState(true);
 
-  const handleSubmit = async (data: UserCreate) => {
+  const handleSubmit = async (data: UserCreate | _UserUpdate) => {
     try {
-      await create(data);
+      await create(data as UserCreate);
       showToast("Usuario creado exitosamente", "success");
       setIsModalOpen(false);
-      navigate("/users");
+      void navigate("/users");
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Error al crear el usuario";
@@ -34,7 +34,7 @@ export default function CreateUserPage() {
 
   const handleClose = () => {
     setIsModalOpen(false);
-    navigate("/users");
+    void navigate("/users");
   };
 
   return (
