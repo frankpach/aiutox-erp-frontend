@@ -215,7 +215,7 @@ export function StatusCustomizer() {
                   />
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-medium">{status.name}</span>
+                      <span className="font-medium">{t(`tasks.statuses.${status.name}` as const) || status.name}</span>
                       {status.is_system && (
                         <Badge variant="secondary" className="text-xs">
                           {t('tasks.statusCustomizer.system') || 'Sistema'}

@@ -175,7 +175,7 @@ export function BoardView({
                       style={{ backgroundColor: status.color }}
                     />
                     <h3 className="font-semibold text-foreground">
-                      {status.name}
+                      {t(`tasks.statuses.${status.name}` as const) || status.name}
                     </h3>
                   </div>
                   <Badge variant="outline" className="ml-2">
