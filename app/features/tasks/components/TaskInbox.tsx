@@ -22,9 +22,12 @@ import {
   InboxIcon,
   PlusSignIcon,
   CheckmarkBadge01Icon,
+  Refresh01Icon,
+  MoreVerticalIcon,
 } from "@hugeicons/core-free-icons";
 import { useMyTasks, useCreateTask, useUpdateTask } from "../hooks/useTasks";
 import { useAuthStore } from "~/stores/authStore";
+import { showToast } from "~/components/common/Toast";
 import type { TaskCreate } from "../types/task.types";
 
 interface TaskInboxProps {
@@ -33,18 +36,26 @@ interface TaskInboxProps {
 
 export function TaskInbox({ onTaskProcessed }: TaskInboxProps) {
   const { t } = useTranslation();
-  const { data: tasksData, refetch } = useMyTasks({ page_size: 50 });
+  const { data: tasksData, isLoading: isLoadingTasks, error: tasksError, refetch } = useMyTasks({ page_size: 50 });
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
   const currentUser = useAuthStore((state) => state.user);
 
   const tasks = tasksData?.data || [];
 
-  // Filter tasks that need triage (new tasks without proper classification)
+  // Debug logs
+  console.warn("TaskInbox Debug:", {
+    isLoadingTasks,
+    tasksError,
+    tasksCount: tasks.length,
+    currentUser: currentUser?.id,
+    createTaskPending: createTask.isPending,
+    updateTaskPending: updateTask.isPending
+  });
+
+  // Filter tasks that need triage (temporarily more permissive for debugging)
   const tasksNeedingTriage = tasks.filter(
-    (task) =>
-      task.status === "todo" &&
-      (!task.assigned_to_id || task.priority === "medium")
+    (task) => task.status !== "done" && task.status !== "cancelled"
   );
 
   const [quickCaptureText, setQuickCaptureText] = useState("");
@@ -61,14 +72,17 @@ export function TaskInbox({ onTaskProcessed }: TaskInboxProps) {
         title: quickCaptureText.trim(),
         status: "todo",
         priority: "medium",
-        description: `Capturado desde Inbox: ${new Date().toLocaleString()}`,
+        description: `${t("tasks.quickAdd.capturedFrom") || "Capturado desde Inbox"}: ${new Date().toLocaleString()}`,
       };
 
       await createTask.mutateAsync(taskData as TaskCreate);
       setQuickCaptureText("");
       void refetch();
+      showToast(t("tasks.quickAdd.success"), "success");
+      onTaskProcessed?.();
     } catch (error) {
       console.error("Error creating task:", error);
+      showToast(t("tasks.quickAdd.error"), "error");
     }
   };
 
@@ -104,6 +118,12 @@ export function TaskInbox({ onTaskProcessed }: TaskInboxProps) {
           case "on_hold":
             updateData.status = "on_hold";
             break;
+          case "blocked":
+            updateData.status = "blocked";
+            break;
+          case "review":
+            updateData.status = "review";
+            break;
           case "cancelled":
             updateData.status = "cancelled";
             break;
@@ -118,9 +138,11 @@ export function TaskInbox({ onTaskProcessed }: TaskInboxProps) {
       setSelectedTasks([]);
       setBulkAction("");
       void refetch();
+      showToast(t("tasks.quickAdd.bulkActionSuccess").replace("{count}", selectedTasks.length.toString()), "success");
       onTaskProcessed?.();
     } catch (error) {
       console.error("Error processing bulk action:", error);
+      showToast(t("tasks.quickAdd.bulkActionError"), "error");
     } finally {
       setIsProcessing(false);
     }
@@ -128,11 +150,14 @@ export function TaskInbox({ onTaskProcessed }: TaskInboxProps) {
 
   // Toggle task selection
   const toggleTaskSelection = (taskId: string) => {
-    setSelectedTasks((prev) =>
-      prev.includes(taskId)
+    console.warn("Toggle task selection:", { taskId, currentSelected: selectedTasks });
+    setSelectedTasks((prev) => {
+      const newSelection = prev.includes(taskId)
         ? prev.filter((id) => id !== taskId)
-        : [...prev, taskId]
-    );
+        : [...prev, taskId];
+      console.warn("New selection:", newSelection);
+      return newSelection;
+    });
   };
 
   // Select all tasks
@@ -147,6 +172,35 @@ export function TaskInbox({ onTaskProcessed }: TaskInboxProps) {
 
   return (
     <div className="space-y-4">
+      {/* Error and Loading States */}
+      {tasksError && (
+        <Card className="border-destructive">
+          <CardContent className="pt-6">
+            <div className="text-center text-destructive">
+              <p>{t("tasks.quickAdd.errorLoadingTasks")}: {tasksError.message}</p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => void refetch()}
+                className="mt-2"
+              >
+                {t("tasks.quickAdd.retry")}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
+      {isLoadingTasks && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center text-muted-foreground">
+              <p>{t("tasks.quickAdd.loadingTasks")}</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Quick Capture Section */}
       <Card>
         <CardHeader className="pb-3">
@@ -176,7 +230,11 @@ export function TaskInbox({ onTaskProcessed }: TaskInboxProps) {
               onClick={() => void handleQuickCapture()}
               disabled={!quickCaptureText.trim() || createTask.isPending}
             >
-              <HugeiconsIcon icon={PlusSignIcon} size={16} />
+              {createTask.isPending ? (
+                <HugeiconsIcon icon={CheckmarkBadge01Icon} size={16} className="animate-spin" />
+              ) : (
+                <HugeiconsIcon icon={PlusSignIcon} size={16} />
+              )}
             </Button>
           </div>
           <p className="text-sm text-muted-foreground">
@@ -212,13 +270,37 @@ export function TaskInbox({ onTaskProcessed }: TaskInboxProps) {
                       </Button>
                     </>
                   )}
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => void refetch()}
+                    disabled={isLoadingTasks}
+                    title={t("common.refresh") || "Actualizar tareas"}
+                  >
+                    <HugeiconsIcon 
+                      icon={Refresh01Icon} 
+                      size={16} 
+                      className={isLoadingTasks ? "animate-spin" : ""} 
+                    />
+                  </Button>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-3 pt-0">
               {/* Bulk Actions */}
               {selectedTasks.length > 0 && (
-                <div className="flex items-center gap-2 p-2 bg-muted rounded-md">
+                <div 
+                  className="flex items-center gap-2 p-2 bg-muted rounded-md border-2 border-dashed border-muted-foreground/30"
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const taskId = e.dataTransfer.getData('text/plain');
+                    if (taskId && !selectedTasks.includes(taskId)) {
+                      toggleTaskSelection(taskId);
+                      showToast(t("tasks.quickAdd.addedToSelection"), "success");
+                    }
+                  }}
+                >
                   <span className="text-sm font-medium">
                     {selectedTasks.length}{" "}
                     {t("tasks.inbox.selected") || "tareas seleccionadas"}:
@@ -253,6 +335,12 @@ export function TaskInbox({ onTaskProcessed }: TaskInboxProps) {
                       <SelectItem value="on_hold">
                         {t("tasks.statuses.on_hold") || "En Pausa"}
                       </SelectItem>
+                      <SelectItem value="blocked">
+                        {t("tasks.statuses.blocked") || "Bloqueada"}
+                      </SelectItem>
+                      <SelectItem value="review">
+                        {t("tasks.statuses.review") || "En Revisión"}
+                      </SelectItem>
                       <SelectItem value="cancelled">
                         {t("tasks.statuses.cancelled") || "Cancelada"}
                       </SelectItem>
@@ -280,12 +368,23 @@ export function TaskInbox({ onTaskProcessed }: TaskInboxProps) {
                   tasksNeedingTriage.map((task) => (
                     <div
                       key={task.id}
-                      className="flex items-start gap-2 p-2 border rounded-lg hover:bg-muted/50 transition-colors"
+                      className="flex items-start gap-2 p-2 border rounded-lg hover:bg-muted/50 transition-colors cursor-move"
+                      draggable
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData('text/plain', task.id);
+                        console.warn("Drag started:", task.id);
+                      }}
+                      onDragEnd={() => {
+                        console.warn("Drag ended");
+                      }}
                     >
-                      <Checkbox
-                        checked={selectedTasks.includes(task.id)}
-                        onChange={() => toggleTaskSelection(task.id)}
-                      />
+                      <div className="flex items-center gap-1 cursor-grab">
+                        <HugeiconsIcon icon={MoreVerticalIcon} size={16} className="text-muted-foreground" />
+                        <Checkbox
+                          checked={selectedTasks.includes(task.id)}
+                          onCheckedChange={() => toggleTaskSelection(task.id)}
+                        />
+                      </div>
                       <div className="flex-1">
                         <h4 className="font-medium">{task.title}</h4>
                         {task.description && (
@@ -294,8 +393,12 @@ export function TaskInbox({ onTaskProcessed }: TaskInboxProps) {
                           </p>
                         )}
                         <div className="flex items-center gap-2 mt-1">
-                          <Badge variant="outline">{task.status}</Badge>
-                          <Badge variant="outline">{task.priority}</Badge>
+                          <Badge variant="outline">
+                            {t(`tasks.statuses.${task.status}`) || task.status}
+                          </Badge>
+                          <Badge variant="outline">
+                            {t(`tasks.priorities.${task.priority}`) || task.priority}
+                          </Badge>
                           {task.due_date && (
                             <span className="text-xs text-muted-foreground">
                               {new Date(task.due_date).toLocaleDateString()}

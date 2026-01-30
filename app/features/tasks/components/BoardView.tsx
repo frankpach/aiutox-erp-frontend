@@ -12,6 +12,7 @@ import { cn } from "~/lib/utils";
 import { format } from "date-fns";
 import { es, enUS } from "date-fns/locale";
 import type { Task } from "../types/task.types";
+import type { TaskStatus } from "../types/status.types";
 
 interface BoardViewProps {
   tasks: Task[];
@@ -22,20 +23,23 @@ interface BoardViewProps {
   loading?: boolean;
 }
 
-interface TaskStatus {
-  id: string;
-  name: string;
-  type: "open" | "in_progress" | "closed";
-  color: string;
-  order: number;
-}
-
 const priorityColors: Record<string, string> = {
   low: "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20",
   medium:
     "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20",
   high: "bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/20",
   urgent: "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20",
+};
+
+// Mapeo de nombres de status en español a claves de traducción
+const statusNameToKey: Record<string, string> = {
+  "Por Hacer": "todo",
+  "En Progreso": "inProgress",
+  "Completado": "done",
+  "Cancelado": "cancelled",
+  "En Espera": "onHold",
+  "Bloqueada": "blocked",
+  "En Revisión": "review",
 };
 
 export function BoardView({
@@ -86,7 +90,6 @@ export function BoardView({
   }, [statuses]);
 
   const handleDragStart = (e: React.DragEvent, task: Task) => {
-    console.error("Drag start:", task.title); // Debug
     setDraggedTask(task);
     // Establecer data transfer para mejor compatibilidad
     e.dataTransfer.effectAllowed = "move";
@@ -111,29 +114,19 @@ export function BoardView({
   const handleDrop = (e: React.DragEvent, statusId: string) => {
     e.preventDefault();
     setDragOverStatus(null);
-    console.error("Drop on:", statusId, "Task:", draggedTask?.title); // Debug
 
     if (!draggedTask || !onTaskMove) {
-      console.error("No dragged task or onTaskMove handler");
       return;
     }
 
     // Si la tarea ya está en este estado, no hacer nada
     if (draggedTask.status_id === statusId) {
-      console.error("Task already in this status");
       setDraggedTask(null);
       return;
     }
 
     const targetTasks = tasksByStatus.get(statusId) || [];
     const newOrder = targetTasks.length;
-
-    console.error("Moving task:", {
-      taskId: draggedTask.id,
-      from: draggedTask.status_id,
-      to: statusId,
-      order: newOrder,
-    });
 
     onTaskMove(draggedTask.id, statusId, newOrder);
     setDraggedTask(null);
@@ -151,7 +144,7 @@ export function BoardView({
     <div className="h-full flex gap-3 overflow-x-auto pb-4">
       {sortedStatuses.map((status) => {
         const statusTasks = tasksByStatus.get(status.id) || [];
-        const isClosedType = status.type === "closed";
+        const isClosedType = status.type === "completed" || status.type === "canceled";
 
         return (
           <div
@@ -175,7 +168,7 @@ export function BoardView({
                       style={{ backgroundColor: status.color }}
                     />
                     <h3 className="font-semibold text-foreground">
-                      {t(`tasks.statuses.${status.name}` as const) || status.name}
+                      {t(`tasks.statuses.${statusNameToKey[status.name] || status.name}`) || status.name}
                     </h3>
                   </div>
                   <Badge variant="outline" className="ml-2">

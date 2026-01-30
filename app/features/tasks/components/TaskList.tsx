@@ -253,7 +253,7 @@ export const TaskAdvancedFilter = memo(({
     },
     {
       key: "status",
-      header: t("tasks.status.title") || "Status",
+      header: t("tasks.statuses.title") || "Status",
       cell: (task: Task) => {
         const activityType = getActivityType(task);
         
@@ -273,7 +273,7 @@ export const TaskAdvancedFilter = memo(({
     },
     {
       key: "priority",
-      header: t("tasks.priority.title") || "Priority",
+      header: t("tasks.priorities.title") || "Priority",
       cell: (task: Task) => getPriorityBadge(task.priority),
     },
     {
@@ -403,7 +403,7 @@ export const TaskAdvancedFilter = memo(({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Status Filter */}
             <div className="space-y-2">
-              <Label>{t("tasks.status.title") || "Status"}</Label>
+              <Label>{t("tasks.statuses.title") || "Status"}</Label>
               <Select
                 value={filters.status || "all"}
                 onValueChange={(value) =>
@@ -432,13 +432,19 @@ export const TaskAdvancedFilter = memo(({
                   <SelectItem value="cancelled">
                     {t("tasks.statuses.cancelled")}
                   </SelectItem>
+                  <SelectItem value="blocked">
+                    {t("tasks.statuses.blocked")}
+                  </SelectItem>
+                  <SelectItem value="review">
+                    {t("tasks.statuses.review")}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             {/* Priority Filter */}
             <div className="space-y-2">
-              <Label>{t("tasks.priority.title") || "Priority"}</Label>
+              <Label>{t("tasks.priorities.title") || "Priority"}</Label>
               <Select
                 value={filters.priority || "all"}
                 onValueChange={(value) =>

@@ -329,7 +329,7 @@ export function TaskQuickAdd({
         <DialogTrigger asChild>
           <Button>
             <HugeiconsIcon icon={Add01Icon} size={16} className="mr-2" />
-            {t("tasks.quickAdd")}
+            {t("tasks.quickAdd.title")}
           </Button>
         </DialogTrigger>
       )}
@@ -339,7 +339,7 @@ export function TaskQuickAdd({
             {createdTaskId 
               ? (mode === "task" ? t("tasks.createdSuccess") : t("events.createdSuccess"))
               : mode === "task" 
-                ? t("tasks.quickAdd") 
+                ? t("tasks.quickAdd.title") 
                 : mode === "event" 
                   ? t("events.newEvent") 
                   : mode === "task" ? "Nueva Tarea" : "Nuevo Evento"
