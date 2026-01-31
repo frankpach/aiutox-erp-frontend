@@ -4,8 +4,33 @@
 
 import { describe, it, expect, vi } from "vitest";
 import { render } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import { Header } from "../Header";
+
+// Mock useUsers hook para TaskQuickAdd
+vi.mock("~/features/users/hooks/useUsers", () => ({
+  useUsers: () => ({
+    users: [
+      { id: "1", first_name: "John", last_name: "Doe", email: "john@example.com" },
+      { id: "2", first_name: "Jane", last_name: "Smith", email: "jane@example.com" },
+    ],
+    isLoading: false,
+    error: null,
+  }),
+}));
+
+// Mock useTags hook para TaskQuickAdd
+vi.mock("~/features/tags/hooks/useTags", () => ({
+  useTags: () => ({
+    data: [
+      { id: "1", name: "urgent", color: "#ff0000" },
+      { id: "2", name: "important", color: "#00ff00" },
+    ],
+    isLoading: false,
+    error: null,
+  }),
+}));
 
 // Mock useTheme
 vi.mock("~/providers", () => ({
@@ -19,7 +44,13 @@ vi.mock("~/providers", () => ({
 // Mock useTranslation
 vi.mock("~/lib/i18n/useTranslation", () => ({
   useTranslation: () => ({
-    t: (key: string) => key,
+    t: (key: string) => {
+      const translations: Record<string, string> = {
+        "common.appName": "AiutoX ERP",
+        "header.search.placeholder": "Search...",
+      };
+      return translations[key] || key;
+    },
   }),
 }));
 
@@ -58,12 +89,19 @@ vi.mock("~/hooks/useQuickActions", () => ({
   useQuickActions: () => [],
 }));
 
-// Mock useNavigate
+// Mock useLocation
 vi.mock("react-router", async () => {
   const actual = await vi.importActual("react-router");
   return {
     ...actual,
     useNavigate: () => vi.fn(),
+    useLocation: () => ({
+      pathname: "/",
+      search: "",
+      hash: "",
+      state: null,
+      key: "test",
+    }),
     Link: ({
       to,
       children,
@@ -80,24 +118,33 @@ vi.mock("react-router", async () => {
   };
 });
 
-// Wrapper con RouterProvider para tests
-const createWrapper = () => {
-  return ({ children }: { children: React.ReactNode }) => {
-    const routeWithChildren = createMemoryRouter([
-      {
-        path: "/",
-        element: children,
-      },
-    ]);
+// Wrapper con RouterProvider y QueryClientProvider para tests
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { retry: false },
+    mutations: { retry: false },
+  },
+});
 
-    return <RouterProvider router={routeWithChildren} />;
-  };
+const Wrapper = ({ children }: { children: React.ReactNode }) => {
+  const routeWithChildren = createMemoryRouter([
+    {
+      path: "/",
+      element: children,
+    },
+  ]);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={routeWithChildren} />
+    </QueryClientProvider>
+  );
 };
 
 describe("Header", () => {
   it("should render correctly", () => {
     const { getByText, getByTestId } = render(<Header />, {
-      wrapper: createWrapper(),
+      wrapper: Wrapper,
     });
 
     expect(getByText("AiutoX ERP")).toBeTruthy();
@@ -107,7 +154,7 @@ describe("Header", () => {
   it("should render SidebarToggle", () => {
     const { getByTestId } = render(
       <Header onSidebarToggle={() => {}} isSidebarOpen={false} />,
-      { wrapper: createWrapper() }
+      { wrapper: Wrapper }
     );
 
     expect(getByTestId("sidebar-toggle")).toBeTruthy();
@@ -117,7 +164,7 @@ describe("Header", () => {
     const handleToggle = vi.fn();
     const { getByTestId } = render(
       <Header onSidebarToggle={handleToggle} isSidebarOpen={false} />,
-      { wrapper: createWrapper() }
+      { wrapper: Wrapper }
     );
 
     const toggle = getByTestId("sidebar-toggle");
@@ -127,7 +174,7 @@ describe("Header", () => {
   });
 
   it("should have correct ARIA attributes", () => {
-    const { container } = render(<Header />, { wrapper: createWrapper() });
+    const { container } = render(<Header />, { wrapper: Wrapper });
     const header = container.querySelector("header");
 
     expect(header?.getAttribute("role")).toBe("banner");

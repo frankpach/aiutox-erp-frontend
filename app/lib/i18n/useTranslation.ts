@@ -139,15 +139,12 @@ export function useTranslation() {
       const activeTranslations = getTranslations();
       const value = getNestedValue(activeTranslations, key);
 
-      // If translation not found, try Spanish as fallback
       if (!value && language !== "es") {
         const fallbackValue = getNestedValue(translations.es, key);
         if (fallbackValue) {
           return fallbackValue;
         }
       }
-
-      // If still not found, return the key for debugging
       return value || key;
     }) as TFunction,
     [language, getTranslations]

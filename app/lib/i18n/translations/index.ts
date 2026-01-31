@@ -1,4 +1,5 @@
 // Import all translations
+// Force module reload: 2026-01-30T20:49:00
 import { translations as enTranslations } from "./en";
 import { translations as esTranslations } from "./es";
 import { searchTranslations as enSearchTranslations } from "./search.en";

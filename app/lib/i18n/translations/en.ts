@@ -1,6 +1,8 @@
 /**
- * English translations for SavedFilters, Users, and Config modules
+ * English translations for SavedFilters and Users modules
  */
+
+import { tasksStatisticsEn } from './tasks.statistics.en';
 
 export const translations = {
   // SavedFilters - General
@@ -311,6 +313,7 @@ export const translations = {
     previous: "Previous",
     expand: "Expand",
     uploading: "Uploading...",
+    loadingData: "Error loading data",
   },
   // Layout
   layout: {
@@ -1222,7 +1225,57 @@ export const translations = {
       removeFile: "Remove file",
       confirmRemove: "Are you sure you want to remove this file?",
     },
+    statistics: tasksStatisticsEn,
   },
+  // Approvals module
+  approvals: {
+    title: "Approvals",
+    flows: "Approval Flows",
+    createFlow: "Create Flow",
+    editFlow: "Edit Flow",
+    deleteFlow: "Delete Flow",
+    flowName: "Flow Name",
+    flowDescription: "Flow Description",
+    entityType: "Entity Type",
+    isActive: "Active",
+    steps: "Steps",
+    stepName: "Step Name",
+    approverType: "Approver Type",
+    approverConfig: "Approver Configuration",
+    conditions: "Conditions",
+    addStep: "Add Step",
+    removeStep: "Remove Step",
+    moveUp: "Move Up",
+    moveDown: "Move Down",
+    requests: "Approval Requests",
+    createRequest: "Create Request",
+    requestTitle: "Request Title",
+    requestDescription: "Request Description",
+    currentStep: "Current Step",
+    approve: "Approve",
+    reject: "Reject",
+    delegate: "Delegate",
+    viewDetails: "View Details",
+    approveSuccess: "Request approved successfully",
+    rejectSuccess: "Request rejected successfully",
+    delegateSuccess: "Request delegated successfully",
+    error: "Error loading approvals",
+    statuses: {
+      pending: "Pending",
+      inProgress: "In Progress",
+      approved: "Approved",
+      rejected: "Rejected",
+      cancelled: "Cancelled",
+      expired: "Expired",
+    },
+    approverTypes: {
+      user: "User",
+      role: "Role",
+      department: "Department",
+      custom: "Custom",
+    },
+  },
+  // Calendar module
   calendar: {
     title: "Calendar",
     description: "Calendar and event management",
@@ -1321,54 +1374,6 @@ export const translations = {
     },
     infoNote: {
       addFilesAndComments: "To attach comments and add relevant files, open the newly created task"
-    },
-  },
-  // Approvals module
-  approvals: {
-    title: "Approvals",
-    flows: "Approval Flows",
-    createFlow: "Create Flow",
-    editFlow: "Edit Flow",
-    deleteFlow: "Delete Flow",
-    flowName: "Flow Name",
-    flowDescription: "Flow Description",
-    entityType: "Entity Type",
-    isActive: "Active",
-    steps: "Steps",
-    stepName: "Step Name",
-    approverType: "Approver Type",
-    approverConfig: "Approver Configuration",
-    conditions: "Conditions",
-    addStep: "Add Step",
-    removeStep: "Remove Step",
-    moveUp: "Move Up",
-    moveDown: "Move Down",
-    requests: "Approval Requests",
-    createRequest: "Create Request",
-    requestTitle: "Request Title",
-    requestDescription: "Request Description",
-    currentStep: "Current Step",
-    approve: "Approve",
-    reject: "Reject",
-    delegate: "Delegate",
-    viewDetails: "View Details",
-    approveSuccess: "Request approved successfully",
-    rejectSuccess: "Request rejected successfully",
-    delegateSuccess: "Request delegated successfully",
-    error: "Error loading approvals",
-    statuses: {
-      pending: "Pending",
-      inProgress: "In Progress",
-      approved: "Approved",
-      rejected: "Rejected",
-      cancelled: "Cancelled",
-      expired: "Expired",
-    },
-    approverTypes: {
-      user: "User",
-      role: "Role",
-      department: "Department",
-      custom: "Custom",
     },
   },
   // Integrations module

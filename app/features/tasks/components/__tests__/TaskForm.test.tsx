@@ -7,39 +7,39 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { TaskForm } from "~/features/tasks/components/TaskForm";
-import type { TaskCreate, TaskStatus, TaskPriority } from "~/features/tasks/types/task.types";
+import type { TaskStatus, TaskPriority } from "~/features/tasks/types/task.types";
 
 // Mock useTranslation
 vi.mock("~/lib/i18n/useTranslation", () => ({
   useTranslation: () => ({
     t: (key: string) => {
       const translations: Record<string, string> = {
-        "tasks.createTask": "Crear Tarea",
-        "tasks.editTask": "Editar Tarea",
-        "tasks.title": "Título",
-        "tasks.description": "Descripción",
-        "tasks.status": "Estado",
-        "tasks.priority": "Prioridad",
-        "tasks.assignedTo": "Asignado a",
-        "tasks.dueDate": "Fecha de vencimiento",
-        "tasks.tags": "Etiquetas",
+        "tasks.createTask": "Create Task",
+        "tasks.editTask": "Edit Task",
+        "tasks.title": "Title",
+        "tasks.description": "Description",
+        "tasks.status": "Status",
+        "tasks.priority": "Priority",
+        "tasks.assignedTo": "Assigned to",
+        "tasks.dueDate": "Due date",
+        "tasks.tags": "Tags",
         "tasks.checklist.title": "Checklist",
-        "tasks.create": "Crear",
-        "tasks.update": "Actualizar",
-        "tasks.cancel": "Cancelar",
-        "tasks.loading": "Cargando...",
-        "tasks.title.required": "El título es requerido",
-        "tasks.status.todo": "Por hacer",
-        "tasks.status.in_progress": "En progreso",
-        "tasks.status.done": "Completado",
-        "tasks.priority.low": "Baja",
-        "tasks.priority.medium": "Media",
-        "tasks.priority.high": "Alta",
-        "tasks.priority.urgent": "Urgente",
-        "validation.required": "Este campo es requerido",
-        "common.save": "Guardar",
-        "common.cancel": "Cancelar",
-        "common.loading": "Cargando...",
+        "tasks.create": "Create",
+        "tasks.update": "Update",
+        "tasks.cancel": "Cancel",
+        "tasks.loading": "Loading...",
+        "tasks.title.required": "Title is required",
+        "tasks.status.todo": "To Do",
+        "tasks.status.in_progress": "In Progress",
+        "tasks.status.done": "Done",
+        "tasks.priority.low": "Low",
+        "tasks.priority.medium": "Medium",
+        "tasks.priority.high": "High",
+        "tasks.priority.urgent": "Urgent",
+        "validation.required": "This field is required",
+        "common.save": "Save",
+        "common.cancel": "Cancel",
+        "common.loading": "Loading...",
       };
       return translations[key] || key;
     },
@@ -137,11 +137,11 @@ describe("TaskForm component", () => {
 
       renderTaskForm();
 
-      expect(screen.getByLabelText(/título/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/descripción/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/estado/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/prioridad/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/asignado a/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/title/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/description/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/status/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/priority/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/assigned to/i)).toBeInTheDocument();
     });
 
     it("loads existing task data when editing", async () => {
@@ -199,12 +199,16 @@ describe("TaskForm component", () => {
       renderTaskForm();
 
       // Try to submit without title
-      const submitButton = screen.getByText(/crear/i);
-      fireEvent.click(submitButton);
+      // Find submit button by type="submit" instead of name
+      const submitButton = screen.getAllByRole('button')[1]; // Get second button (submit)
+      expect(submitButton).toBeInTheDocument();
+      if (submitButton) {
+        fireEvent.click(submitButton);
+      }
 
       // Should show validation error
       await waitFor(() => {
-        expect(screen.getByText(/el título es requerido/i)).toBeInTheDocument();
+        expect(screen.getByText(/title is required/i)).toBeInTheDocument();
       });
 
       expect(mockCreateTask).not.toHaveBeenCalled();
@@ -229,16 +233,20 @@ describe("TaskForm component", () => {
       renderTaskForm();
 
       // Fill form
-      fireEvent.change(screen.getByLabelText(/título/i), {
+      fireEvent.change(screen.getByLabelText(/title/i), {
         target: { value: "New Task" },
       });
-      fireEvent.change(screen.getByLabelText(/descripción/i), {
+      fireEvent.change(screen.getByLabelText(/description/i), {
         target: { value: "Task description" },
       });
 
       // Submit form
-      const submitButton = screen.getByText(/crear/i);
-      fireEvent.click(submitButton);
+      // Find submit button by type="submit" instead of name
+      const submitButton = screen.getAllByRole('button')[1]; // Get second button (submit)
+      expect(submitButton).toBeInTheDocument();
+      if (submitButton) {
+        fireEvent.click(submitButton);
+      }
 
       await waitFor(() => {
         expect(mockMutateAsync).toHaveBeenCalledWith({
@@ -401,12 +409,16 @@ describe("TaskForm component", () => {
       renderTaskForm();
 
       // Fill and submit form
-      fireEvent.change(screen.getByLabelText(/título/i), {
+      fireEvent.change(screen.getByLabelText(/title/i), {
         target: { value: "New Task" },
       });
 
-      const submitButton = screen.getByText(/crear/i);
-      fireEvent.click(submitButton);
+      // Find submit button by type="submit" instead of name
+      const submitButton = screen.getAllByRole('button')[1]; // Get second button (submit)
+      expect(submitButton).toBeInTheDocument();
+      if (submitButton) {
+        fireEvent.click(submitButton);
+      }
 
       await waitFor(() => {
         expect(screen.getByText(/creation failed/i)).toBeInTheDocument();

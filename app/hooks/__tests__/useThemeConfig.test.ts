@@ -4,10 +4,38 @@
 
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
+import React from "react";
 import type { ReactNode } from "react";
 import { useThemeConfig } from "../useThemeConfig";
 import { getThemeConfig, setThemeConfig, updateThemeConfigProperty } from "~/features/config/api/config.api";
+import { HookProviders } from "~/__tests__/helpers/test-providers";
+
+// Mock useTheme hook
+vi.mock("~/hooks/useTheme", () => ({
+  useTheme: () => ({
+    resolvedTheme: "light",
+    setTheme: vi.fn(),
+    theme: "light",
+  }),
+}));
+
+// Mock useThemeConfig hook dependencies
+vi.mock("~/lib/storage/themeCache", () => ({
+  readCachedTheme: vi.fn(),
+  writeCachedTheme: vi.fn(),
+}));
+
+vi.mock("~/stores/authStore", () => ({
+  useAuthStore: () => ({
+    user: { tenant_id: "test-tenant" },
+  }),
+}));
+
+// Mock ThemeProvider
+vi.mock("~/app/providers/ThemeProvider", () => ({
+  ThemeProvider: ({ children }: { children: ReactNode }) => children,
+}));
 
 // Mock apiClient
 vi.mock("~/lib/api/client", () => ({
@@ -108,9 +136,7 @@ const createWrapper = () => {
 
   // eslint-disable-next-line react/display-name
   return ({ children }: { children: ReactNode }) => {
-    // Use createElement to avoid JSX in .ts file
-    const React = require("react");
-    return React.createElement(QueryClientProvider, { client: queryClient }, children);
+    return React.createElement(HookProviders, { queryClient }, children);
   };
 };
 
@@ -237,10 +263,10 @@ describe("useThemeConfig", () => {
 
       const mockFaviconLink = {
         href: "",
-      };
+      } as unknown as Element;
 
       // Mock global document.querySelector
-      const globalQuerySelector = vi.spyOn(document, "querySelector").mockReturnValue(mockFaviconLink as any);
+      const globalQuerySelector = vi.spyOn(document, "querySelector").mockReturnValue(mockFaviconLink);
 
       vi.mocked(getThemeConfig).mockResolvedValue(mockThemeData);
 
@@ -252,7 +278,7 @@ describe("useThemeConfig", () => {
         expect(globalQuerySelector).toHaveBeenCalledWith("link[rel~='icon']");
       });
 
-      expect(mockFaviconLink.href).toBe("/assets/logos/favicon.ico");
+      expect((mockFaviconLink as any).href).toBe("/assets/logos/favicon.ico");
 
       // Restaurar el mock
       globalQuerySelector.mockRestore();

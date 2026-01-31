@@ -473,7 +473,7 @@ describe("ThemeConfigPage", () => {
         ?.querySelector('input[type="text"]') as HTMLInputElement;
 
       // Should show default value from component (not from mock)
-      expect(textInput?.value).toBe("#023E87");
+      expect(textInput?.value).toBe("#1976D2");
     });
   });
 

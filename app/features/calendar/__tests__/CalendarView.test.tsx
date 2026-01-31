@@ -11,6 +11,54 @@ import { EventForm } from "~/features/calendar/components/EventForm";
 import { EventDetails } from "~/features/calendar/components/EventDetails";
 import type { CalendarEvent, Calendar, CalendarViewType, RecurrenceType, ReminderType, AttendeeStatus } from "~/features/calendar/types/calendar.types";
 
+// Mock useTranslation
+vi.mock("~/lib/i18n/useTranslation", () => ({
+  useTranslation: () => ({
+    t: (key: string) => {
+      const translations: Record<string, string> = {
+        "calendar.views.month": "Month",
+        "calendar.views.week": "Week", 
+        "calendar.views.day": "Day",
+        "calendar.views.agenda": "Agenda",
+        "calendar.today": "Today",
+        "calendar.loading": "Loading calendar...",
+        "calendar.events.create": "Create Event",
+        "calendar.events.edit": "Edit Event",
+        "calendar.events.calendar": "Calendar",
+        "calendar.events.calendar.placeholder": "Select calendar",
+        "calendar.events.title": "Event Title",
+        "calendar.events.title.placeholder": "Event Title",
+        "calendar.events.description": "Description",
+        "calendar.events.description.placeholder": "Event description",
+        "calendar.events.start": "Start Time",
+        "calendar.events.startTime": "Start Time",
+        "calendar.events.end": "End Time",
+        "calendar.events.endTime": "End Time",
+        "calendar.events.location": "Location",
+        "calendar.events.location.placeholder": "Location",
+        "calendar.events.allDay": "All Day",
+        "calendar.events.reminders": "Reminders",
+        "calendar.events.save": "Save",
+        "calendar.events.cancel": "Cancel",
+        "calendar.details.edit": "Edit",
+        "calendar.details.delete": "Delete",
+        "calendar.details.close": "Close",
+        "calendar.details.allDay": "All Day",
+        "calendar.details.recurrence": "Recurrence",
+        "calendar.weekdays.mon": "Mon",
+        "calendar.weekdays.tue": "Tue",
+        "calendar.weekdays.wed": "Wed",
+        "calendar.weekdays.thu": "Thu",
+        "calendar.weekdays.fri": "Fri",
+        "calendar.weekdays.sat": "Sat",
+        "calendar.weekdays.sun": "Sun",
+        "date.formats.monthYear": "January 2025",
+      };
+      return translations[key] || key;
+    },
+  }),
+}));
+
 // Mock data
 const mockCalendar: Calendar = {
   id: "1",
@@ -87,10 +135,10 @@ describe("Calendar Module", () => {
         </QueryClientProvider>
       );
 
-      expect(screen.getByText("enero 2025")).toBeInTheDocument();
-      expect(screen.getByText("Mes")).toBeInTheDocument();
-      expect(screen.getByText("Semana")).toBeInTheDocument();
-      expect(screen.getByText("Día")).toBeInTheDocument();
+      expect(screen.getByText("January 2025")).toBeInTheDocument();
+      expect(screen.getByText("Month")).toBeInTheDocument();
+      expect(screen.getByText("Week")).toBeInTheDocument();
+      expect(screen.getByText("Day")).toBeInTheDocument();
       expect(screen.getByText("Agenda")).toBeInTheDocument();
     });
 
@@ -134,7 +182,7 @@ describe("Calendar Module", () => {
         </QueryClientProvider>
       );
 
-      const weekButton = screen.getByText("Semana");
+      const weekButton = screen.getByText("Week");
       fireEvent.click(weekButton);
 
       await waitFor(() => {
@@ -178,7 +226,7 @@ describe("Calendar Module", () => {
         </QueryClientProvider>
       );
 
-      expect(screen.getByText("Cargando calendario...")).toBeInTheDocument();
+      expect(screen.getByText("Loading calendar...")).toBeInTheDocument();
     });
   });
 
@@ -194,9 +242,9 @@ describe("Calendar Module", () => {
         </QueryClientProvider>
       );
 
-      expect(screen.getByText("Calendario")).toBeInTheDocument();
-      expect(screen.getByLabelText("Título")).toBeInTheDocument();
-      expect(screen.getByLabelText("Descripción")).toBeInTheDocument();
+      expect(screen.getByText("Calendar")).toBeInTheDocument();
+      expect(screen.getByLabelText("Event Title")).toBeInTheDocument();
+      expect(screen.getByLabelText("Description")).toBeInTheDocument();
       expect(screen.getByLabelText("Inicio")).toBeInTheDocument();
       expect(screen.getByLabelText("Fin")).toBeInTheDocument();
       expect(screen.getByLabelText("Ubicación")).toBeInTheDocument();
@@ -213,8 +261,8 @@ describe("Calendar Module", () => {
         </QueryClientProvider>
       );
 
-      expect(screen.getByText("Todo el día")).toBeInTheDocument();
-      expect(screen.getByText("Recordatorios")).toBeInTheDocument();
+      expect(screen.getByText("All Day")).toBeInTheDocument();
+      expect(screen.getByText("Reminders")).toBeInTheDocument();
     });
 
     it("calls onSubmit when form is submitted", async () => {
@@ -292,7 +340,7 @@ describe("Calendar Module", () => {
         </QueryClientProvider>
       );
 
-      const allDaySwitch = screen.getByText("Todo el día");
+      const allDaySwitch = screen.getByText("All Day");
       fireEvent.click(allDaySwitch);
 
       // Just verify the switch exists and is clickable
