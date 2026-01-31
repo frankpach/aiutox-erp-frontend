@@ -9,7 +9,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import apiClient from "~/lib/api/client";
 import type { StandardResponse } from "~/lib/api/types/common.types";
-import translations from "./translations";
+import translations, { type TranslationPath } from "./translations";
 
 interface GeneralSettings {
   timezone: string;
@@ -20,16 +20,6 @@ interface GeneralSettings {
 }
 
 type SupportedLanguage = "es" | "en";
-
-type NestedKeyOf<ObjectType extends object> = {
-  [Key in keyof ObjectType & (string | number)]: ObjectType[Key] extends object
-    ? `${Key}` | `${Key}.${NestedKeyOf<ObjectType[Key]>}`
-    : `${Key}`;
-}[keyof ObjectType & (string | number)];
-
-type TranslationPath = NestedKeyOf<typeof translations.es>;
-
-export type { TranslationPath };
 
 type TFunction = {
   (key: TranslationPath): string;
