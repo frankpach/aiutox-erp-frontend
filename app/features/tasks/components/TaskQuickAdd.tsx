@@ -32,12 +32,15 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { X } from "lucide-react";
 import { useCreateTask } from "../hooks/useTasks";
 import { useUsers } from "~/features/users/hooks/useUsers";
+import { useCalendars } from "~/features/calendar/hooks/useCalendar";
 import { createAssignment, createChecklistItem } from "../api/tasks.api";
+import { createEvent } from "~/features/calendar/api/calendar.api";
 import { useAuthStore } from "~/stores/authStore";
 import { MultiSelect } from "~/components/ui/multi-select";
 import { useTags } from "~/features/tags/hooks/useTags";
 import { FileUploader } from "./FileUploader";
 import { CommentThread } from "./CommentThread";
+import type { EventCreate, EventReminderCreate, RecurrenceType, ReminderType } from "~/features/calendar/types/calendar.types";
 import type { TaskCreate, TaskStatus, TaskPriority } from "../types/task.types";
 
 interface TaskQuickAddProps {
@@ -87,6 +90,12 @@ export function TaskQuickAdd({
   const { user } = useAuthStore();
   const { users } = useUsers({ page_size: 100 }); // Obtener usuarios para el MultiSelect
   const { data: tagList = [] } = useTags();
+  const { data: calendarsData } = useCalendars();
+  const calendars = calendarsData?.data || [];
+  
+  // Seleccionar primer calendario por defecto
+  const defaultCalendarId = calendars.find(c => c.is_default)?.id || calendars[0]?.id || "";
+  const [selectedCalendarId, setSelectedCalendarId] = useState(defaultCalendarId);
 
   const isControlled = open !== undefined;
   const isOpen = isControlled ? open : internalOpen;
@@ -120,6 +129,15 @@ export function TaskQuickAdd({
   const [mode, setMode] = useState<TaskFormMode>(defaultMode);
   const [formError, setFormError] = useState<string | null>(null);
   const [createdTaskId, setCreatedTaskId] = useState<string | null>(null);
+  
+  // Estado para recordatorios y recurrencia (solo para eventos)
+  const [reminders, setReminders] = useState<EventReminderCreate[]>([]);
+  const [recurrenceType, setRecurrenceType] = useState<RecurrenceType>("none");
+  const [recurrenceInterval, setRecurrenceInterval] = useState(1);
+  const [recurrenceEndDate, setRecurrenceEndDate] = useState("");
+  const [recurrenceCount, setRecurrenceCount] = useState<number | undefined>(undefined);
+  const [newReminderMinutes, setNewReminderMinutes] = useState(15);
+  const [newReminderType, setNewReminderType] = useState<ReminderType>("in_app");
 
   useEffect(() => {
     if (!isOpen || !initialDueDate || mode !== "task") {
@@ -180,6 +198,11 @@ export function TaskQuickAdd({
     setMode(defaultMode);
     setFormError(null);
     setCreatedTaskId(null);
+    setReminders([]);
+    setRecurrenceType("none");
+    setRecurrenceInterval(1);
+    setRecurrenceEndDate("");
+    setRecurrenceCount(undefined);
   };
 
   const handleClose = (openState: boolean) => {
@@ -207,6 +230,63 @@ export function TaskQuickAdd({
     );
   };
 
+  // Handlers para recordatorios
+  const handleAddReminder = () => {
+    const newReminder: EventReminderCreate = {
+      minutes_before: newReminderMinutes,
+      reminder_type: newReminderType,
+    };
+    setReminders([...reminders, newReminder]);
+  };
+
+  const handleDeleteReminder = (index: number) => {
+    setReminders(reminders.filter((_, i) => i !== index));
+  };
+
+  const formatMinutesBefore = (minutes: number) => {
+    if (minutes === 0) {
+      return t("calendar.reminders.at_start_time");
+    } else if (minutes < 60) {
+      return `${minutes} ${t("calendar.reminders.minutes_before")}`;
+    } else if (minutes < 1440) {
+      const hours = Math.floor(minutes / 60);
+      return `${hours} ${t("calendar.reminders.hours_before")}`;
+    } else {
+      const days = Math.floor(minutes / 1440);
+      return `${days} ${t("calendar.reminders.days_before")}`;
+    }
+  };
+
+  const getReminderTypeLabel = (type: ReminderType) => {
+    switch (type) {
+      case "email":
+        return t("calendar.reminders.types.email");
+      case "in_app":
+        return t("calendar.reminders.types.in_app");
+      case "push":
+        return t("calendar.reminders.types.push");
+      default:
+        return type;
+    }
+  };
+
+  // Handlers para recurrencia
+  const handleRecurrenceTypeChange = (value: RecurrenceType) => {
+    setRecurrenceType(value);
+  };
+
+  const handleRecurrenceIntervalChange = (value: number) => {
+    setRecurrenceInterval(value);
+  };
+
+  const handleRecurrenceEndDateChange = (value: string) => {
+    setRecurrenceEndDate(value);
+  };
+
+  const handleRecurrenceCountChange = (value: number | undefined) => {
+    setRecurrenceCount(value);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
@@ -229,28 +309,84 @@ export function TaskQuickAdd({
     }
 
     try {
+      if (mode === "event") {
+        // Crear evento puro en calendar_events
+        const eventPayload: EventCreate = {
+          calendar_id: selectedCalendarId,
+          title: formData.title || "",
+          description: formData.description || "",
+          start_time: toUTCISOString(formData.start_at)!,
+          end_time: toUTCISOString(formData.end_at)!,
+          all_day: Boolean(formData.all_day),
+          location: "", // Opcional - se podría agregar al formulario
+          // Agregar recurrencia si existe
+          ...(recurrenceType && recurrenceType !== "none" && {
+            recurrence_type: recurrenceType,
+            recurrence_end_date: recurrenceEndDate ? new Date(recurrenceEndDate).toISOString() : undefined,
+            recurrence_count: recurrenceCount,
+            recurrence_interval: recurrenceInterval,
+            recurrence_days_of_week: undefined,
+            recurrence_day_of_month: undefined,
+            recurrence_month_of_year: undefined,
+          }),
+          metadata: {
+            source: "quick_add",
+            created_as: "event",
+            priority: formData.priority,
+            assigned_to_id: formData.assigned_to_id || undefined
+          }
+        };
+
+        try {
+          const eventResponse = await createEvent(eventPayload);
+          const eventId = eventResponse.data.id;
+          
+          // Crear recordatorios si existen
+          if (reminders.length > 0) {
+            const { createReminder } = await import("~/features/calendar/api/calendar.api");
+            await Promise.all(
+              reminders.map((reminder) => 
+                createReminder(eventId, {
+                  reminder_type: reminder.reminder_type,
+                  minutes_before: reminder.minutes_before,
+                })
+              )
+            );
+          }
+          
+          // Crear asignaciones si se seleccionaron
+          if (assignedUserIds.length > 0 && user?.id) {
+            // TODO: Implementar asignaciones para eventos si es necesario
+            console.warn("Assignments for events not implemented yet");
+          }
+          
+          setCreatedTaskId(eventId);
+          return;
+        } catch (error) {
+          console.error("Error al crear evento:", error);
+          if (error instanceof Error && error.message.includes("timeout")) {
+            setFormError("El servidor tardó demasiado en responder. Por favor, intenta nuevamente.");
+          } else {
+            setFormError("Error al crear evento. Por favor, verifica los datos e intenta nuevamente.");
+          }
+          return;
+        }
+      }
+      
+      // Lógica existente para crear tareas
       const basePayload: TaskCreate = {
         ...(formData as TaskCreate),
         color_override: formData.color_override || undefined,
         tag_ids: formData.tag_ids?.length ? formData.tag_ids : undefined,
       };
 
-      const payload: TaskCreate =
-        mode === "event"
-          ? {
-              ...basePayload,
-              due_date: undefined,
-              start_at: toUTCISOString(formData.start_at)!,
-              end_at: toUTCISOString(formData.end_at)!,
-              all_day: Boolean(formData.all_day),
-            }
-          : {
-              ...basePayload,
-              due_date: toUTCISOString(formData.due_date),
-              start_at: undefined,
-              end_at: undefined,
-              all_day: false,
-            };
+      const payload: TaskCreate = {
+        ...basePayload,
+        due_date: toUTCISOString(formData.due_date),
+        start_at: undefined,
+        end_at: undefined,
+        all_day: false,
+      };
 
       const response = await createTask.mutateAsync(payload);
       const taskId = response.data.id;
@@ -341,7 +477,7 @@ export function TaskQuickAdd({
               : mode === "task" 
                 ? t("tasks.quickAdd.title") 
                 : mode === "event" 
-                  ? t("events.newEvent") 
+                  ? t("calendar.events.newEvent") 
                   : mode === "task" ? "Nueva Tarea" : "Nuevo Evento"
             }
           </DialogTitle>
@@ -390,6 +526,26 @@ export function TaskQuickAdd({
                 {t("tasks.type.event") || "Evento"}
               </Button>
             </div>
+
+            {/* Selector de calendario para eventos */}
+            {mode === "event" && calendars.length > 0 && (
+              <div className="space-y-2">
+                <Label htmlFor="calendar">Calendario</Label>
+                <Select value={selectedCalendarId} onValueChange={setSelectedCalendarId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar calendario" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {calendars.map((cal) => (
+                      <SelectItem key={cal.id} value={cal.id}>
+                        {cal.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <form
               onSubmit={(event) => {
                 void handleSubmit(event);
@@ -440,7 +596,7 @@ export function TaskQuickAdd({
                 htmlFor="quick-status"
                 className="block text-sm font-medium mb-2"
               >
-                {t("tasks.status.title")}
+                {t("tasks.statuses.title")}
               </label>
               <Select
                 value={formData.status}
@@ -473,7 +629,7 @@ export function TaskQuickAdd({
                 htmlFor="quick-priority"
                 className="block text-sm font-medium mb-2"
               >
-                {t("tasks.priority.title")}
+                {t("tasks.priorities.title")}
               </label>
               <Select
                 value={formData.priority}
@@ -672,6 +828,192 @@ export function TaskQuickAdd({
               <div className="text-xs text-muted-foreground text-center p-3 bg-muted/20 rounded">
                 {t('tasks.infoNote.addFilesAndComments') || "Para anexar comentarios y agregar archivos relevantes abra la tarea recién creada"}
               </div>
+            </div>
+          )}
+
+          {/* Recurrence - Solo para eventos */}
+          {isEventMode && (
+            <div className="border-t pt-4 mt-4">
+              <Label className="font-medium mb-2 block">
+                {t("calendar.recurrence.title") || "Recurrencia"}
+              </Label>
+              <div className="grid grid-cols-2 gap-4 mt-2">
+                <div>
+                  <Label htmlFor="quick-recurrence-type" className="text-sm text-muted-foreground">
+                    {t("calendar.recurrenceType") || "Tipo"}
+                  </Label>
+                  <Select
+                    value={recurrenceType}
+                    onValueChange={handleRecurrenceTypeChange}
+                  >
+                    <SelectTrigger id="quick-recurrence-type" className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">{t("calendar.recurrenceTypes.none") || "Ninguna"}</SelectItem>
+                      <SelectItem value="daily">{t("calendar.recurrenceTypes.daily") || "Diaria"}</SelectItem>
+                      <SelectItem value="weekly">{t("calendar.recurrenceTypes.weekly") || "Semanal"}</SelectItem>
+                      <SelectItem value="monthly">{t("calendar.recurrenceTypes.monthly") || "Mensual"}</SelectItem>
+                      <SelectItem value="yearly">{t("calendar.recurrenceTypes.yearly") || "Anual"}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {recurrenceType && recurrenceType !== "none" && (
+                  <div>
+                    <Label htmlFor="quick-recurrence-interval" className="text-sm text-muted-foreground">
+                      {t("calendar.recurrenceInterval") || "Intervalo"}
+                    </Label>
+                    <Input
+                      id="quick-recurrence-interval"
+                      type="number"
+                      min={1}
+                      value={recurrenceInterval}
+                      onChange={(e) =>
+                        handleRecurrenceIntervalChange(parseInt(e.target.value) || 1)
+                      }
+                      className="mt-1"
+                    />
+                  </div>
+                )}
+              </div>
+              {recurrenceType && recurrenceType !== "none" && (
+                <div className="grid grid-cols-2 gap-4 mt-3">
+                  <div>
+                    <Label htmlFor="quick-recurrence-end" className="text-sm text-muted-foreground">
+                      {t("calendar.recurrenceEndDate") || "Fecha fin"}
+                    </Label>
+                    <Input
+                      id="quick-recurrence-end"
+                      type="date"
+                      value={recurrenceEndDate}
+                      onChange={(e) =>
+                        handleRecurrenceEndDateChange(e.target.value)
+                      }
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="quick-recurrence-count" className="text-sm text-muted-foreground">
+                      {t("calendar.recurrenceCount") || "Repeticiones"}
+                    </Label>
+                    <Input
+                      id="quick-recurrence-count"
+                      type="number"
+                      min={1}
+                      value={recurrenceCount || ""}
+                      onChange={(e) =>
+                        handleRecurrenceCountChange(e.target.value ? parseInt(e.target.value) : undefined)
+                      }
+                      placeholder="Ilimitado"
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Reminders - Solo para eventos */}
+          {isEventMode && (
+            <div className="border-t pt-4 mt-4">
+              <Label className="font-medium mb-2 block">
+                {t("calendar.reminders.title") || "Recordatorios"}
+              </Label>
+              
+              {/* Lista de recordatorios existentes */}
+              {reminders.length > 0 && (
+                <div className="space-y-2 mb-4">
+                  {reminders.map((reminder, index) => (
+                    <div key={index} className="flex items-center justify-between p-2 border rounded-md bg-muted/30">
+                      <div className="flex items-center space-x-3">
+                        <span className="text-sm font-medium">
+                          {formatMinutesBefore(reminder.minutes_before)}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {getReminderTypeLabel(reminder.reminder_type)}
+                        </span>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteReminder(index)}
+                        disabled={isLoading}
+                        className="text-destructive hover:text-destructive h-6 w-6 p-0"
+                      >
+                        ×
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {/* Agregar nuevo recordatorio */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="quick-reminder-minutes" className="text-sm text-muted-foreground">
+                    {t("calendar.reminders.when") || "Cuándo"}
+                  </Label>
+                  <Select
+                    value={newReminderMinutes.toString()}
+                    onValueChange={(value) => setNewReminderMinutes(parseInt(value))}
+                  >
+                    <SelectTrigger id="quick-reminder-minutes" className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">{t("calendar.reminders.at_start_time") || "Al inicio"}</SelectItem>
+                      <SelectItem value="5">5 {t("calendar.reminders.minutes_before") || "minutos antes"}</SelectItem>
+                      <SelectItem value="15">15 {t("calendar.reminders.minutes_before") || "minutos antes"}</SelectItem>
+                      <SelectItem value="30">30 {t("calendar.reminders.minutes_before") || "minutos antes"}</SelectItem>
+                      <SelectItem value="60">1 {t("calendar.reminders.hours_before") || "hora antes"}</SelectItem>
+                      <SelectItem value="120">2 {t("calendar.reminders.hours_before") || "horas antes"}</SelectItem>
+                      <SelectItem value="1440">1 {t("calendar.reminders.days_before") || "día antes"}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="quick-reminder-type" className="text-sm text-muted-foreground">
+                    {t("calendar.reminders.type") || "Tipo"}
+                  </Label>
+                  <Select
+                    value={newReminderType}
+                    onValueChange={(value) => setNewReminderType(value as ReminderType)}
+                  >
+                    <SelectTrigger id="quick-reminder-type" className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="in_app">
+                        {t("calendar.reminders.types.in_app") || "Notificación en la aplicación"}
+                      </SelectItem>
+                      <SelectItem value="email">
+                        {t("calendar.reminders.types.email") || "Correo electrónico"}
+                      </SelectItem>
+                      <SelectItem value="push">
+                        {t("calendar.reminders.types.push") || "Notificación push"}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleAddReminder}
+                disabled={isLoading}
+                className="mt-3"
+              >
+                + {t("calendar.reminders.add") || "Agregar recordatorio"}
+              </Button>
+              
+              {reminders.length === 0 && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  {t("calendar.reminders.no_reminders") || "No hay recordatorios configurados"}
+                </p>
+              )}
             </div>
           )}
 

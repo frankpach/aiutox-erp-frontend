@@ -9,9 +9,12 @@ import { useTranslation } from "~/lib/i18n/useTranslation";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
+import { ReminderManager } from "~/features/calendar/components/ReminderManager";
+import { useEventReminders, useCreateReminder, useDeleteReminder } from "~/features/calendar/hooks/useCalendar";
 import type {
   CalendarEvent,
   Calendar,
+  EventReminderCreate,
 } from "~/features/calendar/types/calendar.types";
 
 interface EventDetailsProps {
@@ -31,6 +34,32 @@ export function EventDetails({
 }: EventDetailsProps) {
   const { t, language } = useTranslation();
   const dateLocale = language === "en" ? enUS : es;
+
+  // Reminders hooks
+  const { data: remindersData, isLoading: remindersLoading } = useEventReminders(event.id);
+  const createReminder = useCreateReminder();
+  const deleteReminder = useDeleteReminder();
+
+  // Extract reminders array from response
+  const reminders = remindersData?.data || [];
+
+  // Reminder handlers
+  const handleAddReminder = (reminder: Omit<EventReminderCreate, "id">) => {
+    createReminder.mutate({
+      eventId: event.id,
+      payload: reminder,
+    });
+  };
+
+  const handleUpdateReminder = (id: string, reminder: Omit<EventReminderCreate, "id">) => {
+    // For now, we don't have update functionality in the backend
+    // This would require implementing an update endpoint
+    console.log("Update reminder:", id, reminder);
+  };
+
+  const handleDeleteReminder = (id: string) => {
+    deleteReminder.mutate(id);
+  };
 
   const getCalendarColor = (calendarId: string) => {
     const calendar = calendars.find(c => c.id === calendarId);
@@ -158,18 +187,12 @@ export function EventDetails({
             <div className="space-y-2">
               <div className="flex items-center space-x-2">
                 <span className="font-medium">{t("calendar.recurrence.type")}:</span>
-                <span className="capitalize">{event.recurrence_type}</span>
+                <span>{t(`calendar.recurrence.${event.recurrence_type}`)}</span>
               </div>
-              <div className="flex items-center space-x-2">
-                <span className="font-medium">{t("calendar.recurrence.interval")}:</span>
-                <span>
-                  {t("calendar.recurrence.every")} {event.recurrence_interval} {event.recurrence_type}
-                </span>
-              </div>
-              {event.recurrence_end_date && (
+              {event.recurrence_interval && event.recurrence_interval > 1 && (
                 <div className="flex items-center space-x-2">
-                  <span className="font-medium">{t("calendar.recurrence.endDate")}:</span>
-                  <span>{formatDate(event.recurrence_end_date)}</span>
+                  <span className="font-medium">{t("calendar.recurrence.interval")}:</span>
+                  <span>{event.recurrence_interval}</span>
                 </div>
               )}
               {event.recurrence_count && (
@@ -182,6 +205,16 @@ export function EventDetails({
           </CardContent>
         </Card>
       )}
+
+      {/* Reminders */}
+      <ReminderManager
+        eventId={event.id}
+        reminders={reminders}
+        onAddReminder={handleAddReminder}
+        onUpdateReminder={handleUpdateReminder}
+        onDeleteReminder={handleDeleteReminder}
+        disabled={remindersLoading}
+      />
     </div>
   );
 }

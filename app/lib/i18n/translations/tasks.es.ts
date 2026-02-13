@@ -53,7 +53,8 @@ export const tasksTranslations = {
   filtersAllStatuses: "Todos los estados",
   filtersAllPriorities: "Todas las prioridades",
   filtersAssignedTo: "Asignado a",
-  filtersAssignedToPlaceholder: "Filtrar por ID de asignado...",
+  filtersAssignedToPlaceholder: "Filtrar por asignado...",
+  advancedFilters: "Filtros Avanzados",
   filtersDueDateRange: "Rango de Fecha de Vencimiento",
   filtersFrom: "Desde",
   filtersTo: "Hasta",
@@ -636,5 +637,17 @@ export const tasksTranslations = {
     currentFilter: "Filtro Actual",
     from: "Desde",
     to: "Hasta"
+  },
+  // Additional translations for direct access
+  "status.title": "Estado",
+  "priority.title": "Prioridad",
+  quickAddDescription: "Agrega tareas rápidamente con descripción simple",
+  quickAddPlaceholder: "Escribe una tarea rápida...",
+  checklist: {
+    title: "Checklist",
+    addItem: "Agregar item",
+  },
+  infoNote: {
+    addFilesAndComments: "Agregar archivos y comentarios",
   },
 };

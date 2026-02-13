@@ -32,13 +32,6 @@ const DEFAULT_EVENT_STATUS_VISUALS: Record<string, { icon: string; className: st
   completed: { icon: "✓", className: "text-white" },
   canceled: { icon: "✕", className: "text-white" },
   blocked: { icon: "!", className: "text-white" },
-  // Iconos específicos para eventos
-  scheduled: { icon: "📅", className: "text-white" },
-  confirmed: { icon: "✅", className: "text-white" },
-  tentative: { icon: "📝", className: "text-white" },
-  cancelled: { icon: "❌", className: "text-white" },
-  // Default para eventos que no tienen estado específico
-  event: { icon: "📅", className: "text-white" },
 };
 import {
   DndContext,
@@ -53,7 +46,6 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { ResizeHandle } from "~/features/calendar/components/ResizeHandle";
 import { canResizeEvent, buildResizedEventTimesWithValidation } from "~/features/calendar/utils/eventValidation";
-import { snapToGrid } from "~/features/calendar/utils/eventDrag";
 import { showToast } from "~/components/common/Toast";
 import {
   addDays,
@@ -501,12 +493,7 @@ export function CalendarView({
       return icon;
     }
     
-    // Fallback específico para eventos
-    if (activityType === "event") {
-      return DEFAULT_EVENT_STATUS_VISUALS[status] || DEFAULT_EVENT_STATUS_VISUALS["event"];
-    }
-    
-    // Fallback to default visuals para tareas
+    // Fallback to default visuals
     return DEFAULT_EVENT_STATUS_VISUALS[status] || { icon: "•", className: "text-white/70" };
   };
 
@@ -716,18 +703,15 @@ export function CalendarView({
                           onEventCreate={onEventCreate}
                           onEventClick={onEventClick}
                           renderEvent={(event) => {
-                            // Determinar si es tarea o evento
+                            // Identificar si es tarea o evento
                             const isTask = event.source_type === "task" || 
-                                          event.metadata?.activity_type === "task";
-                            
-                            // Configurar data-attributes según el tipo
+                                           event.metadata?.activity_type === "task";
                             const activityType = isTask ? "task" : "event";
                             const activitySubtype = isTask ? "task" : "event";
-                            
                             const activityIcon = getActivityIcon(event);
                             const eventColor = resolveEventColor(event);
                             const textColor = getEventTextColor(eventColor);
-                            const canResize = canResizeEvent(event) && !isTask; // Las tareas no pueden redimensionarse
+                            const canResize = canResizeEvent(event); // Ahora todos pueden redimensionarse si no son read-only
                             
                             return (
                               <div className="group/event flex w-full min-w-0 items-center gap-1 pr-2">
@@ -735,8 +719,8 @@ export function CalendarView({
                                   <button
                                     type="button"
                                     data-calendar-event="true"
-                                    data-activity-type={activityType}           // ← "task" o "event" según corresponda
-                                    data-activity-subtype={activitySubtype}     // ← "task" o "event" según corresponda
+                                    data-activity-type={activityType}           // ← "task" o "event"
+                                    data-activity-subtype={activitySubtype}     // ← "task" o "event"
                                     title={createStructuredTooltip(event)}
                                     className="box-border relative flex w-full min-w-0 max-w-[calc(100%-8px)] items-center overflow-hidden rounded-full px-2 py-1.5 text-left text-xs font-medium shadow-sm transition hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 data-[dragging=true]:cursor-grabbing"
                                     style={{
@@ -758,9 +742,9 @@ export function CalendarView({
                                     )}
                                     
                                     <span
-                                      className={cn("mr-1.5 text-[10px]", activityIcon?.className || "text-white/70")}
+                                      className={cn("mr-1.5 text-[10px]", activityIcon.className)}
                                     >
-                                      {activityIcon?.icon || "📅"}
+                                      {activityIcon.icon}
                                     </span>
                                     <span className="truncate min-w-0">
                                       {(() => {
@@ -820,64 +804,7 @@ export function CalendarView({
                             const activityIcon = getActivityIcon(bar.event);
                             const eventColor = resolveEventColor(bar.event);
                             const textColor = getEventTextColor(eventColor);
-                            const isTask = bar.event.source_type === "task" || 
-                                          bar.event.metadata?.activity_type === "task";
-                            const canResize = canResizeEvent(bar.event) && !isTask; // Las tareas no pueden redimensionarse
-                            
-                            // Determinar si el evento empieza o termina en esta fila/semana
-                            const isFirstLane = laneIndex === 0;
-                            const isLastLane = laneIndex === visibleLanes.length - 1;
-                            
-                            // Para eventos multi-día, calcular las semanas reales que abarca el evento
-                            const firstDayOfWeek = weekDays[0];
-                            if (!firstDayOfWeek) return null;
-                            
-                            const weekStart = startOfWeek(firstDayOfWeek, { weekStartsOn: 1 });
-                            const weekEnd = endOfWeek(firstDayOfWeek, { weekStartsOn: 1 });
-                            const eventStart = new Date(bar.event.start_time);
-                            const eventEnd = new Date(bar.event.end_time || bar.event.start_time);
-                            
-                            // Calcular semana de inicio y fin del evento
-                            const eventStartWeek = startOfWeek(eventStart, { weekStartsOn: 1 });
-                            const eventEndWeek = startOfWeek(eventEnd, { weekStartsOn: 1 });
-                            
-                            // Calcular número de semanas que abarca el evento
-                            const weeksDiff = Math.round((eventEndWeek.getTime() - eventStartWeek.getTime()) / (7 * 24 * 60 * 60 * 1000));
-                            const totalEventWeeks = weeksDiff + 1;
-                            
-                            // Calcular en qué semana del evento estamos (basado en la semana actual)
-                            const currentEventWeek = Math.round((weekStart.getTime() - eventStartWeek.getTime()) / (7 * 24 * 60 * 60 * 1000));
-                            const isFirstEventWeek = currentEventWeek === 0;
-                            const isLastEventWeek = currentEventWeek === weeksDiff;
-                            
-                            const eventStartsInThisWeek = eventStart >= weekStart && eventStart <= weekEnd;
-                            const eventEndsInThisWeek = eventEnd >= weekStart && eventEnd <= weekEnd;
-                            
-                            // Debug
-                            console.warn("🔍 Multi-day event debug:", {
-                              eventTitle: bar.event.title,
-                              laneIndex,
-                              totalLanes: visibleLanes.length,
-                              totalEventWeeks,
-                              currentEventWeek,
-                              isFirstLane,
-                              isLastLane,
-                              isFirstEventWeek,
-                              isLastEventWeek,
-                              weekStart: weekStart.toISOString().split('T')[0],
-                              weekEnd: weekEnd.toISOString().split('T')[0],
-                              eventStart: eventStart.toISOString().split('T')[0],
-                              eventEnd: eventEnd.toISOString().split('T')[0],
-                              eventStartsInThisWeek,
-                              eventEndsInThisWeek,
-                              showLeftHandle: canResize && (isFirstEventWeek || eventStartsInThisWeek),
-                              showRightHandle: canResize && (isLastEventWeek || eventEndsInThisWeek),
-                            });
-                            
-                            // Mostrar handle izquierdo solo si es primera semana del evento O si el evento empieza en esta semana
-                            const showLeftHandle = canResize && (isFirstEventWeek || eventStartsInThisWeek);
-                            // Mostrar handle derecho solo si es última semana del evento O si el evento termina en esta semana
-                            const showRightHandle = canResize && (isLastEventWeek || eventEndsInThisWeek);
+                            const canResize = canResizeEvent(bar.event);
                             
                             return (
                               <div
@@ -904,8 +831,8 @@ export function CalendarView({
                                       onEventClick?.(bar.event);
                                     }}
                                   >
-                                    {/* Resize Handle izquierdo - solo en primera fila o cuando empieza el evento */}
-                                    {showLeftHandle && (
+                                    {/* Resize Handle izquierdo */}
+                                    {canResize && (
                                       <ResizeHandle
                                         event={bar.event}
                                         direction="left"
@@ -916,17 +843,17 @@ export function CalendarView({
                                     <span
                                       className={cn(
                                         "mr-1.5 text-[10px]",
-                                        activityIcon?.className || "text-white/70"
+                                        activityIcon.className
                                       )}
                                     >
-                                      {activityIcon?.icon || "📅"}
+                                      {activityIcon.icon}
                                     </span>
                                     <span className="truncate min-w-0">
                                       {bar.event.title}
                                     </span>
                                     
-                                    {/* Resize Handle derecho - solo en última fila o cuando termina el evento */}
-                                    {showRightHandle && (
+                                    {/* Resize Handle derecho */}
+                                    {canResize && (
                                       <ResizeHandle
                                         event={bar.event}
                                         direction="right"
@@ -1216,7 +1143,18 @@ export function CalendarView({
 
                         return eventStart < slotEnd && eventEnd > slotStart;
                       })
-                      .map((event) => (
+                      .map((event) => {
+                        // Identificar si es tarea o evento
+                        const isTask = event.source_type === "task" || 
+                                       event.metadata?.activity_type === "task";
+                        const activityType = isTask ? "task" : "event";
+                        const activitySubtype = isTask ? "task" : "event";
+                        const activityIcon = getActivityIcon(event);
+                        const eventColor = resolveEventColor(event);
+                        const textColor = getEventTextColor(eventColor);
+                        const canResize = canResizeEvent(event);
+                        
+                        return (
                         <div
                           key={event.id}
                           className="group/event text-xs p-1 rounded truncate cursor-pointer hover:opacity-80 mb-1 flex items-center justify-between gap-2"
@@ -1229,29 +1167,60 @@ export function CalendarView({
                           }}
                         >
                           <DraggableEvent event={event} action="move">
-                            <span>
-                              {(() => {
-                                const timeLabel = getEventTimeLabel(
-                                  event,
-                                  "day"
-                                );
-                                return timeLabel ? `${timeLabel} ` : "";
-                              })()}
-                              {event.title}
-                            </span>
+                            <button
+                              type="button"
+                              data-calendar-event="true"
+                              data-activity-type={activityType}
+                              data-activity-subtype={activitySubtype}
+                              title={createStructuredTooltip(event)}
+                              className="box-border relative flex w-full min-w-0 max-w-[calc(100%-8px)] items-center overflow-hidden rounded-full px-2 py-1.5 text-left text-xs font-medium shadow-sm transition hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 data-[dragging=true]:cursor-grabbing"
+                              style={{
+                                backgroundColor: eventColor,
+                                color: textColor,
+                              }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onEventClick?.(event);
+                              }}
+                            >
+                              {/* Resize Handle izquierdo */}
+                              {canResize && (
+                                <ResizeHandle
+                                  event={event}
+                                  direction="left"
+                                  textColor={textColor}
+                                />
+                              )}
+                              
+                              <span
+                                className={cn("mr-1.5 text-[10px]", activityIcon.className)}
+                              >
+                                {activityIcon.icon}
+                              </span>
+                              <span className="truncate min-w-0">
+                                {(() => {
+                                  const timeLabel = getEventTimeLabel(
+                                    event,
+                                    "day"
+                                  );
+                                  return timeLabel ? `${timeLabel} ` : "";
+                                })()}
+                                {event.title}
+                              </span>
+                              
+                              {/* Resize Handle derecho */}
+                              {canResize && (
+                                <ResizeHandle
+                                  event={event}
+                                  direction="right"
+                                  textColor={textColor}
+                                />
+                              )}
+                            </button>
                           </DraggableEvent>
-                          {
-                            // Solo mostrar resize si es evento (no es tarea)
-                            !(event.source_type === "task" || event.metadata?.activity_type === "task") && canResizeEvent(event) && (
-                              <DraggableEvent event={event} action="resize">
-                                <span className="cursor-ew-resize text-[10px] opacity-70 group-hover/event:opacity-100">
-                                  ↔
-                                </span>
-                              </DraggableEvent>
-                            )
-                          }
                         </div>
-                      ))}
+                      );
+                    })}
                   </TimeSlot>
                 );
               })()}
@@ -1556,12 +1525,7 @@ export function CalendarView({
           const isTask = draggedEvent.source_type === "task" || 
                          draggedEvent.metadata?.activity_type === "task";
 
-          // Permitir movimiento de tareas, pero bloquear resize de tareas
-          if (isTask && payload.type === "resize") {
-            showToast(t("calendar.resize.taskNotResizable"), "warning");
-            setActiveEventId(null);
-            return;
-          }
+          // NOTA: Permitimos resize de tareas también, como funciona en TaskCalendar
 
           if (payload.type === "resize") {
             // Para resize, necesitamos la dirección del payload
@@ -1571,29 +1535,34 @@ export function CalendarView({
               return;
             }
 
-            // Snap to 15-minute grid for resize operations
-            const snappedDate = snapToGrid(targetDate);
+            // Para eventos, usar buildResizedEventTimesWithValidation
+            // Para tareas, dejar que TaskCalendar maneje la lógica
+            if (isTask) {
+              // Para tareas, simplemente llamar a onEventResize con el evento original
+              // TaskCalendar manejará la lógica específica de tareas
+              onEventResize?.(draggedEvent, targetDate, { preserveTime });
+            } else {
+              // Para eventos, validar y construir las nuevas fechas
+              const updates = buildResizedEventTimesWithValidation(
+                draggedEvent,
+                targetDate,
+                direction,
+                preserveTime
+              );
 
-            // Validar y construir las nuevas fechas
-            const updates = buildResizedEventTimesWithValidation(
-              draggedEvent,
-              snappedDate,
-              direction,
-              preserveTime
-            );
+              if (!updates) {
+                // Validación falló - mostrar error
+                showToast("La fecha de inicio debe ser menor o igual a la fecha de fin", "error");
+                setActiveEventId(null);
+                return;
+              }
 
-            if (!updates) {
-              // Validación falló - mostrar error
-              showToast(t("calendar.resize.invalid"), "error");
-              setActiveEventId(null);
-              return;
+              // Crear el evento actualizado con las nuevas fechas
+              const updatedEvent = { ...draggedEvent, ...updates };
+              
+              // Llamar a onEventResize para el evento actualizado y la fecha objetivo
+              onEventResize?.(updatedEvent, targetDate, { preserveTime });
             }
-
-            // Crear el evento actualizado con las nuevas fechas
-            const updatedEvent = { ...draggedEvent, ...updates };
-            
-            // Llamar a onEventResize para el evento actualizado y la fecha objetivo
-            onEventResize?.(updatedEvent, targetDate, { preserveTime });
           } else {
             onEventMove?.(draggedEvent, targetDate, { preserveTime });
           }

@@ -503,7 +503,7 @@ export const TaskAdvancedFilter = memo(({
 
             {/* Due Date Range and Assigned To - Same Row */}
             <div className="space-y-2">
-              <Label>{t("tasks.dueDateRange")}</Label>
+              <Label>{t("tasks.filtersDueDateRange")}</Label>
               <div className="flex gap-2">
                 <Input
                   type="date"
@@ -531,7 +531,7 @@ export const TaskAdvancedFilter = memo(({
                 onChange={(e) =>
                   handleFilterChange({ assignedToId: e.target.value })
                 }
-                placeholder={t("tasks.filterAssignedToPlaceholder")}
+                placeholder={t("tasks.filtersAssignedToPlaceholder")}
               />
             </div>
 

@@ -5,6 +5,12 @@
 import { tasksStatisticsEn } from './tasks.statistics.en';
 
 export const translations = {
+  // Direct task translations (level 1)
+  "tasks.filtersAssignedToPlaceholder": "Filter by assignee...",
+  "tasks.advancedFilters": "Advanced Filters",
+  "tasks.status.title": "Status",
+  "tasks.priority.title": "Priority",
+  
   // SavedFilters - General
   savedFilters: {
     title: "Saved Filters",
@@ -1323,7 +1329,9 @@ export const translations = {
       sun: "Sun",
     },
     events: {
+      newEvent: "New Event",
       create: "Create event",
+      allDay: "All day",
       edit: "Edit event",
       details: "Event details",
       confirmDelete: "Do you want to delete this event?",
@@ -1332,7 +1340,6 @@ export const translations = {
       description: "Description",
       startTime: "Start",
       endTime: "End",
-      allDay: "All day",
       location: "Location",
       reminders: "Reminders",
       attendees: "Attendees",
@@ -1346,6 +1353,7 @@ export const translations = {
       calendarPlaceholderAlt: "Select a calendar",
     },
     reminders: {
+      // Existing reminder translations
       minutes: "min",
       fiveMinutes: "5 min",
       fifteenMinutes: "15 min",
@@ -1355,8 +1363,26 @@ export const translations = {
       inApp: "In-app",
       email: "Email",
       push: "Push",
+      // New reminder translations for ReminderManager component
+      title: "Reminders",
+      when: "When",
+      type: "Type",
+      types: {
+        email: "Email",
+        in_app: "In-app notification",
+        push: "Push notification",
+        in_advance: "In advance",
+      },
+      add: "Add Reminder",
+      add_first: "Add First Reminder",
+      no_reminders: "No reminders configured",
+      at_start_time: "At event start",
+      minutes_before: "minutes before",
+      hours_before: "hours before",
+      days_before: "days before",
     },
     recurrence: {
+      title: "Recurrence",
       type: "Type",
       interval: "Interval",
       endDate: "End date",

@@ -6,6 +6,12 @@
 import { tasksTranslations } from './tasks.es';
 
 export const translations = {
+  // Direct task translations (level 1)
+  "tasks.filtersAssignedToPlaceholder": "Filtrar por asignado...",
+  "tasks.advancedFilters": "Filtros Avanzados",
+  "tasks.status.title": "Estado",
+  "tasks.priority.title": "Prioridad",
+  
   // SavedFilters - General
   savedFilters: {
     title: "Filtros Guardados",
@@ -243,6 +249,7 @@ export const translations = {
   // Common
   common: {
     name: "Nombre",
+    description: "Descripción",
     selectField: "Seleccionar campo",
     selectOperator: "Seleccionar operador",
     selectValue: "Seleccionar valor",
@@ -298,6 +305,8 @@ export const translations = {
     refresh: "Actualizar",
     expand: "Expandir",
     uploading: "Subiendo...",
+    files: "Archivos",
+    comments: "Comentarios",
   },
   // Layout
   layout: {
@@ -1295,6 +1304,45 @@ export const translations = {
     emptyDescription:
       "No hay calendarios activos para este tenant. Activa el calendario en la configuración del módulo.",
     emptyAction: "Ir a configuración de tareas",
+    events: {
+      newEvent: "Nuevo Evento",
+      create: "Crear Evento",
+      allDay: "Todo el día",
+    },
+    editEvent: "Editar Evento",
+    editEventDescription: "Edita los detalles del evento seleccionado",
+    eventDescriptionPlaceholder: "Describe los detalles del evento",
+    eventTitlePlaceholder: "Título del evento",
+    startTime: "Inicio",
+    endTime: "Fin",
+    location: "Ubicación",
+    locationPlaceholder: "Ubicación del evento",
+    status: "Estado",
+    recurrenceType: "Tipo de recurrencia",
+    attendees: "Asistentes",
+    selectAttendees: "Seleccionar asistentes",
+    // Status options
+    statuses: {
+      confirmed: "Confirmado",
+      tentative: "Tentativo",
+      cancelled: "Cancelado",
+    },
+    // Recurrence types
+    recurrenceTypes: {
+      none: "Ninguna",
+      daily: "Diaria",
+      weekly: "Semanal",
+      monthly: "Mensual",
+      yearly: "Anual",
+    },
+    // Error messages
+    errors: {
+      titleRequired: "El título es obligatorio",
+      eventTimesRequired: "Debes indicar inicio y fin para el evento",
+      invalidEventRange: "La hora de fin debe ser posterior al inicio",
+      updateFailed: "Error al actualizar el evento",
+    },
+    confirmDelete: "Confirmar Eliminación",
     labels: {
       time: "Hora",
       more: "más",
@@ -1386,30 +1434,8 @@ export const translations = {
       sat: "Sáb",
       sun: "Dom",
     },
-    events: {
-      create: "Crear evento",
-      edit: "Editar evento",
-      details: "Detalles del evento",
-      confirmDelete: "¿Deseas eliminar este evento?",
-      calendar: "Calendario",
-      title: "Título",
-      description: "Descripción",
-      startTime: "Inicio",
-      endTime: "Fin",
-      allDay: "Todo el día",
-      location: "Ubicación",
-      reminders: "Recordatorios",
-      attendees: "Asistentes",
-      recurrence: "Recurrencia",
-      date: "Fecha",
-      time: "Hora",
-      calendarPlaceholder: "Selecciona un calendario",
-      titlePlaceholder: "Título del evento",
-      descriptionPlaceholder: "Describe el evento",
-      locationPlaceholder: "Ubicación del evento",
-      calendarPlaceholderAlt: "Selecciona un calendario",
-    },
     reminders: {
+      // Existing reminder translations
       minutes: "min",
       fiveMinutes: "5 min",
       fifteenMinutes: "15 min",
@@ -1419,14 +1445,40 @@ export const translations = {
       inApp: "En app",
       email: "Email",
       push: "Push",
+      // New reminder translations for ReminderManager component
+      title: "Recordatorios",
+      when: "Cuándo",
+      type: "Tipo",
+      types: {
+        email: "Correo electrónico",
+        in_app: "Notificación en la aplicación",
+        push: "Notificación push",
+        in_advance: "Con antelación",
+      },
+      add: "Agregar Recordatorio",
+      add_first: "Agregar Primer Recordatorio",
+      no_reminders: "No hay recordatorios configurados",
+      at_start_time: "Al inicio del evento",
+      minutes_before: "minutos antes",
+      hours_before: "horas antes",
+      days_before: "días antes",
     },
     recurrence: {
+      title: "Recurrencia",
       type: "Tipo",
+      recurrenceType: "Tipo de recurrencia",
       interval: "Intervalo",
       endDate: "Fecha fin",
       count: "Cantidad",
       occurrences: "ocurrencias",
       every: "Cada",
+      types: {
+        none: "Ninguna",
+        daily: "Diaria",
+        weekly: "Semanal",
+        monthly: "Mensual",
+        yearly: "Anual",
+      },
     },
     files: {
       title: "Archivos",
@@ -1435,15 +1487,17 @@ export const translations = {
       orClickToSelect: "o haz clic para seleccionar",
       selectFile: "Seleccionar archivo",
     },
-    comments: {
-      title: "Comentarios",
-      noComments: "No hay comentarios",
-      placeholder: "Escribe un comentario...",
-      send: "Enviar",
-    },
     calendarSync: {
       sync: "Sincronizar",
     },
+  },
+  // Comments module (reusable across modules)
+  comments: {
+    title: "Comentarios",
+    noComments: "No hay comentarios",
+    placeholder: "Escribe un comentario...",
+    addPlaceholder: "Agrega un comentario...",
+    send: "Enviar",
   },
   // Approvals module
   approvals: {

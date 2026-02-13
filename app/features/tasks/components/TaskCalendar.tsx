@@ -42,14 +42,17 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { Refresh01Icon } from "@hugeicons/core-free-icons";
 import { TaskQuickAdd, type TaskFormMode } from "./TaskQuickAdd";
 import { TaskEdit } from "./TaskEdit";
+import { EventEdit } from "~/features/calendar/components/EventEdit";
 import { CalendarView } from "~/features/calendar/components/CalendarView";
 import { useMyTasks, useUpdateTask } from "../hooks/useTasks";
 import { useTags } from "~/features/tags/hooks/useTags";
+import { useEvents, useUpdateEvent } from "~/features/calendar/hooks/useCalendar";
 import type { Task, TaskListParams, TaskUpdate } from "../types/task.types";
 import type {
   CalendarEvent,
   Calendar,
   CalendarViewType,
+  EventUpdate,
 } from "~/features/calendar/types/calendar.types";
 
 interface TaskCalendarProps {
@@ -291,6 +294,7 @@ export function TaskCalendar({
     initialQuickAddDefaults
   );
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [calendarTasks, setCalendarTasks] = useState<Task[]>([]);
   const [filters, setFilters] = useState<TaskCalendarFilters>({
     status: "all",
@@ -302,7 +306,12 @@ export function TaskCalendar({
 
   const tasksQuery = useMyTasks(fetchParams ?? { page: 1, page_size: 100 });
   const updateTaskMutation = useUpdateTask();
+  const updateEventMutation = useUpdateEvent();
   const { data: tagList = [] } = useTags();
+  
+  // Obtener eventos del calendario
+  const { data: eventsData } = useEvents();
+  const calendarEvents = eventsData?.data || [];
 
   const resolvedTasks = useMemo(
     () => tasks ?? tasksQuery.data?.data ?? [],
@@ -395,8 +404,9 @@ export function TaskCalendar({
   }, [filteredTasks]);
 
   const events = useMemo<CalendarEvent[]>(
-    () =>
-      [...eventTasks, ...dueOnlyTasks].flatMap((task) => {
+    () => {
+      // Convertir tareas a eventos
+      const taskEvents = [...eventTasks, ...dueOnlyTasks].flatMap((task) => {
         const times = resolveTaskTimes(task);
         if (!times) {
           return [];
@@ -415,7 +425,7 @@ export function TaskCalendar({
             all_day: task.all_day ?? false,
             status: task.status,
             source_type: "task", 
-            recurrence_type: "none",
+            recurrence_type: "none" as const,
             recurrence_end_date: null,
             recurrence_count: null,
             recurrence_interval: 1,
@@ -435,12 +445,18 @@ export function TaskCalendar({
             updated_at: task.updated_at,
           },
         ];
-      }),
-    [eventTasks, dueOnlyTasks]
+      });
+      
+      // Combinar con eventos del calendario
+      return [...taskEvents, ...calendarEvents];
+    },
+    [eventTasks, dueOnlyTasks, calendarEvents]
   );
 
   const highlightDates = useMemo(() => {
     const set = new Set<string>();
+    
+    // Agregar fechas de tareas
     filteredTasks.forEach((task) => {
       const anchor = task.start_at || task.due_date || task.end_at;
       if (anchor) {
@@ -448,8 +464,17 @@ export function TaskCalendar({
         set.add(day);
       }
     });
+    
+    // Agregar fechas de eventos del calendario
+    calendarEvents.forEach((event) => {
+      if (event.start_time) {
+        const day = format(new Date(event.start_time), "yyyy-MM-dd");
+        set.add(day);
+      }
+    });
+    
     return set;
-  }, [filteredTasks]);
+  }, [filteredTasks, calendarEvents]);
 
   const applyTaskDateUpdate = (task: Task, payload: Partial<TaskUpdate>) => {
     const nextTask = { ...task };
@@ -561,34 +586,68 @@ export function TaskCalendar({
     targetDate: Date,
     options?: { preserveTime: boolean }
   ) => {
-    const task = calendarTasks.find((item) => item.id === event.id);
-    if (!task) {
-      return;
-    }
+    // Determinar si es tarea o evento
+    const isTask = event.source_type === "task" || 
+                  event.metadata?.activity_type === "task";
 
-    const payload = buildTaskUpdatePayload(
-      task,
-      targetDate,
-      "resize",
-      options?.preserveTime
-    );
-    applyOptimisticUpdate(task.id, payload);
-    updateTaskMutation.mutate(
-      {
-        id: task.id,
-        payload: {
-          ...payload,
-        },
-      },
-      {
-        onSuccess: () => {
-          handleRefresh();
-        },
-        onError: () => {
-          handleRefresh();
-        },
+    if (isTask) {
+      // Manejar resize de tarea
+      const task = calendarTasks.find((item) => item.id === event.id);
+      if (!task) {
+        return;
       }
-    );
+
+      const payload = buildTaskUpdatePayload(
+        task,
+        targetDate,
+        "resize",
+        options?.preserveTime
+      );
+      applyOptimisticUpdate(task.id, payload);
+      updateTaskMutation.mutate(
+        {
+          id: task.id,
+          payload: {
+            ...payload,
+          },
+        },
+        {
+          onSuccess: () => {
+            handleRefresh();
+          },
+          onError: (error) => {
+            console.error("Failed to update task:", error);
+            // Revertir optimist update si falla
+            handleRefresh();
+          },
+        }
+      );
+    } else {
+      // Manejar resize de evento - usar las fechas del evento actualizado
+      // El CalendarView ya calculó las fechas correctas usando buildResizedEventTimesWithValidation
+      // y las pasó en el objeto event actualizado
+      const eventPayload: EventUpdate = {
+        start_time: event.start_time,
+        end_time: event.end_time,
+      };
+
+      updateEventMutation.mutate(
+        {
+          id: event.id,
+          payload: eventPayload,
+        },
+        {
+          onSuccess: () => {
+            handleRefresh();
+          },
+          onError: (error: unknown) => {
+            console.error("Failed to update event:", error);
+            // Revertir optimist update si falla
+            handleRefresh();
+          },
+        }
+      );
+    }
   };
 
   const hasEvents = events.length > 0;
@@ -765,6 +824,19 @@ export function TaskCalendar({
           }}
         />
       )}
+      <EventEdit
+        event={editingEvent}
+        open={Boolean(editingEvent)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditingEvent(null);
+          }
+        }}
+        onEventUpdated={() => {
+          setEditingEvent(null);
+          handleRefresh();
+        }}
+      />
 
       <div className="grid gap-6 md:grid-cols-[280px_minmax(0,1fr)] lg:grid-cols-[320px_minmax(0,1fr)]">
         <div className="space-y-4">
@@ -1013,11 +1085,21 @@ export function TaskCalendar({
                     taskColorsById.get(event.id) || "#023E87"
                   }
                   onEventClick={(event) => {
+                    // Verificar si es una tarea
                     const task = calendarTasks.find(
                       (item) => item.id === event.id
                     );
                     if (task) {
                       handleTaskClick(task);
+                      return;
+                    }
+                    
+                    // Si no es tarea, es un evento del calendario
+                    const calendarEvent = calendarEvents.find(
+                      (item) => item.id === event.id
+                    );
+                    if (calendarEvent) {
+                      setEditingEvent(calendarEvent);
                     }
                   }}
                   onEventCreate={handleEventCreate}

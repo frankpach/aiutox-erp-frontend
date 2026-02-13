@@ -45,12 +45,14 @@ const loadModuleTranslations = (): ModuleTranslations => {
         const moduleName = matches[1];
         const lang = matches[2];
         
-        if (!modules[moduleName]) {
-          modules[moduleName] = { es: {}, en: {} };
-        }
-        
-        if (lang === 'es' || lang === 'en') {
-          modules[moduleName][lang] = moduleFiles[path] as Record<string, unknown>;
+        if (moduleName && lang) {
+          if (!modules[moduleName]) {
+            modules[moduleName] = { es: {}, en: {} };
+          }
+          
+          if (lang === 'es' || lang === 'en') {
+            modules[moduleName][lang] = moduleFiles[path] as Record<string, unknown>;
+          }
         }
       }
     }
@@ -68,17 +70,12 @@ const moduleTranslations = loadModuleTranslations();
 // Consolidar todas las traducciones
 const translations = {
   en: {
-    ...commonEn,
-    ...enTranslations,
-    search: {
-      ...enTranslations.search,
-      ...enSearchTranslations,
-    },
-    common: {
-      ...commonEn,
-      ...enTranslations.common,
-      ...enSearchTranslations.common,
-    },
+    // Direct task translations (priority keys)
+    "tasks.filtersAssignedToPlaceholder": "Filter by assignee...",
+    "tasks.advancedFilters": "Advanced Filters",
+    "tasks.status.title": "Status",
+    "tasks.priority.title": "Priority",
+    
     // Agregar traducciones de módulos descubiertos
     ...Object.fromEntries(
       Object.entries(moduleTranslations).map(([name, trans]) => [name, trans.en])

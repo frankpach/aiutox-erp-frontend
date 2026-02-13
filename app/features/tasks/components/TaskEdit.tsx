@@ -28,7 +28,7 @@ import {
 import { Switch } from "~/components/ui/switch";
 import { Edit01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useUpdateTask } from "../hooks/useTasks";
+import { useUpdateTask, useDeleteTask } from "../hooks/useTasks";
 import { useUsers } from "~/features/users/hooks/useUsers";
 import { useTags } from "~/features/tags/hooks/useTags";
 import { useAuthStore } from "~/stores/authStore";
@@ -63,9 +63,25 @@ export function TaskEdit({
 }: TaskEditProps) {
   const { t } = useTranslation();
   const updateTask = useUpdateTask();
+  const deleteTask = useDeleteTask();
   const { users } = useUsers({ page_size: 100 });
   const { data: tagList = [] } = useTags();
   const { user } = useAuthStore();
+  
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const handleDeleteTask = () => {
+    if (!task) return;
+    
+    void deleteTask.mutateAsync(task.id)
+      .then(() => {
+        onTaskUpdated?.();
+        onOpenChange(false);
+      })
+      .catch((error) => {
+        console.error("Error al eliminar tarea:", error);
+      });
+  };
   
   
   const DATE_INPUT_FORMAT = "yyyy-MM-dd'T'HH:mm";
@@ -551,6 +567,35 @@ export function TaskEdit({
             >
               {t("common.cancel")}
             </Button>
+            {!showDeleteConfirm ? (
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => setShowDeleteConfirm(true)}
+                disabled={isLoading}
+              >
+                {t("common.delete")}
+              </Button>
+            ) : (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={isLoading}
+                >
+                  {t("common.cancel")}
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={handleDeleteTask}
+                  disabled={deleteTask.isPending || isLoading}
+                >
+                  {deleteTask.isPending ? t("common.deleting") || "Eliminando..." : t("common.confirmDelete") || "Confirmar Eliminación"}
+                </Button>
+              </>
+            )}
             <Button type="submit" disabled={isLoading}>
               {isLoading ? t("common.saving") : t("tasks.update")}
             </Button>

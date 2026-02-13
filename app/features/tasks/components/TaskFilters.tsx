@@ -47,6 +47,12 @@ interface TaskFiltersProps {
 
 export function TaskFilters({ filters, onChange, onReset }: TaskFiltersProps) {
   const { t } = useTranslation();
+  
+  // Debug: Verificar qué traducciones está cargando el hook
+  console.log("Debug - tasks.advancedFilters:", t("tasks.advancedFilters"));
+  console.log("Debug - tasks.filtersAssignedToPlaceholder:", t("tasks.filtersAssignedToPlaceholder"));
+  console.log("Debug - savedFilters.title:", t("savedFilters.title"));
+  
   const [isCollapsed, setIsCollapsed] = useState(true);
 
   // Set default "to" date to today if not already set
@@ -247,7 +253,7 @@ export function TaskFilters({ filters, onChange, onReset }: TaskFiltersProps) {
             {/* Assigned To Filter */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t("tasks.filtersAssignedTo")}
+                {t("tasks.filtersAssignedTo")} - {t("tasks.status.title")}
               </label>
               <div className="relative">
                 <HugeiconsIcon
@@ -256,7 +262,7 @@ export function TaskFilters({ filters, onChange, onReset }: TaskFiltersProps) {
                   className="absolute left-3 top-1/2 text-gray-400"
                 />
                 <Input
-                  placeholder={t("tasks.filtersAssignedToPlaceholder")}
+                  placeholder="PRUEBA DIRECTA"
                   value={filters.assigned_to || ""}
                   onChange={(e) => updateFilter("assigned_to", e.target.value)}
                   className="pl-10"

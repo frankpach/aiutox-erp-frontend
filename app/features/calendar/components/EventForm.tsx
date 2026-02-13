@@ -19,11 +19,13 @@ import {
 import { Switch } from "~/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Label } from "~/components/ui/label";
+import { RecurrenceEditor, type RecurrenceConfig } from "~/features/calendar/components/RecurrenceEditor";
+import { ReminderManager } from "~/features/calendar/components/ReminderManager";
+import { configToBackend, backendToConfig } from "~/features/calendar/utils/recurrence";
 import type {
   CalendarEvent,
   EventCreate,
   Calendar,
-  ReminderType,
   EventReminderCreate,
 } from "~/features/calendar/types/calendar.types";
 
@@ -72,10 +74,20 @@ export function EventForm({
     recurrence_interval: event?.recurrence_interval || 1,
   });
 
+  // Reminders state
   const [reminders, setReminders] = useState<EventReminderCreate[]>([]);
-  const [newReminder, setNewReminder] = useState<EventReminderCreate>({
-    minutes_before: 15,
-    reminder_type: "in_app" as ReminderType,
+
+  // Initialize recurrence config from event
+  const [recurrenceConfig, setRecurrenceConfig] = useState<RecurrenceConfig | null>(() => {
+    if (event) {
+      return backendToConfig({
+        recurrence_type: event.recurrence_type,
+        recurrence_interval: event.recurrence_interval,
+        recurrence_end_date: event.recurrence_end_date || undefined,
+        recurrence_days_of_week: event.recurrence_days_of_week || undefined,
+      });
+    }
+    return null;
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -89,19 +101,34 @@ export function EventForm({
       return `${dateOnly}T${isEnd ? "23:59:59" : "00:00:00"}`;
     };
 
+    // Convert recurrence config to backend format
+    const recurrenceData = configToBackend(recurrenceConfig);
+    
+    // Type assertion to ensure compatibility with EventCreate
+    const typedRecurrenceData = {
+      recurrence_type: recurrenceData.recurrence_type as "none" | "daily" | "weekly" | "monthly" | "yearly",
+      recurrence_interval: recurrenceData.recurrence_interval,
+      recurrence_end_date: recurrenceData.recurrence_end_date,
+      recurrence_days_of_week: recurrenceData.recurrence_days_of_week,
+    };
+
     const payload = formData.all_day
       ? {
           ...formData,
+          ...typedRecurrenceData,
           start_time: normalizeAllDayTimestamp(formData.start_time, false),
           end_time: normalizeAllDayTimestamp(formData.end_time, true),
         }
-      : formData;
+      : {
+          ...formData,
+          ...typedRecurrenceData,
+        };
 
     onSubmit({ event: payload, reminders });
   };
 
   const handleFieldChange = (
-    field: keyof EventCreate,
+    field: keyof typeof formData,
     value: string | boolean | number
   ) => {
     setFormData((prev) => ({
@@ -110,13 +137,19 @@ export function EventForm({
     }));
   };
 
-  const addReminder = () => {
-    setReminders((prev) => [...prev, newReminder]);
-    setNewReminder({ minutes_before: 15, reminder_type: "in_app" });
+  // Reminder handlers
+  const handleAddReminder = (reminder: Omit<EventReminderCreate, "id">) => {
+    setReminders((prev) => [...prev, reminder]);
   };
 
-  const removeReminder = (index: number) => {
-    setReminders((prev) => prev.filter((_, i) => i !== index));
+  const handleUpdateReminder = (id: string, reminder: Omit<EventReminderCreate, "id">) => {
+    setReminders((prev) => 
+      prev.map((r, index) => index.toString() === id ? reminder : r)
+    );
+  };
+
+  const handleDeleteReminder = (id: string) => {
+    setReminders((prev) => prev.filter((_, index) => index.toString() !== id));
   };
 
   const handleAllDayToggle = (isAllDay: boolean) => {
@@ -269,91 +302,24 @@ export function EventForm({
               />
             </div>
 
-            {/* Reminders */}
+            {/* Recurrence */}
             <div className="space-y-2">
-              <Label>{t("calendar.events.reminders")}</Label>
-              <div className="flex space-x-2">
-                <Select
-                  value={newReminder.minutes_before.toString()}
-                  onValueChange={(value) =>
-                    setNewReminder((prev) => ({
-                      ...prev,
-                      minutes_before: parseInt(value),
-                    }))
-                  }
-                >
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5">
-                      {t("calendar.reminders.fiveMinutes")}
-                    </SelectItem>
-                    <SelectItem value="15">
-                      {t("calendar.reminders.fifteenMinutes")}
-                    </SelectItem>
-                    <SelectItem value="30">
-                      {t("calendar.reminders.thirtyMinutes")}
-                    </SelectItem>
-                    <SelectItem value="60">
-                      {t("calendar.reminders.oneHour")}
-                    </SelectItem>
-                    <SelectItem value="1440">
-                      {t("calendar.reminders.oneDay")}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select
-                  value={newReminder.reminder_type}
-                  onValueChange={(value: ReminderType) =>
-                    setNewReminder((prev) => ({
-                      ...prev,
-                      reminder_type: value,
-                    }))
-                  }
-                >
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="in_app">
-                      {t("calendar.reminders.inApp")}
-                    </SelectItem>
-                    <SelectItem value="email">
-                      {t("calendar.reminders.email")}
-                    </SelectItem>
-                    <SelectItem value="push">
-                      {t("calendar.reminders.push")}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button type="button" onClick={addReminder}>
-                  {t("common.add")}
-                </Button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {reminders.map((reminder, index) => (
-                  <span
-                    key={index}
-                    className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-muted text-foreground"
-                  >
-                    {reminder.minutes_before} {t("calendar.reminders.minutes")}{" "}
-                    {reminder.reminder_type === "in_app"
-                      ? t("calendar.reminders.inApp")
-                      : reminder.reminder_type === "email"
-                        ? t("calendar.reminders.email")
-                        : t("calendar.reminders.push")}
-                    <button
-                      type="button"
-                      onClick={() => removeReminder(index)}
-                      className="ml-1 text-muted-foreground hover:text-foreground"
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
+              <RecurrenceEditor
+                value={recurrenceConfig}
+                onChange={setRecurrenceConfig}
+                startDate={new Date(formData.start_time)}
+              />
             </div>
+
+            {/* Reminders */}
+            <ReminderManager
+              eventId={event?.id || "new"}
+              reminders={reminders.map((r, index) => ({ ...r, id: index.toString() }))}
+              onAddReminder={handleAddReminder}
+              onUpdateReminder={handleUpdateReminder}
+              onDeleteReminder={handleDeleteReminder}
+              disabled={loading}
+            />
 
             {/* Actions */}
             <div className="flex justify-end space-x-2">

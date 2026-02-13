@@ -16,6 +16,7 @@ import type {
   CalendarEvent,
   EventCreate,
   EventUpdate,
+  EventReminder,
   EventReminderCreate,
   CalendarListParams,
   EventListParams,
@@ -222,17 +223,36 @@ export async function createReminder(
 }
 
 /**
+ * List reminders for event
+ * GET /api/v1/calendar/events/{id}/reminders
+ *
+ * Requires: calendar.view permission
+ */
+export async function listEventReminders(
+  eventId: string,
+  params?: { page?: number; page_size?: number }
+): Promise<StandardListResponse<EventReminder>> {
+  const searchParams = new URLSearchParams();
+  if (params?.page) searchParams.set("page", params.page.toString());
+  if (params?.page_size) searchParams.set("page_size", params.page_size.toString());
+  
+  const response = await apiClient.get<StandardListResponse<EventReminder>>(
+    `/calendar/events/${eventId}/reminders?${searchParams.toString()}`
+  );
+  return response.data;
+}
+
+/**
  * Delete reminder from event
- * DELETE /api/v1/calendar/events/{id}/reminders/{reminder_id}
+ * DELETE /api/v1/calendar/reminders/{reminder_id}
  *
  * Requires: calendar.manage permission
  */
 export async function deleteReminder(
-  eventId: string,
   reminderId: string
 ): Promise<StandardResponse<null>> {
   const response = await apiClient.delete<StandardResponse<null>>(
-    `/calendar/events/${eventId}/reminders/${reminderId}`
+    `/calendar/reminders/${reminderId}`
   );
   return response.data;
 }

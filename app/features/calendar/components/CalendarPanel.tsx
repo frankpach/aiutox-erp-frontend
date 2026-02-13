@@ -11,25 +11,21 @@ import { Button } from "~/components/ui/button";
 import { Dialog, DialogContent } from "~/components/ui/dialog";
 import { EmptyState } from "~/components/common/EmptyState";
 import { CalendarView } from "~/features/calendar/components/CalendarView";
-import { EventForm } from "~/features/calendar/components/EventForm";
+import { TaskQuickAdd } from "~/features/tasks/components/TaskQuickAdd";
 import { EventDetails } from "~/features/calendar/components/EventDetails";
 import {
   useCalendars,
   useEvents,
-  useCreateEvent,
   useUpdateEvent,
   useDeleteEvent,
-  useCreateReminder,
 } from "~/features/calendar/hooks/useCalendar";
+import { useUpdateTask } from "~/features/tasks/hooks/useTasks";
 import {
   buildMovedEventTimes,
-  buildResizedEventTimes,
 } from "~/features/calendar/utils/eventDrag";
 import type {
   CalendarEvent,
   CalendarViewType,
-  EventCreate,
-  EventReminderCreate,
   EventUpdate,
 } from "~/features/calendar/types/calendar.types";
 
@@ -67,10 +63,9 @@ export function CalendarPanel({ showClose, onClose }: CalendarPanelProps) {
     end_date: eventParams.end_date,
   });
 
-  const createEventMutation = useCreateEvent();
   const updateEventMutation = useUpdateEvent();
   const deleteEventMutation = useDeleteEvent();
-  const createReminderMutation = useCreateReminder();
+  const updateTaskMutation = useUpdateTask();
 
   const calendars = calendarsData?.data || [];
   const hasCalendars = calendars.length > 0;
@@ -113,89 +108,84 @@ export function CalendarPanel({ showClose, onClose }: CalendarPanelProps) {
     targetDate: Date,
     options?: { preserveTime: boolean }
   ) => {
-    const payload = buildMovedEventTimes(
-      event,
-      targetDate,
-      options?.preserveTime ?? true
-    );
+    const isTask = event.source_type === "task" || 
+                   event.metadata?.activity_type === "task";
+    
+    if (isTask) {
+      // Actualizar tarea en su tabla
+      const taskPayload = {
+        start_at: options?.preserveTime 
+          ? combineDateAndTime(targetDate, event.start_time)
+          : targetDate.toISOString(),
+        end_at: event.end_time ? 
+          (options?.preserveTime 
+            ? combineDateAndTime(targetDate, event.end_time)
+            : targetDate.toISOString()) 
+          : undefined,
+      };
+      
+      void updateTaskMutation.mutate({
+        id: event.source_id || event.id,
+        payload: taskPayload
+      });
+    } else {
+      // Lógica existente para eventos
+      const payload = buildMovedEventTimes(
+        event,
+        targetDate,
+        options?.preserveTime ?? true
+      );
 
-    void updateEventMutation.mutate({
-      id: event.id,
-      payload,
-    });
+      void updateEventMutation.mutate({
+        id: event.id,
+        payload,
+      });
+    }
   };
 
   const handleEventResize = (
     event: CalendarEvent,
-    targetDate: Date,
-    options?: { preserveTime: boolean }
+    _targetDate: Date,
+    _options?: { preserveTime: boolean }
   ) => {
-    const payload = buildResizedEventTimes(
-      event,
-      targetDate,
-      options?.preserveTime ?? true
-    );
-    if (!payload) {
-      return;
+    // El evento ya viene con las fechas actualizadas desde CalendarView
+    // Solo necesitamos extraer los cambios y enviarlos al backend
+    const payload: EventUpdate = {};
+    
+    // Si el evento tiene start_time diferente al original, lo incluimos
+    if (event.start_time) {
+      payload.start_time = event.start_time;
     }
-
+    
+    // Si el evento tiene end_time diferente al original, lo incluimos
+    if (event.end_time) {
+      payload.end_time = event.end_time;
+    }
+    
+    // Actualizar el evento
     void updateEventMutation.mutate({
       id: event.id,
       payload,
     });
-  };
-
-  const handleEventSubmit = async (payload: {
-    event: EventCreate;
-    reminders: EventReminderCreate[];
-  }) => {
-    const { event, reminders } = payload;
-    if (selectedEvent) {
-      void updateEventMutation.mutate(
-        { id: selectedEvent.id, payload: event as EventUpdate },
-        {
-          onSuccess: () => {
-            setShowEventForm(false);
-            setSelectedEvent(null);
-            setInitialDate(null);
-            void refetchEvents();
-          },
-        }
-      );
-    } else {
-      try {
-        const response = await createEventMutation.mutateAsync(event);
-        const createdEvent = response.data;
-
-        if (createdEvent && reminders.length > 0) {
-          await Promise.all(
-            reminders.map((reminder) =>
-              createReminderMutation.mutateAsync({
-                eventId: createdEvent.id,
-                payload: reminder,
-              })
-            )
-          );
-        }
-
-        setShowEventForm(false);
-        setInitialDate(null);
-        void refetchEvents();
-      } catch (error) {
-        console.error("Failed to create event reminders:", error);
-      }
-    }
-  };
-
-  const handleEventFormCancel = () => {
-    setShowEventForm(false);
-    setSelectedEvent(null);
-    setInitialDate(null);
   };
 
   const handleEventDetailsClose = () => {
     setShowEventDetails(false);
     setSelectedEvent(null);
+  };
+
+  const combineDateAndTime = (date: Date, time: string): string => {
+    const targetDate = new Date(date);
+    const timeDate = new Date(time);
+    
+    targetDate.setHours(
+      timeDate.getHours(),
+      timeDate.getMinutes(),
+      timeDate.getSeconds(),
+      0
+    );
+    
+    return targetDate.toISOString();
   };
 
   return (
@@ -253,15 +243,21 @@ export function CalendarPanel({ showClose, onClose }: CalendarPanelProps) {
         onOpenChange={(open) => setShowEventForm(open)}
       >
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <EventForm
-            event={selectedEvent || undefined}
-            calendars={calendars}
-            initialDate={initialDate || undefined}
-            onSubmit={(payload) => void handleEventSubmit(payload)}
-            onCancel={handleEventFormCancel}
-            loading={
-              createEventMutation.isPending || updateEventMutation.isPending
-            }
+          <TaskQuickAdd
+            open={showEventForm}
+            onOpenChange={(open) => setShowEventForm(open)}
+            initialStartDate={initialDate || undefined}
+            initialEndDate={initialDate ? new Date(initialDate.getTime() + 60 * 60 * 1000) : undefined}
+            defaultMode="event"
+            onTaskCreated={() => {
+              setShowEventForm(false);
+              setInitialDate(null);
+              void refetchEvents();
+            }}
+            onFormReset={() => {
+              setSelectedEvent(null);
+              setInitialDate(null);
+            }}
           />
         </DialogContent>
       </Dialog>

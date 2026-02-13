@@ -4,6 +4,18 @@
 
 import type { CalendarEvent } from "~/features/calendar/types/calendar.types";
 
+/**
+ * Snaps a date to the nearest time interval.
+ * @param date - The date to snap
+ * @param intervalMinutes - Interval in minutes (default: 15)
+ * @returns A new Date rounded to the nearest interval
+ */
+export function snapToGrid(date: Date, intervalMinutes: number = 15): Date {
+  const ms = intervalMinutes * 60 * 1000;
+  const rounded = new Date(Math.round(date.getTime() / ms) * ms);
+  return rounded;
+}
+
 export function buildMovedEventTimes(
   event: CalendarEvent,
   targetDate: Date,

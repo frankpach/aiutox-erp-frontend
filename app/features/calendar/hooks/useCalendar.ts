@@ -17,17 +17,17 @@ import {
   updateEvent,
   deleteEvent,
   createReminder,
+  listEventReminders,
   deleteReminder,
   updateAttendeeStatus,
 } from "~/features/calendar/api/calendar.api";
 import type { 
-  CalendarCreate, 
   CalendarUpdate, 
   CalendarListParams,
-  EventCreate,
   EventUpdate,
   EventListParams,
   EventReminderCreate,
+  EventReminder,
 } from "~/features/calendar/types/calendar.types";
 
 // Calendars Query hooks
@@ -100,11 +100,13 @@ export function useDeleteCalendar() {
 
 // Events Query hooks
 export function useEvents(params?: EventListParams) {
+  console.warn("useEvents called with params:", params);
   return useQuery({
     queryKey: ["events", params],
     queryFn: () => listEvents(params),
     staleTime: 1000 * 60 * 2, // 2 minutes - events change more frequently
     retry: 2,
+    enabled: true, // Asegurar que siempre esté habilitado para debug
   });
 }
 
@@ -166,6 +168,17 @@ export function useDeleteEvent() {
   });
 }
 
+// Event Reminders Query hooks
+export function useEventReminders(eventId: string, params?: { page?: number; page_size?: number }) {
+  return useQuery({
+    queryKey: ["events", eventId, "reminders", params],
+    queryFn: () => listEventReminders(eventId, params),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: 2,
+    enabled: !!eventId,
+  });
+}
+
 // Event Reminders Mutation hooks
 export function useCreateReminder() {
   const queryClient = useQueryClient();
@@ -174,7 +187,8 @@ export function useCreateReminder() {
     mutationFn: ({ eventId, payload }: { eventId: string; payload: EventReminderCreate }) =>
       createReminder(eventId, payload),
     onSuccess: (_, variables) => {
-      // Invalidate specific event query
+      // Invalidate specific event reminders query
+      void queryClient.invalidateQueries({ queryKey: ["events", variables.eventId, "reminders"] });
       void queryClient.invalidateQueries({ queryKey: ["events", variables.eventId] });
     },
     onError: (error) => {
@@ -187,11 +201,11 @@ export function useDeleteReminder() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: ({ eventId, reminderId }: { eventId: string; reminderId: string }) =>
-      deleteReminder(eventId, reminderId),
-    onSuccess: (_, variables) => {
-      // Invalidate specific event query
-      void queryClient.invalidateQueries({ queryKey: ["events", variables.eventId] });
+    mutationFn: (reminderId: string) => deleteReminder(reminderId),
+    onSuccess: (_, _reminderId) => {
+      // Invalidate all reminders queries since we don't know which event
+      void queryClient.invalidateQueries({ queryKey: ["events"] });
+      void queryClient.invalidateQueries({ queryKey: ["reminders"] });
     },
     onError: (error) => {
       console.error("Failed to delete reminder:", error);
@@ -204,11 +218,10 @@ export function useUpdateAttendeeStatus() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: ({ eventId, userId, status }: { 
+    mutationFn: ({ eventId, status }: { 
       eventId: string; 
-      userId: string; 
       status: "accepted" | "declined" | "tentative" 
-    }) => updateAttendeeStatus(eventId, userId, status),
+    }) => updateAttendeeStatus(eventId, status),
     onSuccess: (_, variables) => {
       // Invalidate specific event query
       void queryClient.invalidateQueries({ queryKey: ["events", variables.eventId] });
