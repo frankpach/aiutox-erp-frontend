@@ -348,6 +348,8 @@ export const translations = {
     },
   },
   config: {
+    created: "Creado",
+    updated: "Actualizado",
     common: {
       loading: "Cargando...",
       saving: "Guardando...",

@@ -28,15 +28,43 @@ interface ModuleTranslations {
   };
 }
 
+interface ModuleTranslationFile {
+  translations?: Record<string, unknown>;
+  default?: Record<string, unknown>;
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function deepMergeRecords(
+  base: Record<string, unknown>,
+  extra: Record<string, unknown>
+): Record<string, unknown> {
+  const result: Record<string, unknown> = { ...base };
+
+  for (const [key, extraValue] of Object.entries(extra)) {
+    const baseValue = result[key];
+
+    if (isPlainObject(baseValue) && isPlainObject(extraValue)) {
+      result[key] = deepMergeRecords(baseValue, extraValue);
+      continue;
+    }
+
+    result[key] = extraValue;
+  }
+
+  return result;
+}
+
 // Descubrir y cargar traducciones de módulos
 const loadModuleTranslations = (): ModuleTranslations => {
   const modules: ModuleTranslations = {};
   
   try {
     // Usar Vite's import.meta.glob para descubrir archivos de módulos
-    const moduleFiles = import.meta.glob('../../features/**/i18n/*.ts', {
+    const moduleFiles = import.meta.glob('../../../features/**/i18n/*.ts', {
       eager: true,
-      import: 'default'
     });
     
     for (const path in moduleFiles) {
@@ -46,12 +74,13 @@ const loadModuleTranslations = (): ModuleTranslations => {
         const lang = matches[2];
         
         if (moduleName && lang) {
-          if (!modules[moduleName]) {
-            modules[moduleName] = { es: {}, en: {} };
-          }
+          const moduleBucket = modules[moduleName] ?? { es: {}, en: {} };
+          modules[moduleName] = moduleBucket;
           
           if (lang === 'es' || lang === 'en') {
-            modules[moduleName][lang] = moduleFiles[path] as Record<string, unknown>;
+            const fileModule = moduleFiles[path] as ModuleTranslationFile;
+            const translations = fileModule.translations ?? fileModule.default ?? {};
+            moduleBucket[lang] = translations;
           }
         }
       }
@@ -67,37 +96,52 @@ const loadModuleTranslations = (): ModuleTranslations => {
 // Cargar traducciones de módulos
 const moduleTranslations = loadModuleTranslations();
 
+function mergeModuleTranslationsByLanguage(language: 'es' | 'en'): Record<string, unknown> {
+  return Object.values(moduleTranslations).reduce<Record<string, unknown>>((acc, trans) => {
+    return deepMergeRecords(acc, trans[language] ?? {});
+  }, {});
+}
+
+const mergedModuleEn = mergeModuleTranslationsByLanguage('en');
+const mergedModuleEs = mergeModuleTranslationsByLanguage('es');
+
+const enBase = {
+  ...commonEn,
+  ...enTranslations,
+  search: {
+    ...enTranslations.search,
+    ...enSearchTranslations,
+  },
+  common: {
+    ...commonEn,
+    ...enTranslations.common,
+    ...enSearchTranslations.common,
+  },
+  // Direct task translations (priority keys)
+  "tasks.filtersAssignedToPlaceholder": "Filter by assignee...",
+  "tasks.advancedFilters": "Advanced Filters",
+  "tasks.status.title": "Status",
+  "tasks.priority.title": "Priority",
+};
+
+const esBase = {
+  ...commonEs,
+  ...esTranslations,
+  search: {
+    ...esTranslations.search,
+    ...esSearchTranslations,
+  },
+  common: {
+    ...commonEs,
+    ...esTranslations.common,
+    ...esSearchTranslations.common,
+  },
+};
+
 // Consolidar todas las traducciones
 const translations = {
-  en: {
-    // Direct task translations (priority keys)
-    "tasks.filtersAssignedToPlaceholder": "Filter by assignee...",
-    "tasks.advancedFilters": "Advanced Filters",
-    "tasks.status.title": "Status",
-    "tasks.priority.title": "Priority",
-    
-    // Agregar traducciones de módulos descubiertos
-    ...Object.fromEntries(
-      Object.entries(moduleTranslations).map(([name, trans]) => [name, trans.en])
-    ),
-  },
-  es: {
-    ...commonEs,
-    ...esTranslations,
-    search: {
-      ...esTranslations.search,
-      ...esSearchTranslations,
-    },
-    common: {
-      ...commonEs,
-      ...esTranslations.common,
-      ...esSearchTranslations.common,
-    },
-    // Agregar traducciones de módulos descubiertos
-    ...Object.fromEntries(
-      Object.entries(moduleTranslations).map(([name, trans]) => [name, trans.es])
-    ),
-  },
+  en: deepMergeRecords(enBase, mergedModuleEn),
+  es: deepMergeRecords(esBase, mergedModuleEs),
 } as const;
 
 export default translations;

@@ -33,7 +33,7 @@ function getNestedValue(
   obj: Record<string, unknown>,
   path: string
 ): string | undefined {
-  return path.split(".").reduce(
+  const result = path.split(".").reduce(
     (current, key) => {
       if (current && typeof current === "object" && key in current) {
         return current[key] as Record<string, unknown> | string | undefined;
@@ -41,7 +41,22 @@ function getNestedValue(
       return undefined;
     },
     obj as Record<string, unknown> | string | undefined
-  ) as string | undefined;
+  );
+
+  if (typeof result === "string") {
+    return result;
+  }
+
+  if (
+    result &&
+    typeof result === "object" &&
+    "__value" in result &&
+    typeof result.__value === "string"
+  ) {
+    return result.__value;
+  }
+
+  return undefined;
 }
 
 /**

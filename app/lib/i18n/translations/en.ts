@@ -363,6 +363,8 @@ export const translations = {
 
   // Config Pages
   config: {
+    created: "Created",
+    updated: "Updated",
     common: {
       loading: "Loading...",
       saving: "Saving...",
