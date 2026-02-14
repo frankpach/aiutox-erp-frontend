@@ -46,11 +46,15 @@ export function ResizeHandle({ event, direction, textColor }: ResizeHandleProps)
         "resize-handle",
         "absolute top-1/2 -translate-y-1/2 z-10",
         "flex items-center justify-center",
-        "w-4 h-4 cursor-ew-resize",
+        // Desktop: compact 16px, Mobile: 44px touch target
+        "w-4 h-4 md:w-4 md:h-4",
+        "touch-none cursor-ew-resize",
         "opacity-0 transition-opacity duration-150",
         "group-hover/event:opacity-80",
         "hover:opacity-100",
         "select-none",
+        // Mobile: larger touch area via padding
+        "before:absolute before:inset-[-14px] before:content-[''] md:before:inset-0",
         isDragging && "opacity-100 cursor-grabbing",
         // Posicionamiento en extremos
         direction === "left" ? "left-0" : "right-0"

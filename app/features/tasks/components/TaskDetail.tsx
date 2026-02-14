@@ -17,7 +17,9 @@ import {
   UploadIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useTask } from "~/features/tasks/hooks/useTasks";
+import { useTask, useUpdateTask } from "~/features/tasks/hooks/useTasks";
+import { SubtaskTree } from "~/features/tasks/components/SubtaskTree";
+import { TimeTracker } from "~/features/tasks/components/TimeTracker";
 import type {
   Task,
   TaskStatus,
@@ -30,6 +32,7 @@ export function TaskDetail() {
   const id = params.id as string;
   const navigate = useNavigate();
   const { data: taskResponse, isLoading, error } = useTask(id);
+  const updateTaskMutation = useUpdateTask();
 
   const task = taskResponse?.data;
 
@@ -248,6 +251,36 @@ export function TaskDetail() {
             </CardContent>
           </Card>
         )}
+
+        {/* Subtasks */}
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("tasks.subtasks.title")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <SubtaskTree
+              task={task}
+              level={0}
+              onToggleComplete={(taskId, completed) => {
+                updateTaskMutation.mutate({
+                  id: taskId,
+                  payload: { status: completed ? "done" : "todo" },
+                });
+              }}
+              onTaskClick={(sub) => navigate(`/tasks/${sub.id}`)}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Time Tracking */}
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("tasks.timeTracking.title")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <TimeTracker taskId={task.id} />
+          </CardContent>
+        </Card>
 
         {/* Metadata */}
         {task.metadata && Object.keys(task.metadata).length > 0 && (

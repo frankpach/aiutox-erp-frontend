@@ -63,5 +63,8 @@ export default [
   route("/config/audit", "routes/config.audit.tsx"),
   route("/config/files", "routes/config.files.tsx"),
   route("/settings/activity-icons", "routes/settings.activity-icons.tsx"),
+  // Gamification routes
+  route("/gamification", "routes/gamification.tsx"),
+  route("/gamification/manager", "routes/gamification.manager.tsx"),
   route("*", "routes/not-found.tsx"), // Catch-all para 404
 ] satisfies RouteConfig;

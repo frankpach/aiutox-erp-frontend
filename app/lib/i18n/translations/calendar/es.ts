@@ -52,6 +52,25 @@ export const calendarEs = {
     sat: "Sáb",
   },
   
+  // Quick Edit
+  quickEdit: {
+    title: "Edición rápida",
+    openFull: "Editar completo",
+    saved: "Evento actualizado",
+    error: "Error al actualizar evento",
+  },
+
+  // Mobile
+  mobile: {
+    actions: "Acciones",
+    view: "Ver detalles",
+    edit: "Editar",
+    quickEdit: "Edición rápida",
+    move: "Mover",
+    delete: "Eliminar",
+    confirmDelete: "¿Eliminar este evento?",
+  },
+
   // Resize
   resize: {
     invalid: "La fecha de inicio debe ser menor a la fecha de fin",
@@ -142,5 +161,8 @@ export const calendarEs = {
     minutes_before: "minutos antes",
     hours_before: "horas antes",
     days_before: "días antes",
+    delete: "Eliminar recordatorio",
+    confirmDelete: "¿Eliminar este recordatorio?",
+    limit: "Máximo 5 recordatorios por evento",
   },
 };

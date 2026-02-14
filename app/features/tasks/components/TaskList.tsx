@@ -25,6 +25,7 @@ import { Delete01Icon, Edit01Icon, Refresh01Icon, ViewIcon } from "@hugeicons/co
 import { TaskEdit } from "./TaskEdit";
 import { TaskView } from "./TaskView";
 import { useTaskAssignments } from "../hooks/useTasks";
+import { calculateSubtaskProgress } from "~/features/tasks/utils/subtasks";
 import type {
   Task,
   TaskStatus,
@@ -244,9 +245,15 @@ export const TaskAdvancedFilter = memo(({
       cell: (task: Task) => {
         const activityType = getActivityType(task);
         const typeLabel = activityType === "evento" ? "Evento" : "Tarea";
+        const progress = calculateSubtaskProgress(task);
         return (
           <div className="font-medium">
-            {typeLabel}: {task.title}
+            <span>{typeLabel}: {task.title}</span>
+            {progress.total > 0 && (
+              <Badge variant="secondary" className="ml-2 text-[10px] px-1.5 py-0">
+                {progress.completed}/{progress.total}
+              </Badge>
+            )}
           </div>
         );
       },

@@ -52,6 +52,25 @@ export const calendarEn = {
     sat: "Sat",
   },
   
+  // Quick Edit
+  quickEdit: {
+    title: "Quick Edit",
+    openFull: "Edit full",
+    saved: "Event updated",
+    error: "Error updating event",
+  },
+
+  // Mobile
+  mobile: {
+    actions: "Actions",
+    view: "View details",
+    edit: "Edit",
+    quickEdit: "Quick edit",
+    move: "Move",
+    delete: "Delete",
+    confirmDelete: "Delete this event?",
+  },
+
   // Resize
   resize: {
     invalid: "Start date must be before end date",
@@ -142,5 +161,8 @@ export const calendarEn = {
     minutes_before: "minutes before",
     hours_before: "hours before",
     days_before: "days before",
+    delete: "Delete reminder",
+    confirmDelete: "Delete this reminder?",
+    limit: "Maximum 5 reminders per event",
   },
 };

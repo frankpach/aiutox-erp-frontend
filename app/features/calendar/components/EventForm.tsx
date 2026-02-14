@@ -39,6 +39,7 @@ interface EventFormProps {
   }) => void;
   onCancel?: () => void;
   loading?: boolean;
+  mode?: "quick" | "full";
 }
 
 export function EventForm({
@@ -48,7 +49,9 @@ export function EventForm({
   onSubmit,
   onCancel,
   loading = false,
+  mode = "full",
 }: EventFormProps) {
+  const isFullMode = mode === "full";
   const { t } = useTranslation();
 
   const initialStartTime = event
@@ -191,8 +194,8 @@ export function EventForm({
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Calendar */}
-            <div className="space-y-2">
+            {/* Calendar - full mode only */}
+            {isFullMode && <div className="space-y-2">
               <Label htmlFor="calendar">{t("calendar.events.calendar")}</Label>
               <Select
                 value={formData.calendar_id}
@@ -221,7 +224,7 @@ export function EventForm({
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+            </div>}
 
             {/* Title */}
             <div className="space-y-2">
@@ -281,45 +284,53 @@ export function EventForm({
               </div>
             </div>
 
-            {/* All Day */}
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="all_day"
-                checked={formData.all_day}
-                onCheckedChange={handleAllDayToggle}
-              />
-              <Label htmlFor="all_day">{t("calendar.events.allDay")}</Label>
-            </div>
+            {/* All Day - full mode only */}
+            {isFullMode && (
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="all_day"
+                  checked={formData.all_day}
+                  onCheckedChange={handleAllDayToggle}
+                />
+                <Label htmlFor="all_day">{t("calendar.events.allDay")}</Label>
+              </div>
+            )}
 
-            {/* Location */}
-            <div className="space-y-2">
-              <Label htmlFor="location">{t("calendar.events.location")}</Label>
-              <Input
-                id="location"
-                value={formData.location}
-                onChange={(e) => handleFieldChange("location", e.target.value)}
-                placeholder={t("calendar.events.locationPlaceholder")}
-              />
-            </div>
+            {/* Location - full mode only */}
+            {isFullMode && (
+              <div className="space-y-2">
+                <Label htmlFor="location">{t("calendar.events.location")}</Label>
+                <Input
+                  id="location"
+                  value={formData.location}
+                  onChange={(e) => handleFieldChange("location", e.target.value)}
+                  placeholder={t("calendar.events.locationPlaceholder")}
+                />
+              </div>
+            )}
 
-            {/* Recurrence */}
-            <div className="space-y-2">
-              <RecurrenceEditor
-                value={recurrenceConfig}
-                onChange={setRecurrenceConfig}
-                startDate={new Date(formData.start_time)}
-              />
-            </div>
+            {/* Recurrence - full mode only */}
+            {isFullMode && (
+              <div className="space-y-2">
+                <RecurrenceEditor
+                  value={recurrenceConfig}
+                  onChange={setRecurrenceConfig}
+                  startDate={new Date(formData.start_time)}
+                />
+              </div>
+            )}
 
-            {/* Reminders */}
-            <ReminderManager
-              eventId={event?.id || "new"}
-              reminders={reminders.map((r, index) => ({ ...r, id: index.toString() }))}
-              onAddReminder={handleAddReminder}
-              onUpdateReminder={handleUpdateReminder}
-              onDeleteReminder={handleDeleteReminder}
-              disabled={loading}
-            />
+            {/* Reminders - full mode only */}
+            {isFullMode && (
+              <ReminderManager
+                eventId={event?.id || "new"}
+                reminders={reminders.map((r, index) => ({ ...r, id: index.toString() }))}
+                onAddReminder={handleAddReminder}
+                onUpdateReminder={handleUpdateReminder}
+                onDeleteReminder={handleDeleteReminder}
+                disabled={loading}
+              />
+            )}
 
             {/* Actions */}
             <div className="flex justify-end space-x-2">

@@ -3,7 +3,7 @@
  * Shared calendar content for page and modal rendering
  */
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router";
 import { endOfMonth, format, startOfMonth } from "date-fns";
 import { useTranslation } from "~/lib/i18n/useTranslation";
@@ -13,6 +13,8 @@ import { EmptyState } from "~/components/common/EmptyState";
 import { CalendarView } from "~/features/calendar/components/CalendarView";
 import { TaskQuickAdd } from "~/features/tasks/components/TaskQuickAdd";
 import { EventDetails } from "~/features/calendar/components/EventDetails";
+import { useEventQuickEdit } from "~/features/calendar/hooks/useEventQuickEdit";
+import { EventQuickEdit } from "~/features/calendar/components/EventQuickEdit";
 import {
   useCalendars,
   useEvents,
@@ -45,6 +47,9 @@ export function CalendarPanel({ showClose, onClose }: CalendarPanelProps) {
     null
   );
   const [initialDate, setInitialDate] = useState<Date | null>(null);
+  const quickEdit = useEventQuickEdit();
+  const quickEditAnchorRef = useRef<HTMLDivElement>(null);
+  const [quickEditAnchorStyle, setQuickEditAnchorStyle] = useState<React.CSSProperties>({});
 
   const { data: calendarsData, isLoading: calendarsLoading } = useCalendars();
   const startDate = startOfMonth(currentDate);
@@ -71,9 +76,28 @@ export function CalendarPanel({ showClose, onClose }: CalendarPanelProps) {
   const hasCalendars = calendars.length > 0;
   const events = eventsData?.data || [];
 
-  const handleEventClick = (event: CalendarEvent) => {
-    setSelectedEvent(event);
-    setShowEventDetails(true);
+  const handleEventClick = (event: CalendarEvent, mouseEvent?: React.MouseEvent) => {
+    if (mouseEvent) {
+      // Position the invisible anchor near the click for popover
+      const rect = (mouseEvent.currentTarget as HTMLElement).getBoundingClientRect();
+      setQuickEditAnchorStyle({
+        position: "fixed",
+        top: rect.top,
+        left: rect.left,
+        width: rect.width,
+        height: rect.height,
+        pointerEvents: "none",
+      });
+    }
+    quickEdit.open(event);
+  };
+
+  const handleOpenFullEdit = () => {
+    if (quickEdit.event) {
+      setSelectedEvent(quickEdit.event);
+      quickEdit.close();
+      setShowEventDetails(true);
+    }
   };
 
   const handleRefresh = () => {
@@ -113,15 +137,20 @@ export function CalendarPanel({ showClose, onClose }: CalendarPanelProps) {
     
     if (isTask) {
       // Actualizar tarea en su tabla
-      const taskPayload = {
-        start_at: options?.preserveTime 
-          ? combineDateAndTime(targetDate, event.start_time)
-          : targetDate.toISOString(),
-        end_at: event.end_time ? 
-          (options?.preserveTime 
+      const duration = event.end_time
+        ? new Date(event.end_time).getTime() - new Date(event.start_time).getTime()
+        : 0;
+      const newStart = options?.preserveTime
+        ? combineDateAndTime(targetDate, event.start_time)
+        : targetDate.toISOString();
+      const newEnd = event.end_time
+        ? (options?.preserveTime
             ? combineDateAndTime(targetDate, event.end_time)
-            : targetDate.toISOString()) 
-          : undefined,
+            : new Date(new Date(newStart).getTime() + duration).toISOString())
+        : undefined;
+      const taskPayload = {
+        start_at: newStart,
+        end_at: newEnd,
       };
       
       void updateTaskMutation.mutate({
@@ -236,6 +265,26 @@ export function CalendarPanel({ showClose, onClose }: CalendarPanelProps) {
           onEventResize={handleEventResize}
           loading={eventsLoading}
         />
+      )}
+
+      {/* Quick Edit Popover - positioned at clicked event */}
+      {quickEdit.event && (
+        <EventQuickEdit
+          event={quickEdit.event}
+          open={quickEdit.isOpen}
+          onOpenChange={(open) => {
+            if (!open) quickEdit.close();
+          }}
+          onSave={quickEdit.save}
+          onOpenFull={handleOpenFullEdit}
+          isSaving={quickEdit.isSaving}
+        >
+          <div
+            ref={quickEditAnchorRef}
+            style={quickEditAnchorStyle}
+            aria-hidden="true"
+          />
+        </EventQuickEdit>
       )}
 
       <Dialog

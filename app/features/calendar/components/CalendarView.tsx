@@ -50,11 +50,16 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { CSS } from "@dnd-kit/utilities";
 import { ResizeHandle } from "~/features/calendar/components/ResizeHandle";
-import { canResizeEvent, buildResizedEventTimesWithValidation } from "~/features/calendar/utils/eventValidation";
-import { snapToGrid } from "~/features/calendar/utils/eventDrag";
-import { showToast } from "~/components/common/Toast";
+import { canResizeEvent } from "~/features/calendar/utils/eventValidation";
+import { useEventResize } from "~/features/calendar/hooks/useEventResize";
+import {
+  HOUR_HEIGHT,
+  TOTAL_DAY_HEIGHT,
+  getTimedEventsForDay,
+  calculateEventPositions,
+  type PositionedEvent,
+} from "~/features/calendar/utils/eventLayout";
 import {
   addDays,
   addMonths,
@@ -91,7 +96,7 @@ interface CalendarViewProps {
   currentDate: Date;
   onDateChange: (date: Date) => void;
   onViewTypeChange: (type: CalendarViewType) => void;
-  onEventClick?: (event: CalendarEvent) => void;
+  onEventClick?: (event: CalendarEvent, mouseEvent?: React.MouseEvent) => void;
   onEventCreate?: (date: Date) => void;
   getEventColor?: (event: CalendarEvent) => string;
   onEventMove?: (
@@ -274,7 +279,7 @@ interface MonthDayCellProps {
   isToday: boolean;
   events: CalendarEvent[];
   onEventCreate?: (date: Date) => void;
-  onEventClick?: (event: CalendarEvent) => void;
+  onEventClick?: (event: CalendarEvent, mouseEvent?: React.MouseEvent) => void;
   renderEvent: (event: CalendarEvent) => ReactNode;
 }
 
@@ -363,7 +368,7 @@ function DraggableEvent({ event, children, action }: DraggableEventProps) {
   // Si es evento, permitir ambos move y resize
   const isDraggable = !isTask || action === "move";
 
-  const { attributes, listeners, setNodeRef, transform, isDragging } =
+  const { attributes, listeners, setNodeRef, isDragging } =
     useDraggable({
       id: `${action}-${event.id}`,
       data: { 
@@ -375,8 +380,9 @@ function DraggableEvent({ event, children, action }: DraggableEventProps) {
     });
 
   const style = {
-    transform: CSS.Translate.toString(transform),
-    opacity: isDragging ? 0.6 : 1,
+    // Don't apply transform to the original — DragOverlay shows the ghost.
+    // This prevents the visual offset between mouse and element.
+    opacity: isDragging ? 0.3 : 1,
     cursor: isDraggable ? "move" : "pointer",
   };
 
@@ -391,7 +397,7 @@ function DraggableEvent({ event, children, action }: DraggableEventProps) {
   );
 }
 
-interface TimeSlotProps {
+interface HourDropSlotProps {
   slotDate: Date;
   className?: string;
   style?: CSSProperties;
@@ -399,22 +405,16 @@ interface TimeSlotProps {
   children?: ReactNode;
 }
 
-function TimeSlot({
-  slotDate,
-  className,
-  style,
-  onClick,
-  children,
-}: TimeSlotProps) {
+function HourDropSlot({ slotDate, className, style, onClick, children }: HourDropSlotProps) {
   const { setNodeRef, isOver } = useDroppable({
-    id: `slot-${slotDate.toISOString()}`,
+    id: `hour-slot-${slotDate.toISOString()}`,
     data: { date: slotDate, preserveTime: false },
   });
 
   return (
     <div
       ref={setNodeRef}
-      className={`${className ?? ""} ${isOver ? "ring-2 ring-primary/40" : ""}`}
+      className={cn(className, isOver && "ring-2 ring-primary/40 bg-primary/10")}
       style={style}
       onClick={onClick}
     >
@@ -445,6 +445,7 @@ export function CalendarView({
     useSensor(KeyboardSensor)
   );
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
+  const { handleResize } = useEventResize({ onEventResize });
   
   // Fetch configurable icons
   const { data: iconConfigs } = useActivityIcons();
@@ -745,7 +746,7 @@ export function CalendarView({
                                     }}
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      onEventClick?.(event);
+                                      onEventClick?.(event, e);
                                     }}
                                   >
                                     {/* Resize Handle izquierdo */}
@@ -901,7 +902,7 @@ export function CalendarView({
                                     }}
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      onEventClick?.(bar.event);
+                                      onEventClick?.(bar.event, e);
                                     }}
                                   >
                                     {/* Resize Handle izquierdo - solo en primera fila o cuando empieza el evento */}
@@ -964,34 +965,51 @@ export function CalendarView({
     const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
     const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
     const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
-    const allDayEvents = days.map((day) =>
-      events.filter(
-        (event) => event.all_day && isSameDay(new Date(event.start_time), day)
-      )
+
+    // All-day events per day
+    const allDayEventsPerDay = days.map((day) =>
+      events.filter((event) => {
+        if (!event.all_day) return false;
+        const evStart = new Date(event.start_time);
+        const evEnd = new Date(event.end_time);
+        const dayStart = new Date(day.getFullYear(), day.getMonth(), day.getDate());
+        const dayEnd = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 23, 59, 59);
+        return evStart <= dayEnd && evEnd >= dayStart;
+      })
     );
 
-    return (
-      <div className="space-y-4">
-        <div
-          className="grid grid-cols-8 gap-0 border border-transparent"
-          style={{ background: SURFACE_GRADIENT }}
-        >
-          <div className="text-center font-medium text-sm text-muted-foreground p-2">
-            {t("calendar.labels.time")}
-          </div>
+    // Positioned timed events per day
+    const positionedPerDay = days.map((day) => {
+      const timedEvents = getTimedEventsForDay(events, day);
+      return calculateEventPositions(timedEvents, day);
+    });
 
+    const nowDate = new Date();
+    const nowMinutes = nowDate.getHours() * 60 + nowDate.getMinutes();
+
+    return (
+      <div className="flex flex-col">
+        {/* Header row */}
+        <div
+          className="grid gap-0 border-b border-border/60"
+          style={{ gridTemplateColumns: "60px repeat(7, 1fr)", background: SURFACE_GRADIENT }}
+        >
+          <div className="p-2" />
           {days.map((day) => (
             <div
               key={day.toISOString()}
-              className="text-center font-medium text-sm p-2"
+              className="text-center font-medium text-sm p-2 border-l"
+              style={{ borderColor: MUTED_BORDER_COLOR }}
             >
-              <div>{format(day, "EEE", { locale: dateLocale })}</div>
+              <div className="text-muted-foreground text-xs">
+                {format(day, "EEE", { locale: dateLocale })}
+              </div>
               <div
-                className={
-                  isSameDay(day, currentDate)
-                    ? "bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center mx-auto"
-                    : ""
-                }
+                className={cn(
+                  "text-lg font-semibold mt-0.5",
+                  isSameDay(day, nowDate) &&
+                    "bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center mx-auto"
+                )}
               >
                 {format(day, "d", { locale: dateLocale })}
               </div>
@@ -999,9 +1017,13 @@ export function CalendarView({
           ))}
         </div>
 
-        <div className="grid grid-cols-8 gap-0 border-y border-border/60">
+        {/* All-day row */}
+        <div
+          className="grid gap-0 border-b border-border/60"
+          style={{ gridTemplateColumns: "60px repeat(7, 1fr)" }}
+        >
           <div
-            className="text-xs text-muted-foreground p-2 text-right"
+            className="text-[10px] text-muted-foreground p-1 text-right"
             style={{ background: SURFACE_MUTED_BG }}
           >
             {t("calendar.events.allDay")}
@@ -1009,25 +1031,18 @@ export function CalendarView({
           {days.map((day, index) => (
             <div
               key={`allday-${day.toISOString()}`}
-              className="min-h-[40px] border-l p-1"
-              style={{
-                background: SURFACE_MUTED_BG,
-                borderColor: MUTED_BORDER_COLOR,
-              }}
+              className="min-h-[32px] border-l p-0.5 space-y-0.5"
+              style={{ background: SURFACE_MUTED_BG, borderColor: MUTED_BORDER_COLOR }}
             >
-              {allDayEvents[index]?.map((event) => (
+              {allDayEventsPerDay[index]?.map((event) => (
                 <div
                   key={event.id}
-                  className="mt-(--event-gap)"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEventClick?.(event);
-                  }}
+                  onClick={(e) => { e.stopPropagation(); onEventClick?.(event, e); }}
                 >
                   <DraggableEvent event={event} action="move">
                     <button
                       type="button"
-                      className="flex h-(--event-height) w-full items-center overflow-hidden rounded px-1 text-left text-[10px] sm:text-xs backdrop-blur-md transition hover:opacity-90"
+                      className="flex w-full items-center overflow-hidden rounded px-1 py-0.5 text-left text-[10px] backdrop-blur-md transition hover:opacity-90"
                       style={getEventStyles(resolveEventColor(event), {
                         variant: "soft",
                         borderColor: BRAND_ACCENT_COLOR,
@@ -1043,220 +1058,306 @@ export function CalendarView({
           ))}
         </div>
 
-        <div className="divide-y divide-border/60">
-          {Array.from({ length: 24 }, (_, hour) => (
-            <div key={hour} className="grid grid-cols-8 gap-0">
+        {/* Time grid with absolute-positioned events */}
+        <div className="overflow-y-auto" style={{ maxHeight: "calc(100vh - 280px)" }}>
+          <div
+            className="grid gap-0"
+            style={{ gridTemplateColumns: "60px repeat(7, 1fr)" }}
+          >
+            {/* Hour labels column */}
+            <div className="relative" style={{ height: TOTAL_DAY_HEIGHT }}>
+              {Array.from({ length: 24 }, (_, hour) => (
+                <div
+                  key={hour}
+                  className="absolute right-0 left-0 text-[10px] text-muted-foreground text-right pr-2 -translate-y-1/2"
+                  style={{ top: hour * HOUR_HEIGHT, height: HOUR_HEIGHT }}
+                >
+                  {hour > 0 ? `${hour.toString().padStart(2, "0")}:00` : ""}
+                </div>
+              ))}
+            </div>
+
+            {/* Day columns */}
+            {days.map((day, dayIndex) => (
               <div
-                className="text-xs text-muted-foreground px-2 py-3 text-right"
-                style={{ background: SURFACE_MUTED_BG }}
+                key={day.toISOString()}
+                className="relative border-l"
+                style={{ height: TOTAL_DAY_HEIGHT, borderColor: MUTED_BORDER_COLOR }}
               >
-                {hour.toString().padStart(2, "0")}:00
-              </div>
-              {days.map((day) => {
-                const hourEvents = events.filter((event) => {
-                  if (event.all_day) {
-                    return false;
-                  }
-                  const eventStart = new Date(event.start_time);
-                  const eventEnd = new Date(event.end_time);
-                  const slotStart = new Date(day);
-                  slotStart.setHours(hour, 0, 0, 0);
-                  const slotEnd = new Date(day);
-                  slotEnd.setHours(hour + 1, 0, 0, 0);
-                  return eventStart < slotEnd && eventEnd > slotStart;
-                });
+                {/* Hour grid lines — droppable targets */}
+                {Array.from({ length: 24 }, (_, hour) => {
+                  const slotDate = new Date(day);
+                  slotDate.setHours(hour, 0, 0, 0);
+                  return (
+                    <HourDropSlot
+                      key={hour}
+                      slotDate={slotDate}
+                      className="absolute left-0 right-0 border-t border-border/40 cursor-pointer hover:bg-primary/5 transition-colors"
+                      style={{ top: hour * HOUR_HEIGHT, height: HOUR_HEIGHT }}
+                      onClick={() => onEventCreate?.(slotDate)}
+                    />
+                  );
+                })}
 
-                const slotDate = new Date(day);
-                slotDate.setHours(hour, 0, 0, 0);
-
-                return (
-                  <TimeSlot
-                    key={`${day.toISOString()}-${hour}`}
-                    slotDate={slotDate}
-                    className="min-h-[44px] cursor-pointer"
-                    style={{
-                      background: SURFACE_MUTED_BG,
-                      borderLeft: `1px solid ${MUTED_BORDER_COLOR}`,
-                    }}
-                    onClick={() => {
-                      if (!hourEvents.length) {
-                        onEventCreate?.(slotDate);
-                      }
-                    }}
+                {/* Current time indicator */}
+                {isSameDay(day, nowDate) && (
+                  <div
+                    className="absolute left-0 right-0 z-20 pointer-events-none"
+                    style={{ top: (nowMinutes / 60) * HOUR_HEIGHT }}
                   >
-                    {hourEvents.map((event) => (
+                    <div className="flex items-center">
+                      <div className="w-2 h-2 rounded-full bg-red-500 -ml-1" />
+                      <div className="flex-1 h-[2px] bg-red-500" />
+                    </div>
+                  </div>
+                )}
+
+                {/* Positioned events */}
+                {positionedPerDay[dayIndex]?.map((pos: PositionedEvent) => {
+                  const eventColor = resolveEventColor(pos.event);
+                  const textColor = getEventTextColor(eventColor);
+                  const isTask = pos.event.source_type === "task" || pos.event.metadata?.activity_type === "task";
+                  const colWidth = 100 / pos.totalColumns;
+
+                  return (
+                    <div
+                      key={pos.event.id}
+                      className="absolute z-10 px-0.5"
+                      style={{
+                        top: pos.top,
+                        height: pos.height,
+                        left: `${pos.column * colWidth}%`,
+                        width: `${colWidth}%`,
+                      }}
+                    >
                       <div
-                        key={event.id}
-                        className="group/event text-xs p-1 rounded truncate cursor-pointer hover:opacity-80 flex items-center justify-between gap-2"
-                        style={getEventStyles(resolveEventColor(event), {
-                          borderColor: BRAND_PRIMARY_COLOR,
-                        })}
+                        className="group/event relative h-full rounded-md overflow-hidden cursor-pointer transition-shadow hover:shadow-lg border border-white/20"
+                        style={{
+                          backgroundColor: eventColor,
+                          color: textColor,
+                        }}
                         onClick={(e) => {
                           e.stopPropagation();
-                          onEventClick?.(event);
+                          onEventClick?.(pos.event, e);
                         }}
                       >
-                        <DraggableEvent event={event} action="move">
-                          <span>{event.title}</span>
-                        </DraggableEvent>
-                        {
-                          // Solo mostrar resize si es evento (no es tarea)
-                          !(event.source_type === "task" || event.metadata?.activity_type === "task") && canResizeEvent(event) && (
-                            <DraggableEvent event={event} action="resize">
-                              <span className="cursor-ew-resize text-[10px] opacity-70 group-hover/event:opacity-100">
-                                ↔
+                        <DraggableEvent event={pos.event} action="move">
+                          <div className="p-1 h-full flex flex-col overflow-hidden">
+                            <span className="text-[10px] font-semibold leading-tight truncate">
+                              {pos.event.title}
+                            </span>
+                            {pos.height > 30 && (
+                              <span className="text-[9px] opacity-80 truncate">
+                                {format(new Date(pos.event.start_time), "HH:mm")}
+                                {" – "}
+                                {format(new Date(pos.event.end_time), "HH:mm")}
                               </span>
-                            </DraggableEvent>
-                          )
-                        }
+                            )}
+                          </div>
+                        </DraggableEvent>
+
+                        {/* Bottom resize handle */}
+                        {!isTask && canResizeEvent(pos.event) && (
+                          <DraggableEvent event={pos.event} action="resize">
+                            <div className="absolute bottom-0 left-0 right-0 h-3 cursor-ns-resize opacity-0 group-hover/event:opacity-100 transition-opacity bg-linear-to-t from-black/20 to-transparent" />
+                          </DraggableEvent>
+                        )}
                       </div>
-                    ))}
-                  </TimeSlot>
-                );
-              })}
-            </div>
-          ))}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
   };
 
   const renderDayView = () => {
-    const dayEvents = events.filter((event) =>
-      isSameDay(new Date(event.start_time), currentDate)
-    );
-    const allDayEvents = dayEvents.filter((event) => event.all_day);
+    // Include multi-day events that overlap with currentDate
+    const allDayEvents = events.filter((event) => {
+      if (!event.all_day) return false;
+      const evStart = new Date(event.start_time);
+      const evEnd = new Date(event.end_time);
+      const dayStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
+      const dayEnd = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate(), 23, 59, 59);
+      return evStart <= dayEnd && evEnd >= dayStart;
+    });
+
+    // Positioned timed events
+    const timedEvents = getTimedEventsForDay(events, currentDate);
+    const positionedEvents = calculateEventPositions(timedEvents, currentDate);
+
+    const nowDate = new Date();
+    const nowMinutes = nowDate.getHours() * 60 + nowDate.getMinutes();
 
     return (
-      <div className="space-y-4">
+      <div className="flex flex-col">
+        {/* Day header */}
         <div
-          className="border rounded p-2"
+          className="text-center p-3 border-b border-border/60"
+          style={{ background: SURFACE_GRADIENT }}
+        >
+          <div className="text-muted-foreground text-sm">
+            {format(currentDate, "EEEE", { locale: dateLocale })}
+          </div>
+          <div
+            className={cn(
+              "text-2xl font-bold mt-1",
+              isSameDay(currentDate, nowDate) &&
+                "bg-primary text-primary-foreground rounded-full w-10 h-10 flex items-center justify-center mx-auto"
+            )}
+          >
+            {format(currentDate, "d", { locale: dateLocale })}
+          </div>
+        </div>
+
+        {/* All-day section */}
+        <div
+          className="border-b border-border/60 p-2"
           style={{ background: SURFACE_MUTED_BG }}
         >
-          <div className="text-xs text-muted-foreground mb-2">
+          <div className="text-[10px] text-muted-foreground mb-1">
             {t("calendar.events.allDay")}
           </div>
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             {allDayEvents.length === 0 && (
-              <div className="text-xs text-muted-foreground">
-                {t("calendar.labels.more")} 0
-              </div>
+              <div className="text-[10px] text-muted-foreground italic">—</div>
             )}
             {allDayEvents.map((event) => (
-              <DraggableEvent key={event.id} event={event} action="move">
-                <button
-                  type="button"
-                  className="flex h-(--event-height) w-full items-center overflow-hidden rounded px-1 text-left text-[10px] sm:text-xs backdrop-blur-md transition hover:opacity-90"
-                  style={getEventStyles(resolveEventColor(event), {
-                    variant: "soft",
-                    borderColor: BRAND_ACCENT_COLOR,
-                    enableShadow: false,
-                  })}
-                  onClick={() => onEventClick?.(event)}
-                >
-                  <span className="truncate">{event.title}</span>
-                </button>
-              </DraggableEvent>
+              <div
+                key={event.id}
+                onClick={(e) => { e.stopPropagation(); onEventClick?.(event, e); }}
+              >
+                <DraggableEvent event={event} action="move">
+                  <button
+                    type="button"
+                    className="flex w-full items-center overflow-hidden rounded px-2 py-1 text-left text-xs backdrop-blur-md transition hover:opacity-90"
+                    style={getEventStyles(resolveEventColor(event), {
+                      variant: "soft",
+                      borderColor: BRAND_ACCENT_COLOR,
+                      enableShadow: false,
+                    })}
+                  >
+                    <span className="truncate">{event.title}</span>
+                  </button>
+                </DraggableEvent>
+              </div>
             ))}
           </div>
         </div>
 
-        <div className="divide-y divide-border/60">
-          {Array.from({ length: 24 }, (_, hour) => (
-            <div key={hour} className="flex gap-2">
-              <div
-                className="text-xs text-muted-foreground w-16 py-3 text-right"
-                style={{ background: SURFACE_MUTED_BG }}
-              >
-                {hour.toString().padStart(2, "0")}:00
-              </div>
+        {/* Time grid with absolute-positioned events */}
+        <div className="overflow-y-auto" style={{ maxHeight: "calc(100vh - 320px)" }}>
+          <div className="flex">
+            {/* Hour labels */}
+            <div className="relative shrink-0" style={{ width: 60, height: TOTAL_DAY_HEIGHT }}>
+              {Array.from({ length: 24 }, (_, hour) => (
+                <div
+                  key={hour}
+                  className="absolute right-0 left-0 text-[10px] text-muted-foreground text-right pr-2 -translate-y-1/2"
+                  style={{ top: hour * HOUR_HEIGHT, height: HOUR_HEIGHT }}
+                >
+                  {hour > 0 ? `${hour.toString().padStart(2, "0")}:00` : ""}
+                </div>
+              ))}
+            </div>
 
-              {(() => {
+            {/* Day column */}
+            <div
+              className="relative flex-1 border-l"
+              style={{ height: TOTAL_DAY_HEIGHT, borderColor: MUTED_BORDER_COLOR }}
+            >
+              {/* Hour grid lines */}
+              {Array.from({ length: 24 }, (_, hour) => {
                 const slotDate = new Date(currentDate);
                 slotDate.setHours(hour, 0, 0, 0);
+                return (
+                  <HourDropSlot
+                    key={hour}
+                    slotDate={slotDate}
+                    className="absolute left-0 right-0 border-t border-border/40 cursor-pointer hover:bg-primary/5 transition-colors"
+                    style={{ top: hour * HOUR_HEIGHT, height: HOUR_HEIGHT }}
+                    onClick={() => onEventCreate?.(slotDate)}
+                  />
+                );
+              })}
+
+              {/* Current time indicator */}
+              {isSameDay(currentDate, nowDate) && (
+                <div
+                  className="absolute left-0 right-0 z-20 pointer-events-none"
+                  style={{ top: (nowMinutes / 60) * HOUR_HEIGHT }}
+                >
+                  <div className="flex items-center">
+                    <div className="w-2.5 h-2.5 rounded-full bg-red-500 -ml-1.5" />
+                    <div className="flex-1 h-[2px] bg-red-500" />
+                  </div>
+                </div>
+              )}
+
+              {/* Positioned events */}
+              {positionedEvents.map((pos: PositionedEvent) => {
+                const eventColor = resolveEventColor(pos.event);
+                const textColor = getEventTextColor(eventColor);
+                const isTask = pos.event.source_type === "task" || pos.event.metadata?.activity_type === "task";
+                const colWidth = 100 / pos.totalColumns;
 
                 return (
-                  <TimeSlot
-                    slotDate={slotDate}
-                    className="flex-1 min-h-[44px] cursor-pointer"
+                  <div
+                    key={pos.event.id}
+                    className="absolute z-10 px-0.5"
                     style={{
-                      background: SURFACE_MUTED_BG,
-                      borderLeft: `1px solid ${MUTED_BORDER_COLOR}`,
-                    }}
-                    onClick={() => {
-                      const hourEvents = events.filter((event) => {
-                        if (event.all_day) {
-                          return false;
-                        }
-                        const eventStart = new Date(event.start_time);
-                        const eventEnd = new Date(event.end_time);
-                        const slotStart = new Date(currentDate);
-                        slotStart.setHours(hour, 0, 0, 0);
-                        const slotEnd = new Date(currentDate);
-                        slotEnd.setHours(hour + 1, 0, 0, 0);
-
-                        return eventStart < slotEnd && eventEnd > slotStart;
-                      });
-                      if (!hourEvents.length) {
-                        onEventCreate?.(slotDate);
-                      }
+                      top: pos.top,
+                      height: pos.height,
+                      left: `${pos.column * colWidth}%`,
+                      width: `${colWidth}%`,
                     }}
                   >
-                    {dayEvents
-                      .filter((event) => {
-                        if (event.all_day) {
-                          return false;
-                        }
-                        const eventStart = new Date(event.start_time);
-                        const eventEnd = new Date(event.end_time);
-                        const slotStart = new Date(currentDate);
-                        slotStart.setHours(hour, 0, 0, 0);
-                        const slotEnd = new Date(currentDate);
-                        slotEnd.setHours(hour + 1, 0, 0, 0);
-
-                        return eventStart < slotEnd && eventEnd > slotStart;
-                      })
-                      .map((event) => (
-                        <div
-                          key={event.id}
-                          className="group/event text-xs p-1 rounded truncate cursor-pointer hover:opacity-80 mb-1 flex items-center justify-between gap-2"
-                          style={getEventStyles(resolveEventColor(event), {
-                            borderColor: BRAND_PRIMARY_COLOR,
-                          })}
-                          onClick={(eventClick) => {
-                            eventClick.stopPropagation();
-                            onEventClick?.(event);
-                          }}
-                        >
-                          <DraggableEvent event={event} action="move">
-                            <span>
-                              {(() => {
-                                const timeLabel = getEventTimeLabel(
-                                  event,
-                                  "day"
-                                );
-                                return timeLabel ? `${timeLabel} ` : "";
-                              })()}
-                              {event.title}
+                    <div
+                      className="group/event relative h-full rounded-md overflow-hidden cursor-pointer transition-shadow hover:shadow-lg border border-white/20"
+                      style={{
+                        backgroundColor: eventColor,
+                        color: textColor,
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEventClick?.(pos.event, e);
+                      }}
+                    >
+                      <DraggableEvent event={pos.event} action="move">
+                        <div className="p-1.5 h-full flex flex-col overflow-hidden">
+                          <span className="text-xs font-semibold leading-tight truncate">
+                            {pos.event.title}
+                          </span>
+                          {pos.height > 35 && (
+                            <span className="text-[10px] opacity-80 truncate mt-0.5">
+                              {format(new Date(pos.event.start_time), "HH:mm")}
+                              {" – "}
+                              {format(new Date(pos.event.end_time), "HH:mm")}
                             </span>
-                          </DraggableEvent>
-                          {
-                            // Solo mostrar resize si es evento (no es tarea)
-                            !(event.source_type === "task" || event.metadata?.activity_type === "task") && canResizeEvent(event) && (
-                              <DraggableEvent event={event} action="resize">
-                                <span className="cursor-ew-resize text-[10px] opacity-70 group-hover/event:opacity-100">
-                                  ↔
-                                </span>
-                              </DraggableEvent>
-                            )
-                          }
+                          )}
+                          {pos.height > 60 && pos.event.description && (
+                            <span className="text-[9px] opacity-60 truncate mt-0.5">
+                              {pos.event.description}
+                            </span>
+                          )}
                         </div>
-                      ))}
-                  </TimeSlot>
+                      </DraggableEvent>
+
+                      {/* Bottom resize handle */}
+                      {!isTask && canResizeEvent(pos.event) && (
+                        <DraggableEvent event={pos.event} action="resize">
+                          <div className="absolute bottom-0 left-0 right-0 h-3 cursor-ns-resize opacity-0 group-hover/event:opacity-100 transition-opacity bg-linear-to-t from-black/20 to-transparent" />
+                        </DraggableEvent>
+                      )}
+                    </div>
+                  </div>
                 );
-              })()}
+              })}
             </div>
-          ))}
+          </div>
         </div>
       </div>
     );
@@ -1376,7 +1477,7 @@ export function CalendarView({
                     <button
                       key={event.id}
                       type="button"
-                      onClick={() => onEventClick?.(event)}
+                      onClick={(e) => onEventClick?.(event, e)}
                       className="group w-full rounded-lg border border-border/60 bg-card p-3 text-left transition-all hover:border-primary/40 hover:shadow-md"
                     >
                       <div className="flex items-start gap-3">
@@ -1473,11 +1574,12 @@ export function CalendarView({
     <div className="w-full">
       {/* Toolbar */}
       {showHeader && (
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col gap-2 mb-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="icon"
+              className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0"
               onClick={() => navigateDate("prev")}
             >
               <ChevronLeftIcon className="h-4 w-4" />
@@ -1485,39 +1587,48 @@ export function CalendarView({
             <Button
               variant="outline"
               size="icon"
+              className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0"
               onClick={() => navigateDate("next")}
             >
               <ChevronRightIcon className="h-4 w-4" />
             </Button>
-            <div className="text-sm font-medium">
+            <div className="text-sm font-medium truncate">
               {format(currentDate, "MMMM yyyy", { locale: dateLocale })}
             </div>
-            <Button variant="outline" onClick={() => onDateChange(new Date())}>
+            <Button variant="outline" className="min-h-[44px] sm:min-h-0" onClick={() => onDateChange(new Date())}>
               {t("calendar.today")}
             </Button>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-1 sm:space-x-2 overflow-x-auto">
               <Button
                 variant={viewType === "month" ? "default" : "outline"}
+                size="sm"
+                className="min-h-[44px] sm:min-h-0 text-xs sm:text-sm"
                 onClick={() => onViewTypeChange("month")}
               >
                 {t("calendar.views.month")}
               </Button>
               <Button
                 variant={viewType === "week" ? "default" : "outline"}
+                size="sm"
+                className="min-h-[44px] sm:min-h-0 text-xs sm:text-sm"
                 onClick={() => onViewTypeChange("week")}
               >
                 {t("calendar.views.week")}
               </Button>
               <Button
                 variant={viewType === "day" ? "default" : "outline"}
+                size="sm"
+                className="min-h-[44px] sm:min-h-0 text-xs sm:text-sm"
                 onClick={() => onViewTypeChange("day")}
               >
                 {t("calendar.views.day")}
               </Button>
               <Button
                 variant={viewType === "agenda" ? "default" : "outline"}
+                size="sm"
+                className="min-h-[44px] sm:min-h-0 text-xs sm:text-sm"
                 onClick={() => onViewTypeChange("agenda")}
               >
                 {t("calendar.views.agenda")}
@@ -1552,48 +1663,13 @@ export function CalendarView({
             return;
           }
 
-          // Identificar si es tarea
-          const isTask = draggedEvent.source_type === "task" || 
-                         draggedEvent.metadata?.activity_type === "task";
-
-          // Permitir movimiento de tareas, pero bloquear resize de tareas
-          if (isTask && payload.type === "resize") {
-            showToast(t("calendar.resize.taskNotResizable"), "warning");
-            setActiveEventId(null);
-            return;
-          }
-
           if (payload.type === "resize") {
-            // Para resize, necesitamos la dirección del payload
             const direction = payload.direction;
             if (!direction) {
               setActiveEventId(null);
               return;
             }
-
-            // Snap to 15-minute grid for resize operations
-            const snappedDate = snapToGrid(targetDate);
-
-            // Validar y construir las nuevas fechas
-            const updates = buildResizedEventTimesWithValidation(
-              draggedEvent,
-              snappedDate,
-              direction,
-              preserveTime
-            );
-
-            if (!updates) {
-              // Validación falló - mostrar error
-              showToast(t("calendar.resize.invalid"), "error");
-              setActiveEventId(null);
-              return;
-            }
-
-            // Crear el evento actualizado con las nuevas fechas
-            const updatedEvent = { ...draggedEvent, ...updates };
-            
-            // Llamar a onEventResize para el evento actualizado y la fecha objetivo
-            onEventResize?.(updatedEvent, targetDate, { preserveTime });
+            handleResize(draggedEvent, targetDate, direction, preserveTime);
           } else {
             onEventMove?.(draggedEvent, targetDate, { preserveTime });
           }

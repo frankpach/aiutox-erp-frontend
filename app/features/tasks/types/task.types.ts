@@ -31,6 +31,9 @@ export interface Task {
   source_module?: string; // e.g., 'projects', 'workflows'
   source_id?: string; // ID of source entity
   source_context?: Record<string, unknown>; // Additional context from source module
+  // Subtask hierarchy
+  parent_task_id?: string | null;
+  subtasks?: Task[];
   // Legacy fields (kept for backward compatibility)
   related_entity_type?: string;
   related_entity_id?: string;
@@ -57,6 +60,8 @@ export interface TaskCreate {
   source_module?: string;
   source_id?: string;
   source_context?: Record<string, unknown>;
+  // Subtask hierarchy
+  parent_task_id?: string | null;
   // Legacy fields
   related_entity_type?: string;
   related_entity_id?: string;
@@ -81,6 +86,8 @@ export interface TaskUpdate {
   status_id?: string | null;
   board_order?: number | null;
   template_id?: string | null;
+  // Subtask hierarchy
+  parent_task_id?: string | null;
   // Multi-module integration
   source_module?: string;
   source_id?: string;
