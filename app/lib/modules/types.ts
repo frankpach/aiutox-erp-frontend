@@ -11,37 +11,43 @@
 
 import type { IconSvgElement } from "@hugeicons/react";
 
-/**
- * Module type: core (infrastructure) or business
- */
 export type ModuleType = "core" | "business";
 
-/**
- * Navigation item at level 3 (pages/actions)
- */
-export interface NavigationItem {
-  /** Unique identifier for the navigation item */
+export interface ModuleNavigationSettingRequirement {
+  module: string;
+  key: string;
+  value?: unknown;
+}
+
+export interface ModuleNavigationItemDTO {
   id: string;
-  /** Display label */
   label: string;
-  /** Route path */
-  to: string;
-  /** Icon component from Hugeicons */
-  icon?: IconSvgElement;
-  /** Required permission to show this item (granular permission) */
+  path: string;
   permission?: string;
-  /** Optional badge/counter */
-  badge?: number;
-  /** Order within the module */
+  icon?: string;
+  category?: string;
   order?: number;
-  /** Whether this item is active */
+  badge?: number;
+  requires_module_setting?: ModuleNavigationSettingRequirement | null;
+}
+
+export interface ModuleNavigationPayload {
+  navigation_items?: ModuleNavigationItemDTO[];
+  settings_links?: ModuleNavigationItemDTO[];
+}
+
+export interface NavigationItem {
+  id: string;
+  label: string;
+  to: string;
+  icon?: IconSvgElement;
+  permission?: string;
+  badge?: number;
+  order?: number;
   isActive?: boolean;
-  /** Optional module setting requirement to show item */
-  requiresModuleSetting?: {
-    module: string;
-    key: string;
-    value?: boolean;
-  };
+  iconToken?: string;
+  requiresModuleSetting?: ModuleNavigationSettingRequirement;
+  sourceModule?: string;
 }
 
 /**
@@ -79,39 +85,19 @@ export interface NavigationHierarchy {
  * It includes all information needed for navigation, permissions, and routing.
  */
 export interface FrontendModule {
-  /** Unique module identifier (snake_case) */
   id: string;
-  /** Display name */
   name: string;
-  /** Module type: core or business */
   type: ModuleType;
-  /** Category for grouping in navigation */
-  category?: string;
-  /** Description of the module */
-  description?: string;
-  /** Version of the module */
-  version?: string;
-  /** Whether the module is enabled */
   enabled: boolean;
-  /** Routes defined by this module */
-  routes: ModuleRoute[];
-  /** Permissions required/defined by this module */
-  permissions: string[];
-  /** Dependencies on other modules */
+  description?: string;
   dependsOn?: string[];
-  /** Navigation hierarchy for this module */
+  routes: ModuleRoute[];
+  permissions: string[];
   navigation?: NavigationHierarchy;
-  /** Order for sorting modules */
   order?: number;
-  /** Backend metadata */
-  backend?: {
-    service?: string;
-    routesPrefix?: string;
-  };
-  /** Frontend metadata */
-  frontend?: {
-    featureFlags?: string[];
-  };
+  category?: string;
+  navigationItems?: ModuleNavigationItemDTO[];
+  settingsLinks?: ModuleNavigationItemDTO[];
 }
 
 /**
@@ -214,7 +200,7 @@ export interface ExtendedModulePermission extends ModulePermission {
  * Response from backend module list endpoint
  * GET /api/v1/config/modules
  */
-export interface ModuleListItem {
+export interface ModuleListItem extends ModuleNavigationPayload {
   id: string;
   name: string;
   type: ModuleType;
@@ -227,7 +213,7 @@ export interface ModuleListItem {
  * Response from backend module info endpoint
  * GET /api/v1/config/modules/{module_id}
  */
-export interface ModuleInfoResponse {
+export interface ModuleInfoResponse extends ModuleNavigationPayload {
   id: string;
   name: string;
   type: ModuleType;

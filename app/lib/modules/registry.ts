@@ -21,7 +21,23 @@ import type {
   ModuleNode,
   ModuleListItem,
   ModuleInfoResponse,
+  ModuleNavigationItemDTO,
 } from "./types";
+import type { IconSvgElement } from "@hugeicons/react";
+import {
+  Calendar01Icon,
+  CheckmarkSquareIcon,
+  FileEditIcon,
+  GridIcon,
+  HomeIcon,
+  PlugIcon,
+  SearchIcon,
+  Settings01Icon,
+  ShieldIcon,
+  UploadIcon,
+  UserIcon,
+  ZapIcon,
+} from "@hugeicons/core-free-icons";
 import { getModules, getModuleMetadata } from "../api/modules.api";
 import {
   cacheModuleData,
@@ -31,6 +47,36 @@ import {
 } from "../storage/moduleCache";
 import { useAuthStore } from "../../stores/authStore";
 import { navigationItems } from "../../config/navigation";
+
+const ICON_TOKEN_MAP: Record<string, IconSvgElement> = {
+  calendar: Calendar01Icon,
+  settings: Settings01Icon,
+  plug: PlugIcon,
+  grid: GridIcon,
+  home: HomeIcon,
+};
+
+const MODULE_ICON_MAP: Record<string, IconSvgElement> = {
+  tasks: CheckmarkSquareIcon,
+  approvals: ShieldIcon,
+  files: FileEditIcon,
+  products: UploadIcon,
+  inventory: UploadIcon,
+  crm: UserIcon,
+  users: UserIcon,
+  auth: ShieldIcon,
+  audit: FileEditIcon,
+  config: Settings01Icon,
+  notifications: Settings01Icon,
+  integrations: PlugIcon,
+  import_export: UploadIcon,
+  search: SearchIcon,
+  automation: ZapIcon,
+  gamification: ZapIcon,
+  calendar: Calendar01Icon,
+};
+
+const DEFAULT_ICON = GridIcon;
 
 /**
  * Module Registry class
@@ -50,6 +96,138 @@ class ModuleRegistry {
     return user?.id || "anonymous";
   }
 
+  private inferContextualIcon(
+    dto: ModuleNavigationItemDTO,
+    moduleId: string
+  ): IconSvgElement {
+    const semanticText = `${dto.label} ${dto.path} ${dto.id}`.toLowerCase();
+
+    if (semanticText.includes("audit") || semanticText.includes("auditor")) {
+      return FileEditIcon;
+    }
+    if (
+      semanticText.includes("rol") ||
+      semanticText.includes("permiso") ||
+      semanticText.includes("permission")
+    ) {
+      return ShieldIcon;
+    }
+    if (semanticText.includes("usuario") || semanticText.includes("user")) {
+      return UserIcon;
+    }
+    if (semanticText.includes("archivo") || semanticText.includes("file")) {
+      return FileEditIcon;
+    }
+    if (
+      semanticText.includes("import") ||
+      semanticText.includes("export") ||
+      semanticText.includes("exportar")
+    ) {
+      return UploadIcon;
+    }
+    if (
+      semanticText.includes("integr") ||
+      semanticText.includes("webhook") ||
+      semanticText.includes("hook")
+    ) {
+      return PlugIcon;
+    }
+    if (semanticText.includes("calendar") || semanticText.includes("calend")) {
+      return Calendar01Icon;
+    }
+    if (
+      semanticText.includes("task") ||
+      semanticText.includes("tarea") ||
+      semanticText.includes("workflow")
+    ) {
+      return CheckmarkSquareIcon;
+    }
+    if (semanticText.includes("search") || semanticText.includes("busq")) {
+      return SearchIcon;
+    }
+    if (semanticText.includes("auto") || semanticText.includes("gamif")) {
+      return ZapIcon;
+    }
+
+    return MODULE_ICON_MAP[moduleId] ?? DEFAULT_ICON;
+  }
+
+  private toNavigationItem(
+    dto: ModuleNavigationItemDTO,
+    moduleId: string,
+    index: number
+  ): NavigationItem | null {
+    if (!dto.path) {
+      return null;
+    }
+
+    const normalizedIconToken = dto.icon?.toLowerCase();
+    let iconComponent = normalizedIconToken
+      ? ICON_TOKEN_MAP[normalizedIconToken]
+      : undefined;
+
+    if (
+      !iconComponent ||
+      normalizedIconToken === "grid" ||
+      normalizedIconToken === "settings"
+    ) {
+      iconComponent = this.inferContextualIcon(dto, moduleId);
+    }
+
+    const requiresModuleSetting = dto.requires_module_setting
+      ? {
+          module: dto.requires_module_setting.module,
+          key: dto.requires_module_setting.key,
+          value: dto.requires_module_setting.value,
+        }
+      : undefined;
+
+    return {
+      id: dto.id || `${moduleId}-${index}`,
+      label: dto.label,
+      to: dto.path,
+      icon: iconComponent,
+      iconToken: dto.icon,
+      permission: dto.permission,
+      badge: dto.badge,
+      order: dto.order,
+      requiresModuleSetting,
+      sourceModule: moduleId,
+    };
+  }
+
+  private appendModuleNavigation(
+    categories: Map<string, CategoryNode>,
+    allItems: NavigationItem[],
+    navigation: NavigationHierarchy,
+    moduleNameOverride?: string,
+    directItems = false
+  ): void {
+    const { category, module: moduleId, items, categoryOrder, moduleOrder } = navigation;
+
+    let categoryNode = categories.get(category);
+    if (!categoryNode) {
+      categoryNode = {
+        name: category,
+        order: categoryOrder || 99,
+        modules: new Map(),
+      };
+      categories.set(category, categoryNode);
+    }
+
+    const moduleNode: ModuleNode = {
+      id: directItems ? `${moduleId}-direct` : moduleId,
+      name: directItems ? "" : (moduleNameOverride ?? moduleId),
+      order: moduleOrder || 99,
+      items,
+      mainRoute: items[0]?.to,
+      permission: items[0]?.permission,
+    };
+
+    categoryNode.modules.set(moduleNode.id, moduleNode);
+    allItems.push(...items);
+  }
+
   /**
    * Discover modules from backend and cache locally
    *
@@ -62,16 +240,14 @@ class ModuleRegistry {
   async discoverModules(): Promise<FrontendModule[]> {
     const userId = this.getUserId();
 
-    // Try to get from cache first
+    // Always reset in-memory state before rebuilding from cache/backend.
+    // This prevents stale modules/navigation from previous users or refreshes.
+    this.modules.clear();
+    this.navigationTree = null;
+
+    // Read cache as fallback only. We prefer fresh backend discovery to avoid
+    // keeping stale/partial navigation forever after schema changes.
     const cachedModules = await getCachedModuleData(userId);
-    if (cachedModules && cachedModules.length > 0) {
-      // Register cached modules
-      for (const module of cachedModules) {
-        this.modules.set(module.id, module);
-      }
-      this.isInitialized = true;
-      return cachedModules;
-    }
 
     // Fetch from backend
     try {
@@ -93,11 +269,12 @@ class ModuleRegistry {
               ...moduleInfoResponse.data,
             };
           } catch {
-            // If detailed fetch fails, use basic info from list
             moduleInfo = moduleItem;
           }
 
           // Convert backend module info to FrontendModule
+          const navigationItemsDto = moduleInfo.navigation_items ?? [];
+          const settingsLinksDto = moduleInfo.settings_links ?? [];
           const frontendModule: FrontendModule = {
             id: moduleInfo.id,
             name: moduleInfo.name,
@@ -106,9 +283,11 @@ class ModuleRegistry {
             description: moduleInfo.description,
             dependsOn: moduleInfo.dependencies,
             routes: this.extractRoutesFromModule(moduleInfo),
-            permissions: [], // Will be populated from backend permissions endpoint
-            navigation: this.buildNavigationHierarchy(moduleInfo),
+            permissions: [],
+            navigation: this.buildNavigationHierarchy(navigationItemsDto, moduleInfo),
             order: this.getDefaultOrder(moduleInfo.type as "core" | "business"),
+            navigationItems: navigationItemsDto,
+            settingsLinks: settingsLinksDto,
           };
 
           modules.push(frontendModule);
@@ -129,6 +308,15 @@ class ModuleRegistry {
       return modules;
     } catch (error) {
       console.error("Failed to discover modules:", error);
+
+      if (cachedModules && cachedModules.length > 0) {
+        for (const module of cachedModules) {
+          this.modules.set(module.id, module);
+        }
+        this.isInitialized = true;
+        return cachedModules;
+      }
+
       throw error;
     }
   }
@@ -172,31 +360,24 @@ class ModuleRegistry {
    * Build navigation hierarchy from module metadata
    */
   private buildNavigationHierarchy(
-    moduleInfo: ModuleListItem | ModuleInfoResponse
+    itemsDto: ModuleNavigationItemDTO[],
+    moduleInfo: ModuleListItem | ModuleInfoResponse | FrontendModule
   ): NavigationHierarchy | undefined {
-    // Determine category based on module type
-    const category = this.getCategoryForModule(moduleInfo);
+    if (!itemsDto || itemsDto.length === 0) {
+      return undefined;
+    }
 
-    // Build navigation items from routes
-    const items: NavigationItem[] = [
-      {
-        id: `${moduleInfo.id}-list`,
-        label: this.getModuleLabel(moduleInfo.name),
-        to: `/${moduleInfo.id}`,
-        permission: `${moduleInfo.id}.view`,
-        order: 1,
-      },
-    ];
+    const categoryOverride = itemsDto[0]?.category;
+    const category = categoryOverride ?? this.getCategoryForModule(moduleInfo);
+    const items = itemsDto
+      .map((item, idx) =>
+        this.toNavigationItem(item, moduleInfo.id, idx)
+      )
+      .filter((item): item is NavigationItem => Boolean(item))
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
-    // Add create item for business modules
-    if (moduleInfo.type === "business") {
-      items.push({
-        id: `${moduleInfo.id}-create`,
-        label: `Crear ${this.getModuleLabel(moduleInfo.name)}`,
-        to: `/${moduleInfo.id}/create`,
-        permission: `${moduleInfo.id}.create`,
-        order: 2,
-      });
+    if (items.length === 0) {
+      return undefined;
     }
 
     return {
@@ -216,7 +397,7 @@ class ModuleRegistry {
    * - Business modules → Gestión/Catálogo
    */
   private getCategoryForModule(
-    moduleInfo: ModuleListItem | ModuleInfoResponse
+    moduleInfo: ModuleListItem | ModuleInfoResponse | FrontendModule
   ): string {
     // Core modules mapped to new categories
     if (moduleInfo.type === "core") {
@@ -280,13 +461,14 @@ class ModuleRegistry {
    */
   private getCategoryOrder(category: string): number {
     const orderMap: Record<string, number> = {
-      Administración: 1,
-      Infraestructura: 2,
-      Catálogo: 3,
-      Operaciones: 4,
-      Ventas: 5,
-      Compras: 6,
-      Negocio: 99,
+      Operación: 10,
+      Gestión: 20,
+      Sistema: 30,
+      Configuración: 40,
+      Automatización: 50,
+      Contextual: 60,
+      Análisis: 70,
+      _root: -1,
     };
 
     return orderMap[category] || 99;
@@ -302,14 +484,6 @@ class ModuleRegistry {
   /**
    * Get module label (singular form for display)
    */
-  private getModuleLabel(name: string): string {
-    // Simple plural to singular conversion
-    if (name.endsWith("s")) {
-      return name.slice(0, -1);
-    }
-    return name;
-  }
-
   /**
    * Register a module locally
    *
@@ -359,7 +533,7 @@ class ModuleRegistry {
     // This prevents duplicates when adding dynamic modules
     const usedIds = new Set<string>();
 
-    // 1. Add static navigation items from navigation.ts
+    // 1. Add static navigation items (global sections only)
     for (const navItem of navigationItems) {
       // Handle top-level items without children (e.g., "Dashboard")
       if (!navItem.children || navItem.children.length === 0) {
@@ -411,8 +585,7 @@ class ModuleRegistry {
         categoryNode.modules.set(navItem.id, moduleNode);
         allItems.push(...moduleNode.items);
       } else {
-        // Handle items with children (e.g., "Configuración")
-        // ✅ FIXED: Children are direct items in the category, NO intermediate module
+        // Handle categories with children (keep structure for non-config sections)
         const categoryName = navItem.label;
         let categoryNode = categories.get(categoryName);
         if (!categoryNode) {
@@ -424,89 +597,134 @@ class ModuleRegistry {
           categories.set(categoryName, categoryNode);
         }
 
-        // ✅ FIXED: Track all child IDs to prevent duplicates
-        for (const child of navItem.children) {
-          usedIds.add(child.id);
-        }
-
-        // ✅ Create a special "direct" module that will be rendered as direct items
-        // The id ending in "-direct" signals NavigationTree to render items directly
-        const directModuleId = `${categoryName.toLowerCase()}-direct`;
-        const directModule: ModuleNode = {
-          id: directModuleId,
-          name: "", // ✅ Empty name - won't be displayed
-          order: 0,
-          items: navItem.children.map((child) => ({
-            id: child.id,
-            label: child.label,
-            to: child.to!,
-            icon: child.icon,
-            permission: child.permission,
-            order: 0,
-            requiresModuleSetting: child.requiresModuleSetting,
-          })),
-          mainRoute: navItem.children[0]?.to,
-          permission: undefined, // Category-level permission check
-        };
-
-        categoryNode.modules.set(directModuleId, directModule);
-        allItems.push(...directModule.items);
-
-        // Store requiresAnyPermission for the category if present
         if (navItem.requiresAnyPermission) {
           (
             categoryNode as { requiresAnyPermission?: string[] }
           ).requiresAnyPermission = navItem.requiresAnyPermission;
         }
+
+        for (const child of navItem.children) {
+          usedIds.add(child.id);
+          const moduleNode: ModuleNode = {
+            id: child.id,
+            name: child.label,
+            order: child.order ?? 0,
+            items: [
+              {
+                id: child.id,
+                label: child.label,
+                to: child.to ?? "#",
+                icon: child.icon,
+                permission: child.permission,
+                order: child.order ?? 0,
+                requiresModuleSetting: child.requiresModuleSetting,
+              },
+            ],
+            mainRoute: child.to,
+            permission: child.permission,
+          };
+
+          categoryNode.modules.set(child.id, moduleNode);
+          allItems.push(...moduleNode.items);
+        }
       }
     }
 
-    // 2. Group modules from backend by category
-    // ✅ FIXED: Skip modules that already exist in static navigation to avoid duplicates
+    // 2. Group modules from backend by category and merge
     for (const module of this.modules.values()) {
-      if (!module.enabled || !module.navigation) {
+      if (!module.enabled) {
+        continue;
+      }
+      const navigationItemsFromContract = module.navigationItems ?? [];
+      const settingsLinksFromContract = module.settingsLinks ?? [];
+
+      if (
+        navigationItemsFromContract.length === 0 &&
+        settingsLinksFromContract.length === 0
+      ) {
+        // Legacy fallback: keep old behavior for modules that still don't publish
+        // navigation contract yet, so they remain visible in sidebar.
+        if (module.navigation) {
+          this.appendModuleNavigation(categories, allItems, module.navigation, module.name);
+          continue;
+        }
+
+        const defaultViewRoute = module.routes[0]?.path ?? `/${module.id}`;
+        const legacyFallbackItems: ModuleNavigationItemDTO[] = [
+          {
+            id: `${module.id}.main`,
+            label: module.name,
+            path: defaultViewRoute,
+            permission: `${module.id}.view`,
+            icon: "grid",
+            order: 0,
+          },
+        ];
+
+        if (module.type === "business") {
+          legacyFallbackItems.push({
+            id: `${module.id}.create`,
+            label: `Crear ${module.name}`,
+            path: `/${module.id}/create`,
+            permission: `${module.id}.create`,
+            icon: "grid",
+            order: 10,
+          });
+        }
+
+        const legacyNavigation = this.buildNavigationHierarchy(legacyFallbackItems, module);
+        if (legacyNavigation && !usedIds.has(module.id)) {
+          this.appendModuleNavigation(categories, allItems, legacyNavigation, module.name);
+        }
         continue;
       }
 
-      const {
-        category,
-        module: moduleId,
-        items,
-        categoryOrder,
-        moduleOrder,
-      } = module.navigation;
+      const groupedNavigationByCategory = navigationItemsFromContract.reduce<
+        Record<string, ModuleNavigationItemDTO[]>
+      >((acc, item) => {
+        const category = item.category ?? this.getCategoryForModule(module);
+        (acc[category] ??= []).push(item);
+        return acc;
+      }, {});
 
-      // ✅ FIXED: Skip this module if its ID is already used in static navigation
-      if (usedIds.has(moduleId)) {
-        console.warn(`[ModuleRegistry] Skipping duplicate module: ${moduleId}`);
-        continue;
+      for (const [category, dtoItems] of Object.entries(groupedNavigationByCategory)) {
+        const navigation = this.buildNavigationHierarchy(dtoItems, module);
+        if (!navigation) {
+          continue;
+        }
+
+        if (usedIds.has(module.id) && category !== "Configuración") {
+          continue;
+        }
+
+        this.appendModuleNavigation(categories, allItems, navigation, module.name);
       }
 
-      // Get or create category node
-      let categoryNode = categories.get(category);
-      if (!categoryNode) {
-        categoryNode = {
-          name: category,
-          order: categoryOrder || 99,
-          modules: new Map(),
-        };
-        categories.set(category, categoryNode);
+      const groupedSettingsByCategory = settingsLinksFromContract
+        .map((link: ModuleNavigationItemDTO) => ({
+          ...link,
+          category: link.category ?? "Configuración",
+        }))
+        .reduce<Record<string, ModuleNavigationItemDTO[]>>((acc, item) => {
+          const category = item.category ?? "Configuración";
+          (acc[category] ??= []).push(item);
+          return acc;
+        }, {});
+
+      for (const dtoItems of Object.values(groupedSettingsByCategory)) {
+        const navigation = this.buildNavigationHierarchy(dtoItems, module);
+        if (!navigation) {
+          continue;
+        }
+
+        this.appendModuleNavigation(
+          categories,
+          allItems,
+          navigation,
+          module.name,
+          true
+        );
       }
-
-      // Create module node
-      const moduleNode: ModuleNode = {
-        id: moduleId,
-        name: module.name,
-        order: moduleOrder || module.order || 99,
-        items: items,
-        mainRoute: module.routes[0]?.path,
-        permission: module.routes[0]?.permission,
-      };
-
-      categoryNode.modules.set(moduleId, moduleNode);
-
-      // Add items to flat list
-      allItems.push(...items);
     }
 
     // Sort categories

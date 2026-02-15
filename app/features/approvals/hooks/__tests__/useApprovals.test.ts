@@ -5,6 +5,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
+import type { ReactNode } from "react";
 import {
   useApprovalWidget,
   useEntityApprovalStatus,
@@ -24,11 +25,12 @@ const createMockQueryClient = () => {
   });
 };
 
-const wrapper = ({ children }: { children: React.ReactNode }) => {
+const wrapper = ({ children }: { children: ReactNode }) => {
   const queryClient = createMockQueryClient();
-  return (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  );
+  return QueryClientProvider({
+    client: queryClient,
+    children,
+  });
 };
 
 describe("useApprovalWidget", () => {
@@ -95,7 +97,11 @@ describe("useApprovalWidget", () => {
       },
     };
 
-    vi.mocked(approvalsApi.getRequestWidgetData).mockResolvedValue(mockError);
+    vi.mocked(approvalsApi.getRequestWidgetData).mockResolvedValue(
+      mockError as unknown as Awaited<
+        ReturnType<typeof approvalsApi.getRequestWidgetData>
+      >
+    );
 
     const { result } = renderHook(() => useApprovalWidget("req-1"), { wrapper });
 
@@ -151,7 +157,7 @@ describe("useApprovalWidget", () => {
       expect(result.current.isSuccess).toBe(true);
     });
 
-    const firstCallCount = approvalsApi.getRequestWidgetData.mock.calls.length;
+    const firstCallCount = vi.mocked(approvalsApi.getRequestWidgetData).mock.calls.length;
 
     rerender();
 

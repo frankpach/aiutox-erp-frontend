@@ -5,6 +5,7 @@
 
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { ReactElement, ReactNode } from "react";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { useTaskDependencies, useAddDependency, useRemoveDependency } from "~/features/tasks/hooks/useDependencies";
 
@@ -36,7 +37,7 @@ vi.mock("@tanstack/react-query", async () => {
 
 describe("useTaskDependencies hook", () => {
   let queryClient: QueryClient;
-  let wrapper: ({ children }: { children: React.ReactNode }) => JSX.Element;
+  let wrapper: ({ children }: { children: ReactNode }) => ReactElement;
 
   beforeEach(() => {
     queryClient = new QueryClient({
@@ -46,9 +47,11 @@ describe("useTaskDependencies hook", () => {
       },
     });
 
-    wrapper = ({ children }: { children: React.ReactNode }) => (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
+    wrapper = ({ children }: { children: ReactNode }) =>
+      QueryClientProvider({
+        client: queryClient,
+        children,
+      });
 
     vi.clearAllMocks();
   });
@@ -133,7 +136,7 @@ describe("useTaskDependencies hook", () => {
     });
 
     it("does not fetch when taskId is empty", () => {
-      const { result } = renderHook(() => useDependencies(""), { wrapper });
+      const { result } = renderHook(() => useTaskDependencies(""), { wrapper });
 
       expect(result.current.isLoading).toBe(false);
       expect(mockGet).not.toHaveBeenCalled();
@@ -146,11 +149,11 @@ describe("useTaskDependencies hook", () => {
       mockGet.mockResolvedValue({ data: { dependencies: [], dependents: [] } });
 
       // First call
-      renderHook(() => useDependencies(taskId1), { wrapper });
+      renderHook(() => useTaskDependencies(taskId1), { wrapper });
       await waitFor(() => expect(mockGet).toHaveBeenCalledTimes(1));
 
       // Second call with different taskId
-      renderHook(() => useDependencies(taskId2), { wrapper });
+      renderHook(() => useTaskDependencies(taskId2), { wrapper });
       await waitFor(() => expect(mockGet).toHaveBeenCalledTimes(2));
 
       expect(mockGet).toHaveBeenNthCalledWith(1, `/tasks/${taskId1}/dependencies`);
@@ -335,8 +338,10 @@ describe("useTaskDependencies hook", () => {
       const taskId = "task-123";
       const dependencyId = "nonexistent-dep";
 
-      const error = new Error("Dependency not found");
-      (error as any).response = { status: 404 };
+      const error = new Error("Dependency not found") as Error & {
+        response?: { status: number };
+      };
+      error.response = { status: 404 };
       mockDelete.mockRejectedValue(error);
 
       const { result } = renderHook(() => useRemoveDependency(), { wrapper });

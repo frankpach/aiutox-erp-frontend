@@ -5,8 +5,10 @@
 
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { ReactElement, ReactNode } from "react";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { useWebhooks, useCreateWebhook, useUpdateWebhook, useDeleteWebhook } from "~/features/tasks/hooks/useWebhooks";
+import type { WebhookCreate, WebhookUpdate } from "~/features/tasks/types/webhook.types";
 
 // Mock apiClient
 const mockGet = vi.fn();
@@ -38,7 +40,7 @@ vi.mock("@tanstack/react-query", async () => {
 
 describe("useWebhooks hook", () => {
   let queryClient: QueryClient;
-  let wrapper: ({ children }: { children: React.ReactNode }) => JSX.Element;
+  let wrapper: ({ children }: { children: ReactNode }) => ReactElement;
 
   beforeEach(() => {
     queryClient = new QueryClient({
@@ -48,9 +50,11 @@ describe("useWebhooks hook", () => {
       },
     });
 
-    wrapper = ({ children }: { children: React.ReactNode }) => (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
+    wrapper = ({ children }: { children: ReactNode }) =>
+      QueryClientProvider({
+        client: queryClient,
+        children,
+      });
 
     vi.clearAllMocks();
   });
@@ -142,12 +146,10 @@ describe("useWebhooks hook", () => {
 
   describe("useCreateWebhook", () => {
     it("creates webhook successfully", async () => {
-      const webhookData = {
+      const webhookData: WebhookCreate = {
         name: "New Webhook",
         url: "https://example.com/webhooks/new",
-        events: ["task.created"],
-        secret: "newsecret123",
-        active: true,
+        event_type: "task.created",
       };
 
       const mockResponse = {
@@ -175,12 +177,10 @@ describe("useWebhooks hook", () => {
     });
 
     it("handles API error when creating webhook", async () => {
-      const webhookData = {
+      const webhookData: WebhookCreate = {
         name: "New Webhook",
         url: "https://example.com/webhooks/new",
-        events: ["task.created"],
-        secret: "newsecret123",
-        active: true,
+        event_type: "task.created",
       };
       const errorMessage = "Failed to create webhook";
 
@@ -195,16 +195,19 @@ describe("useWebhooks hook", () => {
     });
 
     it("handles validation error", async () => {
-      const invalidWebhookData = {
+      const invalidWebhookData: WebhookCreate = {
         name: "", // Empty name should fail validation
         url: "invalid-url", // Invalid URL should fail validation
-        events: [], // Empty events should fail validation
-        secret: "",
-        active: true,
+        event_type: "", // Empty event type should fail validation
       };
 
-      const validationError = new Error("Validation failed");
-      (validationError as any).response = {
+      const validationError = new Error("Validation failed") as Error & {
+        response?: {
+          status: number;
+          data?: { error?: { message?: string } };
+        };
+      };
+      validationError.response = {
         status: 422,
         data: {
           error: {
@@ -223,11 +226,11 @@ describe("useWebhooks hook", () => {
   describe("useUpdateWebhook", () => {
     it("updates webhook successfully", async () => {
       const webhookId = "webhook1";
-      const updateData = {
+      const updateData: WebhookUpdate = {
         name: "Updated Webhook",
         url: "https://example.com/webhooks/updated",
-        events: ["task.created", "task.updated"],
-        active: false,
+        event_type: "task.updated",
+        enabled: false,
       };
 
       const mockResponse = {
@@ -244,7 +247,7 @@ describe("useWebhooks hook", () => {
 
       const { result } = renderHook(() => useUpdateWebhook(), { wrapper });
 
-      await result.current.mutateAsync({ webhookId, ...updateData });
+      await result.current.mutateAsync({ id: webhookId, data: updateData });
 
       expect(mockPut).toHaveBeenCalledWith(`/integrations/webhooks/${webhookId}`, updateData);
 
@@ -255,11 +258,11 @@ describe("useWebhooks hook", () => {
 
     it("handles API error when updating webhook", async () => {
       const webhookId = "webhook1";
-      const updateData = {
+      const updateData: WebhookUpdate = {
         name: "Updated Webhook",
         url: "https://example.com/webhooks/updated",
-        events: ["task.created", "task.updated"],
-        active: false,
+        event_type: "task.updated",
+        enabled: false,
       };
       const errorMessage = "Failed to update webhook";
 
@@ -267,7 +270,9 @@ describe("useWebhooks hook", () => {
 
       const { result } = renderHook(() => useUpdateWebhook(), { wrapper });
 
-      await expect(result.current.mutateAsync({ webhookId, ...updateData })).rejects.toThrow(errorMessage);
+      await expect(
+        result.current.mutateAsync({ id: webhookId, data: updateData })
+      ).rejects.toThrow(errorMessage);
 
       expect(mockPut).toHaveBeenCalledWith(`/integrations/webhooks/${webhookId}`, updateData);
       expect(mockInvalidateQueries).not.toHaveBeenCalled();
@@ -275,20 +280,24 @@ describe("useWebhooks hook", () => {
 
     it("handles webhook not found error", async () => {
       const webhookId = "nonexistent-webhook";
-      const updateData = {
+      const updateData: WebhookUpdate = {
         name: "Updated Webhook",
         url: "https://example.com/webhooks/updated",
-        events: ["task.created"],
-        active: true,
+        event_type: "task.created",
+        enabled: true,
       };
 
-      const notFoundError = new Error("Webhook not found");
-      (notFoundError as any).response = { status: 404 };
+      const notFoundError = new Error("Webhook not found") as Error & {
+        response?: { status: number };
+      };
+      notFoundError.response = { status: 404 };
       mockPut.mockRejectedValue(notFoundError);
 
       const { result } = renderHook(() => useUpdateWebhook(), { wrapper });
 
-      await expect(result.current.mutateAsync({ webhookId, ...updateData })).rejects.toThrow("Webhook not found");
+      await expect(
+        result.current.mutateAsync({ id: webhookId, data: updateData })
+      ).rejects.toThrow("Webhook not found");
     });
   });
 
@@ -326,8 +335,10 @@ describe("useWebhooks hook", () => {
     it("handles webhook not found error", async () => {
       const webhookId = "nonexistent-webhook";
 
-      const notFoundError = new Error("Webhook not found");
-      (notFoundError as any).response = { status: 404 };
+      const notFoundError = new Error("Webhook not found") as Error & {
+        response?: { status: number };
+      };
+      notFoundError.response = { status: 404 };
       mockDelete.mockRejectedValue(notFoundError);
 
       const { result } = renderHook(() => useDeleteWebhook(), { wrapper });
@@ -338,8 +349,10 @@ describe("useWebhooks hook", () => {
     it("handles permission error", async () => {
       const webhookId = "webhook1";
 
-      const permissionError = new Error("Permission denied");
-      (permissionError as any).response = { status: 403 };
+      const permissionError = new Error("Permission denied") as Error & {
+        response?: { status: number };
+      };
+      permissionError.response = { status: 403 };
       mockDelete.mockRejectedValue(permissionError);
 
       const { result } = renderHook(() => useDeleteWebhook(), { wrapper });
@@ -385,9 +398,7 @@ describe("useWebhooks hook", () => {
       await createResult.current.mutateAsync({
         name: "New Webhook",
         url: "https://example.com/webhooks/new",
-        events: ["task.created"],
-        secret: "newsecret123",
-        active: true,
+        event_type: "task.created",
       });
 
       expect(mockInvalidateQueries).toHaveBeenCalledWith({
@@ -401,11 +412,13 @@ describe("useWebhooks hook", () => {
       const { result: updateResult } = renderHook(() => useUpdateWebhook(), { wrapper });
 
       await updateResult.current.mutateAsync({
-        webhookId: "webhook1",
-        name: "Updated Webhook",
-        url: "https://example.com/webhooks/updated",
-        events: ["task.created", "task.updated"],
-        active: false,
+        id: "webhook1",
+        data: {
+          name: "Updated Webhook",
+          url: "https://example.com/webhooks/updated",
+          event_type: "task.updated",
+          enabled: false,
+        },
       });
 
       expect(mockInvalidateQueries).toHaveBeenCalledWith({
@@ -428,12 +441,10 @@ describe("useWebhooks hook", () => {
 
   describe("Edge Cases", () => {
     it("handles webhook with multiple events", async () => {
-      const webhookData = {
+      const webhookData: WebhookCreate = {
         name: "Multi-Event Webhook",
         url: "https://example.com/webhooks/multi",
-        events: ["task.created", "task.updated", "task.deleted", "task.assigned"],
-        secret: "multisecret",
-        active: true,
+        event_type: "task.created",
       };
 
       mockPost.mockResolvedValue({
@@ -450,16 +461,14 @@ describe("useWebhooks hook", () => {
       await result.current.mutateAsync(webhookData);
 
       expect(mockPost).toHaveBeenCalledWith("/integrations/webhooks", webhookData);
-      expect(webhookData.events).toHaveLength(4);
+      expect(webhookData.event_type).toBe("task.created");
     });
 
     it("handles webhook with special characters in name", async () => {
-      const webhookData = {
+      const webhookData: WebhookCreate = {
         name: "Webhook con ñíes y espacios",
         url: "https://example.com/webhooks/special",
-        events: ["task.created"],
-        secret: "specialsecret",
-        active: true,
+        event_type: "task.created",
       };
 
       mockPost.mockResolvedValue({
@@ -480,8 +489,8 @@ describe("useWebhooks hook", () => {
 
     it("handles webhook deactivation", async () => {
       const webhookId = "webhook1";
-      const updateData = {
-        active: false, // Only deactivating
+      const updateData: WebhookUpdate = {
+        enabled: false, // Only deactivating
       };
 
       mockPut.mockResolvedValue({
@@ -499,7 +508,7 @@ describe("useWebhooks hook", () => {
 
       const { result } = renderHook(() => useUpdateWebhook(), { wrapper });
 
-      await result.current.mutateAsync({ webhookId, ...updateData });
+      await result.current.mutateAsync({ id: webhookId, data: updateData });
 
       expect(mockPut).toHaveBeenCalledWith(`/integrations/webhooks/${webhookId}`, updateData);
     });
@@ -528,9 +537,7 @@ describe("useWebhooks hook", () => {
       await createResult.current.mutateAsync({
         name: "Rapid Webhook",
         url: "https://example.com/webhooks/rapid",
-        events: ["task.created"],
-        secret: "rapidsecret",
-        active: true,
+        event_type: "task.created",
       });
 
       // Delete webhook immediately after

@@ -5,6 +5,7 @@
 
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { ReactElement, ReactNode } from "react";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { useTaskFiles, useAttachFile, useDetachFile } from "~/features/tasks/hooks/useTaskFiles";
 
@@ -36,7 +37,7 @@ vi.mock("@tanstack/react-query", async () => {
 
 describe("useTaskFiles hook", () => {
   let queryClient: QueryClient;
-  let wrapper: ({ children }: { children: React.ReactNode }) => JSX.Element;
+  let wrapper: ({ children }: { children: ReactNode }) => ReactElement;
 
   beforeEach(() => {
     queryClient = new QueryClient({
@@ -46,9 +47,11 @@ describe("useTaskFiles hook", () => {
       },
     });
 
-    wrapper = ({ children }: { children: React.ReactNode }) => (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
+    wrapper = ({ children }: { children: ReactNode }) =>
+      QueryClientProvider({
+        client: queryClient,
+        children,
+      });
 
     vi.clearAllMocks();
   });
@@ -365,8 +368,10 @@ describe("useTaskFiles hook", () => {
       const taskId = "task-123";
       const fileId = "nonexistent-file";
 
-      const error = new Error("File not found");
-      (error as any).response = { status: 404 };
+      const error = new Error("File not found") as Error & {
+        response?: { status: number };
+      };
+      error.response = { status: 404 };
       mockDelete.mockRejectedValue(error);
 
       const { result } = renderHook(() => useDetachFile(), { wrapper });
@@ -383,8 +388,10 @@ describe("useTaskFiles hook", () => {
       const taskId = "task-123";
       const fileId = "file1";
 
-      const error = new Error("Permission denied");
-      (error as any).response = { status: 403 };
+      const error = new Error("Permission denied") as Error & {
+        response?: { status: number };
+      };
+      error.response = { status: 403 };
       mockDelete.mockRejectedValue(error);
 
       const { result } = renderHook(() => useDetachFile(), { wrapper });

@@ -4,12 +4,10 @@
  */
 
 import { useState } from "react";
-import { useTranslation } from "~/lib/i18n/useTranslation";
 import { PageLayout } from "~/components/layout/PageLayout";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Separator } from "~/components/ui/separator";
 import { 
   DownloadIcon,
   PlugIcon,
@@ -26,17 +24,18 @@ interface IntegrationStatusProps {
   integrationType: IntegrationType;
 }
 
-export function IntegrationStatus({ integrationId, integrationName, integrationType }: IntegrationStatusProps) {
-  const { t } = useTranslation();
+export function IntegrationStatus({ integrationId, integrationName, integrationType: _integrationType }: IntegrationStatusProps) {
   const [timeRange, setTimeRange] = useState("24h");
   const [autoRefresh, setAutoRefresh] = useState(false);
   const { data: healthResponse, isLoading, error, refetch } = useIntegrationHealth(integrationId);
 
   const health = healthResponse?.data;
-  const [historicalData, setHistoricalData] = useState<any[]>([]);
+  const [historicalData] = useState<Array<{ timestamp: string; response_time_ms: number }>>([]);
+  const latestResponseTime = historicalData.at(-1)?.response_time_ms;
+  const firstResponseTime = historicalData[0]?.response_time_ms;
 
   const handleRefresh = () => {
-    refetch();
+    void refetch();
   };
 
   const getStatusColor = (status: string): string => {
@@ -90,9 +89,9 @@ export function IntegrationStatus({ integrationId, integrationName, integrationT
     return (
       <PageLayout title={`${integrationName} Status`} loading>
         <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
-          <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
-          <div className="h-20 bg-gray-200 rounded mb-4"></div>
+          <div className="h-8 bg-gray-200 rounded w-1/4 mb-4" />
+          <div className="h-4 bg-gray-200 rounded w-1/2 mb-2" />
+          <div className="h-20 bg-gray-200 rounded mb-4" />
         </div>
       </PageLayout>
     );
@@ -179,7 +178,6 @@ export function IntegrationStatus({ integrationId, integrationName, integrationT
                     {health?.status === "healthy" ? "Healthy" : 
                      health?.status === "warning" ? "Warning" : 
                      health?.status === "error" ? "Error" : "Unknown"}
-                    }
                   </div>
               </div>
               
@@ -189,7 +187,6 @@ export function IntegrationStatus({ integrationId, integrationName, integrationT
                   {health?.last_check 
                     ? new Date(health.last_check).toLocaleString() 
                     : "Never checked"}
-                  }
                 </div>
               </div>
             </div>
@@ -253,9 +250,11 @@ export function IntegrationStatus({ integrationId, integrationName, integrationT
                 <h4 className="font-medium text-gray-900">Response Time Trend</h4>
                 <div className="flex items-center gap-2">
                   <Badge className="bg-blue-100 text-blue-800">
-                    {historicalData.length > 0 ? 
-                      (historicalData[historicalData.length - 1].response_time_ms < historicalData[0].response_time_ms ? "up" : "down") : "stable"
-                    }
+                    {latestResponseTime !== undefined && firstResponseTime !== undefined
+                      ? latestResponseTime < firstResponseTime
+                        ? "up"
+                        : "down"
+                      : "stable"}
                   </Badge>
                 </div>
               </div>
@@ -266,10 +265,19 @@ export function IntegrationStatus({ integrationId, integrationName, integrationT
                     <span>{new Date(data.timestamp).toLocaleString()}</span>
                     <span className="flex items-center gap-2">
                       <span>{formatResponseTime(data.response_time_ms)}</span>
-                      {getTrendIcon(
-                        historicalData[index - 1]?.response_time_ms < data.response_time_ms ? "up" : 
-                        historicalData[index - 1]?.response_time_ms > data.response_time_ms ? "down" : "stable"
-                      )}
+                      {(() => {
+                        const previousResponseTime = historicalData[index - 1]?.response_time_ms;
+                        if (previousResponseTime === undefined) {
+                          return getTrendIcon("stable");
+                        }
+                        if (previousResponseTime < data.response_time_ms) {
+                          return getTrendIcon("up");
+                        }
+                        if (previousResponseTime > data.response_time_ms) {
+                          return getTrendIcon("down");
+                        }
+                        return getTrendIcon("stable");
+                      })()}
                     </span>
                   </div>
                 ))}

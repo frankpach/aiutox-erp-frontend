@@ -25,13 +25,18 @@ import type {
  */
 export function useNavigation(): NavigationTree | null {
   const { navigationTree } = useModulesStore();
-  const { hasPermission, hasAnyPermission } = usePermissions();
+  const { permissions, hasPermission, hasAnyPermission } = usePermissions();
   const { data: taskSettingsData } = useTaskModuleSettings();
   const taskSettings = taskSettingsData?.data;
 
   return useMemo(() => {
     if (!navigationTree) {
       return null;
+    }
+
+    const hasWildcardPermission = permissions.includes("*");
+    if (hasWildcardPermission) {
+      return navigationTree;
     }
 
     const isItemEnabledBySettings = (item: NavigationItem) => {
@@ -118,7 +123,7 @@ export function useNavigation(): NavigationTree | null {
       categories: filteredCategories,
       allItems,
     };
-  }, [navigationTree, hasPermission, hasAnyPermission, taskSettings]);
+  }, [navigationTree, permissions, hasPermission, hasAnyPermission, taskSettings]);
 }
 
 /**

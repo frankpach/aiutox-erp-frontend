@@ -5,6 +5,9 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { moduleRegistry } from "../registry";
 import type { FrontendModule } from "../types";
+import { GridIcon } from "@hugeicons/core-free-icons";
+import { getModules, getModuleMetadata } from "../../api/modules.api";
+import { getCachedModuleData } from "../../storage/moduleCache";
 
 // Mock the API functions
 vi.mock("../../api/modules.api", () => ({
@@ -50,9 +53,10 @@ vi.mock("../../storage/moduleCache", () => ({
 }));
 
 describe("ModuleRegistry", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     // Clear registry before each test
-    moduleRegistry.clear();
+    await moduleRegistry.clear();
+    vi.clearAllMocks();
   });
 
   describe("discoverModules", () => {
@@ -60,8 +64,7 @@ describe("ModuleRegistry", () => {
       const modules = await moduleRegistry.discoverModules();
 
       expect(modules).toHaveLength(2);
-      expect(modules[0].id).toBe("users");
-      expect(modules[1].id).toBe("products");
+      expect(modules.map((module) => module.id)).toEqual(["users", "products"]);
     });
 
     it("should build navigation hierarchy", async () => {
@@ -70,6 +73,127 @@ describe("ModuleRegistry", () => {
 
       expect(tree).toBeDefined();
       expect(tree.categories.size).toBeGreaterThan(0);
+    });
+
+    it("should include dynamic module navigation and settings links", async () => {
+      vi.mocked(getModules).mockResolvedValue({
+        data: [
+          {
+            id: "products",
+            name: "Products",
+            type: "business",
+            enabled: true,
+            dependencies: [],
+            navigation_items: [
+              {
+                id: "products.main",
+                label: "Productos",
+                path: "/products",
+                permission: "products.view",
+                icon: "grid",
+                order: 0,
+              },
+            ],
+            settings_links: [
+              {
+                id: "products.config",
+                label: "Configuración de catálogo",
+                path: "/config/modules?module=products",
+                permission: "products.manage",
+                icon: "unknown-token",
+                category: "Configuración",
+                order: 0,
+              },
+            ],
+          },
+        ],
+        meta: {
+          total: 1,
+          page: 1,
+          page_size: 1,
+          total_pages: 1,
+        },
+        error: null,
+      });
+
+      vi.mocked(getModuleMetadata).mockResolvedValue({
+        data: {
+          id: "products",
+          name: "Products",
+          type: "business",
+          enabled: true,
+          dependencies: [],
+          navigation_items: [
+            {
+              id: "products.main",
+              label: "Productos",
+              path: "/products",
+              permission: "products.view",
+              icon: "grid",
+              order: 0,
+            },
+          ],
+          settings_links: [
+            {
+              id: "products.config",
+              label: "Configuración de catálogo",
+              path: "/config/modules?module=products",
+              permission: "products.manage",
+              icon: "unknown-token",
+              category: "Configuración",
+              order: 0,
+            },
+          ],
+        },
+        error: null,
+      });
+
+      await moduleRegistry.discoverModules();
+      const tree = moduleRegistry.getNavigationTree();
+
+      const gestionCategory = tree.categories.get("Gestión");
+      const configCategory = tree.categories.get("Configuración");
+
+      const productsMain = gestionCategory?.modules.get("products")?.items[0];
+      const productsConfig = configCategory?.modules
+        .get("products")
+        ?.items.find((item) => item.id === "products.config");
+
+      expect(productsMain?.id).toBe("products.main");
+      expect(productsConfig?.id).toBe("products.config");
+      expect(productsConfig?.iconToken).toBe("unknown-token");
+      expect(productsConfig?.icon).toBe(GridIcon);
+    });
+
+    it("should replace in-memory modules when cached payload changes", async () => {
+      const alphaModule: FrontendModule = {
+        id: "alpha",
+        name: "Alpha",
+        type: "business",
+        enabled: true,
+        routes: [{ path: "/alpha", permission: "alpha.view" }],
+        permissions: [],
+      };
+
+      const betaModule: FrontendModule = {
+        id: "beta",
+        name: "Beta",
+        type: "business",
+        enabled: true,
+        routes: [{ path: "/beta", permission: "beta.view" }],
+        permissions: [],
+      };
+
+      vi.mocked(getCachedModuleData)
+        .mockResolvedValueOnce([alphaModule])
+        .mockResolvedValueOnce([betaModule]);
+
+      await moduleRegistry.discoverModules();
+      expect(moduleRegistry.getModule("alpha")?.id).toBe("alpha");
+
+      await moduleRegistry.discoverModules();
+      expect(moduleRegistry.getModule("alpha")).toBeUndefined();
+      expect(moduleRegistry.getModule("beta")?.id).toBe("beta");
     });
   });
 

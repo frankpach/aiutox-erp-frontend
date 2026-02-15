@@ -9,7 +9,7 @@
  * Filtra automáticamente por permisos del usuario.
  */
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link, useLocation } from "react-router";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { GridIcon } from "@hugeicons/core-free-icons";
@@ -24,6 +24,9 @@ import {
 import type { NavigationItem, ModuleNode } from "~/lib/modules/types";
 import { cn } from "~/lib/utils";
 import { useCalendarModalStore } from "~/stores/calendarModalStore";
+import { useTranslation } from "~/lib/i18n/useTranslation";
+
+const LONG_LABEL_TOOLTIP_THRESHOLD = 18;
 
 /**
  * Componente para renderizar un item de navegación (Nivel 3)
@@ -110,22 +113,24 @@ function NavigationItemComponent({
         isActive
           ? "bg-primary/10 text-primary border-l-primary border-t-primary/50 border-r-primary/50 border-b-primary/50"
           : "text-foreground hover:text-primary border-transparent",
-        isCollapsed && "justify-center px-2"
+        isCollapsed && "justify-center px-2 py-2.5"
       )}
       style={{ paddingLeft: isCollapsed ? undefined : `${paddingLeft}px` }}
       aria-current={isActive ? "page" : undefined}
       aria-label={isCollapsed ? item.label : undefined}
-      title={isCollapsed ? item.label : undefined}
+      title={
+        isCollapsed || item.label.length > LONG_LABEL_TOOLTIP_THRESHOLD
+          ? item.label
+          : undefined
+      }
     >
-      {item.icon ? (
-        <HugeiconsIcon
-          icon={item.icon}
-          size={18}
-          color={isActive ? "hsl(var(--primary))" : "hsl(var(--foreground))"}
-          strokeWidth={1.5}
-          className="transition-colors duration-150"
-        />
-      ) : null}
+      <HugeiconsIcon
+        icon={item.icon ?? GridIcon}
+        size={isCollapsed ? 22 : 18}
+        color={isActive ? "hsl(var(--primary))" : "hsl(var(--foreground))"}
+        strokeWidth={1.5}
+        className="transition-colors duration-150"
+      />
       <span
         className={cn(
           "flex-1 truncate transition-all duration-150",
@@ -187,18 +192,18 @@ function ModuleNodeComponent({
   }
 
   if (isCollapsed) {
-    // In collapsed mode, show all items with icons only
+    // In collapsed mode, show one representative icon-only entry per module
+    const firstItem = module.items[0];
+    if (!firstItem) {
+      return null;
+    }
+
     return (
-      <div className="space-y-1 m-1">
-        {module.items.map((item) => (
-          <NavigationItemComponent
-            key={item.id}
-            item={item}
-            isCollapsed={true}
-            level={0}
-          />
-        ))}
-      </div>
+      <NavigationItemComponent
+        item={firstItem}
+        isCollapsed
+        level={0}
+      />
     );
   }
 
@@ -217,6 +222,11 @@ function ModuleNodeComponent({
         )}
         aria-expanded={isExpanded}
         aria-label={`${module.name} module`}
+        title={
+          module.name.length > LONG_LABEL_TOOLTIP_THRESHOLD
+            ? module.name
+            : undefined
+        }
       >
         {isExpanded ? (
           <ChevronDown className="h-4 w-4 transition-transform duration-150" />
@@ -232,7 +242,16 @@ function ModuleNodeComponent({
           strokeWidth={1.5}
           className="transition-colors duration-150"
         />
-        <span className="flex-1 text-left truncate">{module.name}</span>
+        <span
+          className="flex-1 text-left truncate"
+          title={
+            module.name.length > LONG_LABEL_TOOLTIP_THRESHOLD
+              ? module.name
+              : undefined
+          }
+        >
+          {module.name}
+        </span>
       </button>
 
       {/* Module items (Nivel 3) */}
@@ -270,7 +289,48 @@ function CategoryNodeComponent({
   isExpanded,
   onToggle,
 }: CategoryNodeComponentProps) {
+  const { language } = useTranslation();
   const location = useLocation();
+
+  const isConfigurationCategory = useMemo(() => {
+    const normalizedCategoryName = categoryName.toLowerCase();
+    return (
+      normalizedCategoryName.includes("config") ||
+      normalizedCategoryName.includes("setting")
+    );
+  }, [categoryName]);
+
+  const labelCollator = useMemo(
+    () =>
+      new Intl.Collator(language || "es", {
+        sensitivity: "base",
+        numeric: true,
+      }),
+    [language]
+  );
+
+  const categoryModules = useMemo(() => {
+    const moduleList = Array.from(modules.values());
+    if (!isConfigurationCategory) {
+      return moduleList;
+    }
+
+    return [...moduleList].sort((a, b) => {
+      const labelA = a.id.endsWith("-direct")
+        ? (a.items[0]?.label ?? a.name)
+        : (a.name || a.items[0]?.label || "");
+      const labelB = b.id.endsWith("-direct")
+        ? (b.items[0]?.label ?? b.name)
+        : (b.name || b.items[0]?.label || "");
+
+      return labelCollator.compare(labelA, labelB);
+    });
+  }, [modules, isConfigurationCategory, labelCollator]);
+
+  const collapsedPrimaryModules = useMemo(
+    () => categoryModules.filter((module) => !module.id.endsWith("-direct")),
+    [categoryModules]
+  );
 
   // Check if any module in this category has active items
   const hasActiveItem = Array.from(modules.values()).some((module) =>
@@ -283,9 +343,13 @@ function CategoryNodeComponent({
 
   if (isCollapsed) {
     // In collapsed mode, show modules without category headers
+    if (collapsedPrimaryModules.length === 0) {
+      return null;
+    }
+
     return (
       <div className="space-y-1 m-1">
-        {Array.from(modules.values()).map((module) => (
+        {collapsedPrimaryModules.map((module) => (
           <ModuleNodeComponent
             key={module.id}
             module={module}
@@ -330,24 +394,44 @@ function CategoryNodeComponent({
             )}
             aria-expanded={isExpanded}
             aria-label={`${categoryName} category`}
+            title={
+              categoryName.length > LONG_LABEL_TOOLTIP_THRESHOLD
+                ? categoryName
+                : undefined
+            }
           >
             {isExpanded ? (
               <ChevronDown className="h-3.5 w-3.5 transition-transform duration-150" />
             ) : (
               <ChevronRight className="h-3.5 w-3.5 transition-transform duration-150" />
             )}
-            <span className="flex-1 text-left truncate">{categoryName}</span>
+            <span
+              className="flex-1 text-left truncate"
+              title={
+                categoryName.length > LONG_LABEL_TOOLTIP_THRESHOLD
+                  ? categoryName
+                  : undefined
+              }
+            >
+              {categoryName}
+            </span>
           </button>
         </CollapsibleTrigger>
 
         {/* Category modules (Nivel 2) - Simplified: direct items or expandable modules */}
         <CollapsibleContent className="ml-2 space-y-1">
-          {Array.from(modules.values()).map((module) => {
+          {categoryModules.map((module) => {
             // ✅ FIXED: If module id ends with "-direct", render items directly (no module header)
             if (module.id.endsWith("-direct")) {
+              const directItems = isConfigurationCategory
+                ? [...module.items].sort((a, b) =>
+                    labelCollator.compare(a.label, b.label)
+                  )
+                : module.items;
+
               return (
                 <div key={module.id} className="space-y-0.5 m-1">
-                  {module.items.map((item) => (
+                  {directItems.map((item) => (
                     <NavigationItemComponent
                       key={item.id}
                       item={item}
@@ -387,9 +471,15 @@ interface NavigationTreeProps {
 
 export function NavigationTree({ isCollapsed = false }: NavigationTreeProps) {
   const navigationTree = useNavigation();
-  const { toggleCategory, isExpanded } = useCategoryCollapse({
+  const { toggleCategory, isExpanded, collapseAll } = useCategoryCollapse({
     maxExpanded: 2,
   });
+
+  useEffect(() => {
+    if (isCollapsed) {
+      collapseAll();
+    }
+  }, [isCollapsed, collapseAll]);
 
   if (!navigationTree || navigationTree.categories.size === 0) {
     return (

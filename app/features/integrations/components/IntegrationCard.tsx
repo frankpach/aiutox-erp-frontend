@@ -4,7 +4,6 @@
  */
 
 import { useState } from "react";
-import { useTranslation } from "~/lib/i18n/useTranslation";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -17,16 +16,11 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { 
-  useIntegration, 
-  useUpdateIntegration, 
-  useDeleteIntegration, 
-  useActivateIntegration, 
-  useTestIntegration,
   useIntegrationHealth,
   useIntegrationLogs,
   useIntegrationEvents
 } from "~/features/integrations/hooks/useIntegrations";
-import type { Integration, IntegrationType } from "~/features/integrations/types/integrations.types";
+import type { Integration } from "~/features/integrations/types/integrations.types";
 
 interface IntegrationCardProps {
   integration: Integration;
@@ -41,7 +35,6 @@ export function IntegrationCard({
   showActions = true, 
   compact = false 
 }: IntegrationCardProps) {
-  const { t } = useTranslation();
   const [showDetails, setShowDetails] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -175,8 +168,6 @@ export function IntegrationCard({
               </Badge>
             </div>
           </div>
-          </div>
-          
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -185,7 +176,7 @@ export function IntegrationCard({
             >
               {showDetails ? "Hide Details" : "Show Details"}
             </Button>
-            
+
             {showActions && (
               <Button
                 variant="outline"
@@ -313,7 +304,7 @@ export function IntegrationCard({
                           log.level === "warn" ? "bg-yellow-500" :
                           log.level === "info" ? "bg-blue-500" :
                           "bg-gray-500"
-                        }`}></div>
+                        }`} />
                         <div>
                           <span className="font-medium text-gray-900">{log.level.toUpperCase()}</span>
                           <span className="text-sm text-gray-600 ml-2">
@@ -348,7 +339,7 @@ export function IntegrationCard({
                       <div className="flex items-center gap-2 mb-1">
                         <div className={`w-2 h-2 rounded-full ${
                           event.processed ? "bg-green-500" : "bg-gray-500"
-                        }`}></div>
+                        }`} />
                         <div>
                           <span className="font-medium text-gray-900">{event.event_type}</span>
                           <span className="text-sm text-gray-600 ml-2">

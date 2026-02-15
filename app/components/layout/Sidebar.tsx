@@ -30,18 +30,20 @@ function SidebarComponent({
   onToggleCollapse,
 }: SidebarProps) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const { isInitialized, loadModules } = useModulesStore();
+  const userId = useAuthStore((state) => state.user?.id);
+  const tenantId = useAuthStore((state) => state.user?.tenant_id);
+  const { loadModules } = useModulesStore();
   const { t } = useTranslation();
   const { theme } = useThemeConfig();
 
   // Cargar módulos cuando el usuario esté autenticado
   useEffect(() => {
-    if (isAuthenticated && !isInitialized) {
+    if (isAuthenticated) {
       loadModules().catch((error) => {
         console.error("Failed to load modules:", error);
       });
     }
-  }, [isAuthenticated, isInitialized, loadModules]);
+  }, [isAuthenticated, userId, tenantId, loadModules]);
 
   // Cerrar sidebar en móvil cuando se hace clic fuera
   useEffect(() => {

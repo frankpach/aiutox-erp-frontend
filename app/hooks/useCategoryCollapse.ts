@@ -108,10 +108,18 @@ export function useCategoryCollapse({
     return expandedCategories.has(categoryName);
   }, [expandedCategories]);
 
+  /**
+   * Colapsar todas las categorías manualmente
+   */
+  const collapseAll = useCallback(() => {
+    setExpandedCategories(new Set());
+  }, []);
+
   return {
     expandedCategories,
     activeCategory,
     toggleCategory,
-    isExpanded
+    isExpanded,
+    collapseAll,
   };
 }

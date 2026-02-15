@@ -48,7 +48,7 @@ export const useModulesStore = create<ModulesState>((set, get) => ({
 
   loadModules: async () => {
     const state = get();
-    if (state.isLoading || state.isInitialized) {
+    if (state.isLoading) {
       return;
     }
 
