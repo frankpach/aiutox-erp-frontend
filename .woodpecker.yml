@@ -1,0 +1,56 @@
+clone:
+  git:
+    image: woodpeckerci/plugin-git
+    settings:
+      recursive: true
+
+steps:
+  #  1. Lint + Format check
+  lint:
+    image: node:20-alpine
+    when:
+      branch: [main, dev]
+      event: [push, pull_request]
+    commands:
+      - npm ci --prefer-offline
+      - npm run lint:strict
+      - npm run format:check
+
+  #  2. Type check
+  typecheck:
+    image: node:20-alpine
+    when:
+      branch: [main, dev]
+      event: [push, pull_request]
+    commands:
+      - npm ci --prefer-offline
+      - npm run typecheck
+
+  #  3. Unit tests
+  test:
+    image: node:20-alpine
+    when:
+      branch: [main, dev]
+      event: [push, pull_request]
+    commands:
+      - npm ci --prefer-offline
+      - npm run test:run
+
+  #  4. Build & push imagen Docker
+  build-push:
+    image: woodpeckerci/plugin-docker-buildx
+    when:
+      branch: main
+      event: push
+    settings:
+      registry: aiutox-nas.tail2a2cda.ts.net:5010
+      repo: aiutox-nas.tail2a2cda.ts.net:5010/aiutox/frontend
+      tags:
+        - latest
+        - ${CI_COMMIT_SHA:0:8}
+      dockerfile: Dockerfile
+      username:
+        from_secret: REGISTRY_USER
+      password:
+        from_secret: REGISTRY_PASSWORD
+      insecure: true
