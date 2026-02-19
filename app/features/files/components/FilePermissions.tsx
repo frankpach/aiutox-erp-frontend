@@ -100,15 +100,18 @@ export function FilePermissions({
   // Get target name for display
   const getTargetName = (targetType: string, targetId: string): string => {
     switch (targetType) {
-      case "user":
+      case "user": {
         const user = availableUsers.find((u) => u.id === targetId);
         return user ? `${user.name} (${user.email})` : targetId;
-      case "role":
+      }
+      case "role": {
         const role = availableRoles.find((r) => r.id === targetId);
         return role ? role.name : targetId;
-      case "organization":
+      }
+      case "organization": {
         const org = availableOrganizations.find((o) => o.id === targetId);
         return org ? org.name : targetId;
+      }
       default:
         return targetId;
     }
@@ -150,7 +153,11 @@ export function FilePermissions({
     value: boolean | string
   ) => {
     const updated = [...permissions];
-    updated[index] = { ...updated[index], [field]: value };
+    // Ensure target_type is never undefined
+    if (field === 'target_type' && value === undefined) {
+      return;
+    }
+    updated[index] = { ...updated[index], [field]: value } as FilePermissionRequest;
     setPermissions(updated);
   };
 

@@ -44,9 +44,12 @@ describe("CodePreview", () => {
       },
     });
 
-    return ({ children }: { children: React.ReactNode }) => (
+    const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     );
+    TestWrapper.displayName = 'TestWrapper';
+
+    return TestWrapper;
   };
 
   beforeEach(() => {

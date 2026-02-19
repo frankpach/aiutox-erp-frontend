@@ -258,7 +258,7 @@ test.describe('Sprint 5 - Validación de Cambios Específicos', () => {
     const hasSSEHook = await page.evaluate(() => {
       // Buscar si hay funciones relacionadas con SSE en el contexto global
       return typeof window !== 'undefined' && 
-             (window.hasOwnProperty('useSSE') || 
+             (Object.prototype.hasOwnProperty.call(window, 'useSSE') || 
               document.querySelector('script[src*="useSSE"]') ||
               (document.body && document.body.textContent && document.body.textContent.includes('useSSE')));
     });
@@ -276,7 +276,7 @@ test.describe('Sprint 5 - Validación de Cambios Específicos', () => {
     // Verificar que los hooks de templates están cargados
     const hasTemplatesHook = await page.evaluate(() => {
       return typeof window !== 'undefined' && 
-             (window.hasOwnProperty('useTemplates') || 
+             (Object.prototype.hasOwnProperty.call(window, 'useTemplates') || 
               (document.body && document.body.textContent && document.body.textContent.includes('useTemplates')));
     });
     

@@ -25,12 +25,14 @@ import {
   useAddEventComment,
   useUpdateEventComment,
   useDeleteEventComment,
+  type EventComment,
 } from '~/features/calendar/hooks/useEventComments';
+import type { TaskComment } from '~/features/tasks/api/task-comments.api';
 import { useUsers } from '~/features/users/hooks/useUsers';
 import { useAuthStore } from '~/stores/authStore';
 import { showToast } from '~/components/common/Toast';
 import { format } from 'date-fns';
-import { es, enUS } from 'date-fns/locale';
+import { es } from 'date-fns/locale';
 
 interface EntityCommentThreadProps {
   entityId: string;
@@ -46,22 +48,19 @@ export function EntityCommentThread({
   const currentUser = useAuthStore((state) => state.user);
   const { users } = useUsers();
   
-  // Usar los hooks apropiados según el tipo de entidad
-  const { data, isLoading } = entityType === 'task' 
-    ? useTaskComments(entityId)
-    : useEventComments(entityId);
-    
-  const addMutation = entityType === 'task'
-    ? useAddComment()
-    : useAddEventComment();
-    
-  const updateMutation = entityType === 'task'
-    ? useUpdateComment()
-    : useUpdateEventComment();
-    
-  const deleteMutation = entityType === 'task'
-    ? useDeleteComment()
-    : useDeleteEventComment();
+  // Call all hooks unconditionally
+  const taskComments = useTaskComments(entityId);
+  const eventComments = useEventComments(entityId);
+  const addCommentMutation = useAddComment();
+  const addEventCommentMutation = useAddEventComment();
+  const updateCommentMutation = useUpdateComment();
+  const updateEventCommentMutation = useUpdateEventComment();
+  const deleteCommentMutation = useDeleteComment();
+  const deleteEventCommentMutation = useDeleteEventComment();
+  
+  // Select appropriate hooks based on entity type
+  const { data, isLoading } = entityType === 'task' ? taskComments : eventComments;
+  const addMutation = entityType === 'task' ? addCommentMutation : addEventCommentMutation;
 
   const [newComment, setNewComment] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -69,18 +68,19 @@ export function EntityCommentThread({
 
   const comments = data?.data || [];
   const dateLocale = es; // Por defecto español
+  const isSubmitting = addMutation.isPending || updateCommentMutation.isPending || updateEventCommentMutation.isPending || deleteCommentMutation.isPending || deleteEventCommentMutation.isPending;
 
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
 
     try {
       if (entityType === 'task') {
-        await addMutation.mutateAsync({
+        await addCommentMutation.mutateAsync({
           taskId: entityId,
           content: newComment.trim(),
         });
       } else {
-        await addMutation.mutateAsync({
+        await addEventCommentMutation.mutateAsync({
           eventId: entityId,
           comment: { content: newComment.trim() },
         });
@@ -97,13 +97,13 @@ export function EntityCommentThread({
 
     try {
       if (entityType === 'task') {
-        await updateMutation.mutateAsync({
+        await updateCommentMutation.mutateAsync({
           taskId: entityId,
           commentId,
           content: editContent.trim(),
         });
       } else {
-        await updateMutation.mutateAsync({
+        await updateEventCommentMutation.mutateAsync({
           eventId: entityId,
           commentId,
           update: { content: editContent.trim() },
@@ -112,20 +112,20 @@ export function EntityCommentThread({
       setEditingId(null);
       setEditContent('');
     } catch (error) {
-      console.error('Error al actualizar comentario:', error);
-      showToast('Error al actualizar comentario', 'error');
+      console.error('Error al editar comentario:', error);
+      showToast('Error al editar comentario', 'error');
     }
   };
 
   const handleDeleteComment = async (commentId: string) => {
     try {
       if (entityType === 'task') {
-        await deleteMutation.mutateAsync({
+        await deleteCommentMutation.mutateAsync({
           taskId: entityId,
           commentId,
         });
       } else {
-        await deleteMutation.mutateAsync({
+        await deleteEventCommentMutation.mutateAsync({
           eventId: entityId,
           commentId,
         });
@@ -140,9 +140,14 @@ export function EntityCommentThread({
     return users.find(u => u.id === userId);
   };
 
-  const formatUserName = (user: any) => {
+  const getCommentUserId = (comment: TaskComment | EventComment): string => {
+    // Task comments use user_id, Event comments use created_by
+    return 'user_id' in comment ? comment.user_id : comment.created_by;
+  };
+
+  const formatUserName = (user: { first_name?: string | null; last_name?: string | null; email?: string } | undefined) => {
     if (!user) return 'Usuario';
-    const fullName = `${user.first_name} ${user.last_name}`.trim();
+    const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim();
     return fullName || user.email || 'Usuario';
   };
 
@@ -181,7 +186,8 @@ export function EntityCommentThread({
             </div>
           ) : (
             comments.map((comment) => {
-              const userInfo = getUserInfo(comment.user_id);
+              const userId = getCommentUserId(comment);
+              const userInfo = getUserInfo(userId);
               const isEditing = editingId === comment.id;
               
               return (
@@ -203,7 +209,7 @@ export function EntityCommentThread({
                         </span>
                       </div>
                       
-                      {comment.user_id === currentUser?.id && (
+                      {userId === currentUser?.id && (
                         <div className="flex gap-1">
                           <Button
                             type="button"
@@ -220,7 +226,10 @@ export function EntityCommentThread({
                             type="button"
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleDeleteComment(comment.id)}
+                            onClick={() => {
+                              if (isSubmitting) return;
+                              void handleDeleteComment(comment.id);
+                            }}
                           >
                             <HugeiconsIcon icon={Delete01Icon} size={14} />
                           </Button>
@@ -240,7 +249,10 @@ export function EntityCommentThread({
                           <Button
                             type="button"
                             size="sm"
-                            onClick={() => handleEditComment(comment.id)}
+                            onClick={() => {
+                              if (isSubmitting) return;
+                              void handleEditComment(comment.id);
+                            }}
                           >
                             Guardar
                           </Button>
@@ -280,7 +292,10 @@ export function EntityCommentThread({
           <div className="flex justify-end">
             <Button
               type="button"
-              onClick={handleAddComment}
+              onClick={() => {
+                if (isSubmitting) return;
+                void handleAddComment();
+              }}
               disabled={!newComment.trim() || addMutation.isPending}
             >
               {addMutation.isPending ? 'Enviando...' : 'Comentar'}

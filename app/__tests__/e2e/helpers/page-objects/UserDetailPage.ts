@@ -2,7 +2,7 @@
  * UserDetailPage - Page Object Model for User Detail Page
  */
 
-import { Page, Locator } from "@playwright/test";
+import type { Page, Locator } from "@playwright/test";
 
 export class UserDetailPage {
   readonly page: Page;
@@ -76,7 +76,7 @@ export class UserDetailPage {
     // Si se proporciona full_name, dividirlo en first_name y last_name
     if (data.full_name) {
       const parts = data.full_name.split(' ');
-      if (parts.length > 0) {
+      if (parts.length > 0 && parts[0]) {
         await this.page.fill('input[name="first_name"]', parts[0]);
       }
       if (parts.length > 1) {
@@ -94,13 +94,13 @@ export class UserDetailPage {
     if (data.job_title) {
       await this.page.fill('input[name="job_title"]', data.job_title).catch(() => {
         // job_title puede no estar presente
-        console.log("[UserDetailPage] job_title field not found");
+        console.warn("[UserDetailPage] job_title field not found");
       });
     }
     if (data.department) {
       await this.page.fill('input[name="department"]', data.department).catch(() => {
         // department puede no estar presente
-        console.log("[UserDetailPage] department field not found");
+        console.warn("[UserDetailPage] department field not found");
       });
     }
   }
@@ -116,7 +116,7 @@ export class UserDetailPage {
   }
 
   async getUserEmail(): Promise<string | null> {
-    const emailElement = await this.page.locator('text=/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}/').first();
+    const emailElement = this.page.locator('text=/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}/').first();
     return await emailElement.textContent();
   }
 }

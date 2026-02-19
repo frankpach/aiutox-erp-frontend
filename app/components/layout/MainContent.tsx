@@ -1,5 +1,4 @@
-import { memo, useEffect, useRef, useState } from "react";
-import type { ReactNode } from "react";
+import { memo, useEffect, useRef, useState, type ReactNode } from "react";
 
 /**
  * MainContent - Contenedor principal del contenido de la aplicación

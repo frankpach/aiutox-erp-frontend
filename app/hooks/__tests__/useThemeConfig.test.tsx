@@ -5,8 +5,7 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient } from "@tanstack/react-query";
-import React from "react";
-import type { ReactNode } from "react";
+import React, { type ReactNode } from "react";
 import { useThemeConfig } from "../useThemeConfig";
 import { getThemeConfig, setThemeConfig, updateThemeConfigProperty } from "~/features/config/api/config.api";
 import { HookProviders } from "~/__tests__/helpers/test-providers";
@@ -136,7 +135,7 @@ const createWrapper = () => {
 
   // eslint-disable-next-line react/display-name
   return ({ children }: { children: ReactNode }) => {
-    return React.createElement(HookProviders, { queryClient }, children);
+    return <HookProviders queryClient={queryClient}>{children}</HookProviders>;
   };
 };
 
@@ -278,7 +277,7 @@ describe("useThemeConfig", () => {
         expect(globalQuerySelector).toHaveBeenCalledWith("link[rel~='icon']");
       });
 
-      expect((mockFaviconLink as any).href).toBe("/assets/logos/favicon.ico");
+      expect((mockFaviconLink as HTMLLinkElement).href).toBe("/assets/logos/favicon.ico");
 
       // Restaurar el mock
       globalQuerySelector.mockRestore();
@@ -414,7 +413,7 @@ describe("useThemeConfig", () => {
       expect(result.current.isUpdating).toBe(false);
 
       // Trigger update - the mutation should start immediately
-      result.current.updateTheme({ primary_color: "#FF5733" } as any);
+      result.current.updateTheme({ primary_color: "#FF5733" });
 
       // Wait a bit for the mutation to start
       await new Promise(resolve => setTimeout(resolve, 50));

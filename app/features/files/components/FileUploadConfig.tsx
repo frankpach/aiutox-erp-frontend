@@ -4,12 +4,11 @@
  */
 
 import { useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { X } from "lucide-react";
 import { FolderSelector } from "./FolderSelector";
 import { FilePermissionsSelector } from "./FilePermissionsSelector";
 import { useUsers } from "~/features/users/hooks/useUsers";
@@ -103,19 +102,9 @@ export function FileUploadConfig({
       }))
     : [];
 
-  // Notify parent of config changes
-  const handleConfigChange = () => {
-    onConfigChange({
-      folderId,
-      description: description.trim() || null,
-      permissions,
-      tags,
-    });
-  };
-
   const handleFolderChange = (newFolderId: string | null) => {
     setFolderId(newFolderId);
-    onConfigChange({
+    void onConfigChange({
       folderId: newFolderId,
       description: description.trim() || null,
       permissions,
@@ -125,7 +114,7 @@ export function FileUploadConfig({
 
   const handleDescriptionChange = (newDescription: string) => {
     setDescription(newDescription);
-    onConfigChange({
+    void onConfigChange({
       folderId,
       description: newDescription.trim() || null,
       permissions,
@@ -135,7 +124,7 @@ export function FileUploadConfig({
 
   const handlePermissionsChange = (newPermissions: FilePermissionRequest[]) => {
     setPermissions(newPermissions);
-    onConfigChange({
+    void onConfigChange({
       folderId,
       description: description.trim() || null,
       permissions: newPermissions,
@@ -145,7 +134,7 @@ export function FileUploadConfig({
 
   const handleTagsChange = (newTags: string[]) => {
     setTags(newTags);
-    onConfigChange({
+    void onConfigChange({
       folderId,
       description: description.trim() || null,
       permissions,

@@ -3,8 +3,7 @@
  * Extracted from smoke tests best practices
  */
 
-import type { Page } from "@playwright/test";
-import { expect } from "@playwright/test";
+import { expect, type Page, type ConsoleMessage, type Response } from "@playwright/test";
 
 // Parametrized URLs - avoid surprises with localhost vs 127.0.0.1
 export const FRONTEND_URL = process.env.FRONTEND_URL ?? "http://127.0.0.1:3000";
@@ -21,9 +20,9 @@ export function logStep(step: string, details?: unknown): void {
   const now = new Date().toISOString();
   const timePart = now.split("T")[1];
   const timestamp = timePart ? timePart.split(".")[0] : now;
-  console.log(`[${timestamp}] 🔍 ${step}`);
+  console.warn(`[${timestamp}] 🔍 ${step}`);
   if (details) {
-    console.log(`[${timestamp}]    Details:`, JSON.stringify(details, null, 2));
+    console.warn(`[${timestamp}]    Details:`, JSON.stringify(details, null, 2));
   }
 }
 
@@ -97,12 +96,12 @@ export function getCriticalReactErrors(errors: string[]): string[] {
 export function setupConsoleCapture(page: Page): string[] {
   const errors: string[] = [];
 
-  page.on("pageerror", (err) => {
+  page.on("pageerror", (err: Error) => {
     errors.push(`pageerror: ${err.message}`);
     logStep("Page error captured", { error: err.message });
   });
 
-  page.on("console", (msg) => {
+  page.on("console", (msg: ConsoleMessage) => {
     if (msg.type() === "error") {
       errors.push(`console.error: ${msg.text()}`);
     }
@@ -115,14 +114,18 @@ export function setupConsoleCapture(page: Page): string[] {
  * Robust login function that works consistently
  * Uses the proven pattern from smoke tests
  */
-export async function performLogin(
+export async function loginAsAdmin(
   page: Page,
   options: {
     email?: string;
     password?: string;
     expectSuccess?: boolean;
   } = {}
-): Promise<{ success: boolean; status?: number; error?: string }> {
+): Promise<{
+  success: boolean;
+  status?: number;
+  error?: string;
+}> {
   const email = options.email ?? ADMIN_EMAIL;
   const password = options.password ?? ADMIN_PASSWORD;
   const expectSuccess = options.expectSuccess ?? true;
@@ -142,7 +145,7 @@ export async function performLogin(
 
   // Setup response listener before clicking
   const loginResponsePromise = page.waitForResponse(
-    (response) =>
+    (response: Response) =>
       response.url().includes("/api/v1/auth/login") &&
       response.request().method() === "POST",
     { timeout: 15000 }

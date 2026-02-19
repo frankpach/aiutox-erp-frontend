@@ -6,8 +6,7 @@
  */
 
 import type { ReactNode } from "react";
-import { PageLayout } from "~/components/layout/PageLayout";
-import type { PageLayoutProps } from "~/components/layout/PageLayout";
+import { PageLayout, type PageLayoutProps } from "~/components/layout/PageLayout";
 import { Button } from "~/components/ui/button";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 
