@@ -1,65 +1,39 @@
-name: Build and Push Frontend
+name: Frontend CI
+
+# El build y push de Docker se hace localmente con scripts/50-deploy/build-and-deploy.ps1
+# Este workflow solo valida el código en GitHub (sin runners self-hosted)
 
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
-  # Job para runner local (Windows) - Solo tests
-  test-local:
-    runs-on: [self-hosted, Windows, AiutoX]
-    if: github.event_name == 'push'
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Check environment
-        run: |
-          echo "Running on: $(hostname)"
-          echo "OS: $(uname -a || ver)"
-          echo "Current directory: $(pwd)"
-          
-      - name: Check Node.js
-        run: |
-          node --version || echo "Node.js not found"
-          npm --version || echo "npm not found"
-          
-      - name: Install dependencies (if Node.js available)
-        run: |
-          if command -v npm &> /dev/null; then
-            npm install
-          else
-            echo "Skipping npm install - Node.js not available"
-          fi
-          
-      - name: Run tests (if available)
-        run: |
-          if command -v npm &> /dev/null && [ -f "package.json" ]; then
-            npm test || echo "Tests failed or not configured"
-          else
-            echo "Skipping tests - Node.js not available or no package.json"
-          fi
+  validate:
+    runs-on: ubuntu-latest
 
-  # Job para runner del NAS (Docker) - Build y push de imágenes
-  build-and-push:
-    runs-on: [self-hosted, aiutox]
-    if: github.event_name == 'push'
-    needs: test-local
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
-      - name: Build Docker image
-        run: |
-          docker build -t aiutox-nas.tail2a2cda.ts.net:5010/aiutox/frontend:latest .
-          
-      - name: Tag with commit SHA
-        run: |
-          docker tag aiutox-nas.tail2a2cda.ts.net:5010/aiutox/frontend:latest aiutox-nas.tail2a2cda.ts.net:5010/aiutox/frontend:${{ github.sha }}
-          
-      - name: Push to registry
-        run: |
-          docker push aiutox-nas.tail2a2cda.ts.net:5010/aiutox/frontend:latest
-          docker push aiutox-nas.tail2a2cda.ts.net:5010/aiutox/frontend:${{ github.sha }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Run tests
+        run: npm test -- --watchAll=false --passWithNoTests
+
+      - name: Build
+        run: npm run build

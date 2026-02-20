@@ -1,11 +1,4 @@
-# .github/workflows/test-runner.yml
-name: Test Runner
-
-on:
-  workflow_dispatch:  # Permite ejecutar manualmente
-
-jobs:
-  test:
-    runs-on: [self-hosted, aiutox]
-    steps:
-      - run: echo "Runner test at $(date)"
+# Este workflow ya no es necesario.
+# El flujo de CI/CD se maneja con:
+#   - GitHub Actions (ubuntu-latest) para validación de código
+#   - scripts/50-deploy/build-and-deploy.ps1 para build Docker y deploy local
