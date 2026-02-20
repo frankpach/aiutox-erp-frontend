@@ -92,8 +92,10 @@ export function useSavedFilters(
 
         if (error instanceof Error) {
           const errorMessage = error.message.toLowerCase();
-          const isAxiosError = (error as any).isAxiosError;
-          const status = (error as any).response?.status;
+          const errObj = error as Record<string, unknown>;
+          const isAxiosError = Boolean(errObj.isAxiosError);
+          const responseObj = errObj.response && typeof errObj.response === "object" ? errObj.response as Record<string, unknown> : null;
+          const status = responseObj?.status as number | undefined;
 
           // Check for network errors (no response from server)
           if (errorMessage.includes('network') || errorMessage.includes('network error')) {

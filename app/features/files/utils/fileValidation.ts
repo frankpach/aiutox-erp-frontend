@@ -63,7 +63,7 @@ export type FileCategory = keyof typeof ALLOWED_FILE_TYPES;
  */
 export function getFileCategory(fileType: string): FileCategory | null {
   for (const [category, types] of Object.entries(ALLOWED_FILE_TYPES)) {
-    if (types.includes(fileType)) {
+    if ((types as readonly string[]).includes(fileType)) {
       return category as FileCategory;
     }
   }
@@ -76,7 +76,7 @@ export function getFileCategory(fileType: string): FileCategory | null {
 export function isFileTypeAllowed(file: File, allowedTypes?: string[]): boolean {
   if (!allowedTypes || allowedTypes.length === 0) {
     // Si no se especifican tipos, permitir todos los conocidos
-    return Object.values(ALLOWED_FILE_TYPES).flat().includes(file.type as any);
+    return (Object.values(ALLOWED_FILE_TYPES).flat() as string[]).includes(file.type);
   }
   
   // Si el primer tipo es */*, permitir cualquier tipo

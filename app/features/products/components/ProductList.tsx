@@ -80,7 +80,7 @@ export function ProductList({
     }));
   };
 
-  const handleFilterChange = (key: keyof ProductListParams, value: any) => {
+  const handleFilterChange = (key: keyof ProductListParams, value: string | number | boolean | undefined) => {
     setFilters(prev => ({
       ...prev,
       [key]: value || undefined,

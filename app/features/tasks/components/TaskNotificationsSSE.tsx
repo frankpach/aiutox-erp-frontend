@@ -51,13 +51,13 @@ export function TaskNotificationsSSE() {
     },
   });
 
-  const handleTaskEvent = (event: { type: string; data: Record<string, any> }) => {
+  const handleTaskEvent = (event: { type: string; data: Record<string, unknown> }) => {
     const notification: TaskNotification = {
       id: `${Date.now()}-${Math.random()}`,
       type: event.type,
       title: getEventTitle(event.type),
       message: getEventMessage(event),
-      task_id: event.data?.task_id || event.data?.id,
+      task_id: (event.data?.task_id ?? event.data?.id) as string | undefined,
       timestamp: new Date().toISOString(),
       read: false,
       severity: getEventSeverity(event.type),
@@ -86,7 +86,7 @@ export function TaskNotificationsSSE() {
     return titles[eventType] || "Notificación";
   };
 
-  const getEventMessage = (event: any): string => {
+  const getEventMessage = (event: { type: string; data: Record<string, unknown> }): string => {
     const taskTitle = event.data?.title || "Tarea";
     
     switch (event.type) {

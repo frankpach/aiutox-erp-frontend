@@ -22,7 +22,7 @@ import {
   useClearPubSubStream,
   useTrimPubSubStream
 } from "../hooks/usePubSub";
-import type { PubSubStream, PubSubGroup } from "../types/pubsub.types";
+import type { PubSubStream, PubSubGroup, PubSubStreamEntry } from "../types/pubsub.types";
 
 interface PubSubStreamViewProps {
   streamName: string;
@@ -68,7 +68,7 @@ export function PubSubStreamView({ streamName, onBack, onGroupView }: PubSubStre
     }
   };
 
-  const handleAddMessage = async (data: Record<string, any>) => {
+  const handleAddMessage = async (data: Record<string, unknown>) => {
     try {
       await addMessageMutation.mutateAsync({
         stream_name: streamName,
@@ -325,14 +325,14 @@ export function PubSubStreamView({ streamName, onBack, onGroupView }: PubSubStre
       {
         key: "id",
         title: t("pubsub.messages.table.id"),
-        render: (entry: any) => (
+        render: (entry: PubSubStreamEntry) => (
           <div className="font-mono text-sm">{entry.id.substring(0, 8)}...</div>
         ),
       },
       {
         key: "data",
         title: t("pubsub.messages.table.data"),
-        render: (entry: any) => (
+        render: (entry: PubSubStreamEntry) => (
           <div className="text-sm">
             <pre className="bg-gray-100 p-2 rounded text-xs overflow-auto max-w-xs">
               {JSON.stringify(entry.data, null, 2)}
@@ -343,7 +343,7 @@ export function PubSubStreamView({ streamName, onBack, onGroupView }: PubSubStre
       {
         key: "timestamp",
         title: t("pubsub.messages.table.timestamp"),
-        render: (entry: any) => (
+        render: (entry: PubSubStreamEntry) => (
           <div className="text-sm">
             {new Date(entry.timestamp).toLocaleString()}
           </div>
@@ -352,7 +352,7 @@ export function PubSubStreamView({ streamName, onBack, onGroupView }: PubSubStre
       {
         key: "sequence",
         title: t("pubsub.messages.table.sequence"),
-        render: (entry: any) => (
+        render: (entry: PubSubStreamEntry) => (
           <div className="text-sm">{entry.sequence}</div>
         ),
       },

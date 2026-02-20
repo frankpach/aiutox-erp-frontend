@@ -34,7 +34,7 @@ export interface ImportJobCreate {
   file_name: string;
   template_id?: string;
   mapping?: Record<string, string>;
-  options?: Record<string, any>;
+  options?: Record<string, unknown>;
 }
 
 export interface ImportJobUpdate {
@@ -51,7 +51,7 @@ export interface ImportJobUpdate {
 export interface ImportJobError {
   row_number: number;
   field: string;
-  value: any;
+  value: unknown;
   message: string;
   error_code: string;
 }
@@ -59,7 +59,7 @@ export interface ImportJobError {
 export interface ImportJobWarning {
   row_number: number;
   field: string;
-  value: any;
+  value: unknown;
   message: string;
   warning_code: string;
 }
@@ -86,7 +86,7 @@ export interface ExportJob {
   status: "pending" | "processing" | "completed" | "failed";
   total_rows: number | null;
   exported_rows: number;
-  filters: Record<string, any> | null;
+  filters: Record<string, unknown> | null;
   columns: string[] | null;
   created_by: string | null;
   started_at: string | null;
@@ -99,9 +99,9 @@ export interface ExportJob {
 export interface ExportJobCreate {
   module: string;
   export_format: "csv" | "excel" | "json";
-  filters?: Record<string, any>;
+  filters?: Record<string, unknown>;
   columns?: string[];
-  options?: Record<string, any>;
+  options?: Record<string, unknown>;
 }
 
 export interface ExportJobUpdate {
@@ -121,9 +121,9 @@ export interface ImportTemplate {
   description: string | null;
   module: string;
   field_mapping: Record<string, string>;
-  default_values: Record<string, any> | null;
-  validation_rules: Record<string, any> | null;
-  transformations: Record<string, any> | null;
+  default_values: Record<string, unknown> | null;
+  validation_rules: Record<string, unknown> | null;
+  transformations: Record<string, unknown> | null;
   skip_header: boolean;
   delimiter: string;
   encoding: string;
@@ -137,9 +137,9 @@ export interface ImportTemplateCreate {
   description?: string;
   module: string;
   field_mapping: Record<string, string>;
-  default_values?: Record<string, any>;
-  validation_rules?: Record<string, any>;
-  transformations?: Record<string, any>;
+  default_values?: Record<string, unknown>;
+  validation_rules?: Record<string, unknown>;
+  transformations?: Record<string, unknown>;
   skip_header?: boolean;
   delimiter?: string;
   encoding?: string;
@@ -149,9 +149,9 @@ export interface ImportTemplateUpdate {
   name?: string;
   description?: string;
   field_mapping?: Record<string, string>;
-  default_values?: Record<string, any>;
-  validation_rules?: Record<string, any>;
-  transformations?: Record<string, any>;
+  default_values?: Record<string, unknown>;
+  validation_rules?: Record<string, unknown>;
+  transformations?: Record<string, unknown>;
   skip_header?: boolean;
   delimiter?: string;
   encoding?: string;
@@ -223,7 +223,7 @@ export interface ImportExportOperation {
   created_at: string;
   completed_at?: string;
   error_message?: string;
-  result?: any;
+  result?: unknown;
 }
 
 // Import/Export List Responses

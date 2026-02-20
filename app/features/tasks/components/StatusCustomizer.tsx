@@ -138,12 +138,11 @@ export function StatusCustomizer() {
     try {
       await deleteMutation.mutateAsync(status.id);
       showToast('Estado eliminado correctamente', 'success');
-    } catch (error: any) {
-      showToast(
-        error.response?.data?.message ||
-          'Error al eliminar estado. Puede estar en uso por tareas.',
-        'error'
-      );
+    } catch (error: unknown) {
+      const msg = error && typeof error === "object" && "response" in error
+        ? String(((error as Record<string, unknown>).response as Record<string, Record<string, unknown>>)?.data?.message ?? "")
+        : "";
+      showToast(msg || 'Error al eliminar estado. Puede estar en uso por tareas.', 'error');
     }
   };
 
@@ -160,11 +159,11 @@ export function StatusCustomizer() {
         showToast('Estado creado correctamente', 'success');
       }
       setShowDialog(false);
-    } catch (error: any) {
-      showToast(
-        error.response?.data?.message || 'Error al guardar estado',
-        'error'
-      );
+    } catch (error: unknown) {
+      const msg = error && typeof error === "object" && "response" in error
+        ? String(((error as Record<string, unknown>).response as Record<string, Record<string, unknown>>)?.data?.message ?? "")
+        : "";
+      showToast(msg || 'Error al guardar estado', 'error');
     }
   };
 
@@ -283,7 +282,7 @@ export function StatusCustomizer() {
               <Label>{t('tasks.statusCustomizer.type') || 'Tipo'}</Label>
               <Select
                 value={formData.type}
-                onValueChange={(value: any) =>
+                onValueChange={(value: TaskStatusType) =>
                   setFormData({ ...formData, type: value })
                 }
               >

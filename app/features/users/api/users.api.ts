@@ -90,15 +90,15 @@ export async function updateUser(
       data: response.data,
     });
     return response.data;
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[updateUser API] Error:", error);
-    // Log detailed error information
-    if (error.response) {
+    if (error && typeof error === "object" && "response" in error) {
+      const axiosError = error as { response: { status: number; statusText: string; data: unknown; headers: unknown } };
       console.error("[updateUser API] Error response:", {
-        status: error.response.status,
-        statusText: error.response.statusText,
-        data: error.response.data,
-        headers: error.response.headers,
+        status: axiosError.response.status,
+        statusText: axiosError.response.statusText,
+        data: axiosError.response.data,
+        headers: axiosError.response.headers,
       });
     }
     throw error;
@@ -126,15 +126,15 @@ export async function updateOwnProfile(
       data: response.data,
     });
     return response.data;
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[updateOwnProfile API] Error:", error);
-    // Log detailed error information
-    if (error.response) {
+    if (error && typeof error === "object" && "response" in error) {
+      const axiosError = error as { response: { status: number; statusText: string; data: unknown; headers: unknown } };
       console.error("[updateOwnProfile API] Error response:", {
-        status: error.response.status,
-        statusText: error.response.statusText,
-        data: error.response.data,
-        headers: error.response.headers,
+        status: axiosError.response.status,
+        statusText: axiosError.response.statusText,
+        data: axiosError.response.data,
+        headers: axiosError.response.headers,
       });
     }
     throw error;

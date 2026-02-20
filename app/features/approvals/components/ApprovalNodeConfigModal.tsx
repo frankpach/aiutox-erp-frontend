@@ -93,20 +93,20 @@ export function ApprovalNodeConfigModal({
   const getApproverOptions = (): ApproverOption[] => {
     switch (formData.approverType) {
       case "user":
-        return users.map((u: any) => ({
+        return users.map((u: Record<string, unknown>) => ({
           id: u.id,
           name: u.name || u.email,
           type: "user" as const,
           avatar: u.avatar,
         }));
       case "role":
-        return roles.map((r: any) => ({
+        return roles.map((r: Record<string, unknown>) => ({
           id: r.id,
           name: r.name,
           type: "role" as const,
         }));
       case "group":
-        return groups.map((g: any) => ({
+        return groups.map((g: Record<string, unknown>) => ({
           id: g.id,
           name: g.name,
           type: "group" as const,

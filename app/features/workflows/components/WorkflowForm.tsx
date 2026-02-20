@@ -79,7 +79,7 @@ export function WorkflowForm({
     setSteps(steps.filter((_, i) => i !== index));
   };
 
-  const updateStep = (index: number, field: keyof WorkflowStepFormData, value: any) => {
+  const updateStep = (index: number, field: keyof WorkflowStepFormData, value: string | number | Record<string, unknown> | Record<string, unknown>[] | null) => {
     const newSteps = [...steps];
     newSteps[index] = { ...newSteps[index], [field]: value };
     setSteps(newSteps);

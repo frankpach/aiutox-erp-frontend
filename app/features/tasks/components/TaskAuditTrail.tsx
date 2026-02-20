@@ -13,8 +13,8 @@ interface AuditLog {
   id: string;
   action: string;
   user_name: string;
-  old_values: Record<string, any>;
-  new_values: Record<string, any>;
+  old_values: Record<string, unknown>;
+  new_values: Record<string, unknown>;
   ip_address?: string;
   created_at: string;
 }

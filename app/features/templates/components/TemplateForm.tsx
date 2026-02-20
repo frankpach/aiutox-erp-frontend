@@ -47,7 +47,7 @@ export function TemplateForm({
     onSubmit(formData);
   };
 
-  const handleFieldChange = (field: keyof TemplateCreate, value: any) => {
+  const handleFieldChange = (field: keyof TemplateCreate, value: string | boolean | string[]) => {
     setFormData(prev => ({
       ...prev,
       [field]: value,

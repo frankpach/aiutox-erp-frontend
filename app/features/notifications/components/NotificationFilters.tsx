@@ -38,7 +38,7 @@ interface NotificationFiltersProps {
 export function NotificationFilters({ filters, onChange, onReset }: NotificationFiltersProps) {
   const { t } = useTranslation();
 
-  const updateFilter = (key: keyof NotificationFilters, value: any) => {
+  const updateFilter = (key: keyof NotificationFilters, value: string | boolean | string[] | null | undefined) => {
     onChange({
       ...filters,
       [key]: value,
@@ -284,7 +284,7 @@ export function NotificationFilters({ filters, onChange, onReset }: Notification
             <div className="flex flex-wrap gap-2">
               {filters.search && (
                 <Badge variant="outline" className="text-xs">
-                  Search: "{filters.search}"
+                  Search: &quot;{filters.search}&quot;
                 </Badge>
               )}
               {filters.status && (

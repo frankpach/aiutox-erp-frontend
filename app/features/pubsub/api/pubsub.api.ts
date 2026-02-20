@@ -113,8 +113,8 @@ export async function deletePubSubStream(name: string): Promise<StandardResponse
  * @param payload - Message data
  * @returns Promise<StandardResponse<PubSubStreamEntry>>
  */
-export async function addPubSubMessage(payload: PubSubAddMessage): Promise<StandardResponse<any>> {
-  const response = await apiClient.post<StandardResponse<any>>("/api/v1/pubsub/streams/messages", payload);
+export async function addPubSubMessage(payload: PubSubAddMessage): Promise<StandardResponse<unknown>> {
+  const response = await apiClient.post<StandardResponse<unknown>>("/api/v1/pubsub/streams/messages", payload);
   return response.data;
 }
 
@@ -289,8 +289,8 @@ export async function trimPubSubStream(name: string, strategy: "maxlen" | "minid
  * Get PubSub configuration
  * @returns Promise<StandardResponse<any>>
  */
-export async function getPubSubConfig(): Promise<StandardResponse<any>> {
-  const response = await apiClient.get<StandardResponse<any>>("/api/v1/pubsub/config");
+export async function getPubSubConfig(): Promise<StandardResponse<unknown>> {
+  const response = await apiClient.get<StandardResponse<unknown>>("/api/v1/pubsub/config");
   return response.data;
 }
 
@@ -299,7 +299,7 @@ export async function getPubSubConfig(): Promise<StandardResponse<any>> {
  * @param config - Configuration data
  * @returns Promise<StandardResponse<any>>
  */
-export async function updatePubSubConfig(config: any): Promise<StandardResponse<any>> {
-  const response = await apiClient.put<StandardResponse<any>>("/api/v1/pubsub/config", config);
+export async function updatePubSubConfig(config: Record<string, unknown>): Promise<StandardResponse<unknown>> {
+  const response = await apiClient.put<StandardResponse<unknown>>("/api/v1/pubsub/config", config);
   return response.data;
 }

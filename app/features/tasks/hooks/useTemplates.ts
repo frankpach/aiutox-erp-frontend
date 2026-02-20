@@ -90,10 +90,15 @@ export function useCreateTaskFromTemplate() {
         t('tasks.templates.createSuccessDescription')
       );
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
+      const msg = error && typeof error === "object" && "response" in error
+        ? ((error as Record<string, unknown>).response as Record<string, unknown>)?.data
+          ? String(((error as Record<string, unknown>).response as Record<string, Record<string, unknown>>).data?.message ?? "")
+          : ""
+        : "";
       toast.error(
         t('tasks.templates.createError'),
-        error.response?.data?.message || t('tasks.templates.createErrorDescription')
+        msg || t('tasks.templates.createErrorDescription')
       );
     },
   });
@@ -125,10 +130,15 @@ export function useCreateTemplate() {
         t('tasks.templates.saveSuccessDescription')
       );
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
+      const msg = error && typeof error === "object" && "response" in error
+        ? ((error as Record<string, unknown>).response as Record<string, unknown>)?.data
+          ? String(((error as Record<string, unknown>).response as Record<string, Record<string, unknown>>).data?.message ?? "")
+          : ""
+        : "";
       toast.error(
         t('tasks.templates.saveError'),
-        error.response?.data?.message || t('tasks.templates.saveErrorDescription')
+        msg || t('tasks.templates.saveErrorDescription')
       );
     },
   });

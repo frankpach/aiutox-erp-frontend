@@ -21,14 +21,16 @@ import {
   Table as TableIcon,
   TrendingUp
 } from "lucide-react";
-import { 
+import type { 
   Report, 
   ReportExecution, 
   ReportResult, 
   ParameterValues,
+  ParameterValue,
   ParameterDefinition,
   ReportVisualization,
-  VisualizationType,
+  ChartConfig,
+  MetricsConfig,
 } from "~/features/reporting/types/reporting.types";
 
 interface ReportViewerProps {
@@ -54,7 +56,7 @@ export function ReportViewer({
   const [parameters, setParameters] = useState<ParameterValues>({});
   const [selectedFormat, setSelectedFormat] = useState<"pdf" | "excel" | "csv" | "json">("pdf");
 
-  const handleParameterChange = (paramName: string, value: any) => {
+  const handleParameterChange = (paramName: string, value: ParameterValue) => {
     setParameters(prev => ({
       ...prev,
       [paramName]: value,
@@ -92,7 +94,7 @@ export function ReportViewer({
       case "string":
         return (
           <Input
-            value={value || ""}
+            value={(value as string) || ""}
             onChange={(e) => handleParameterChange(paramName, e.target.value)}
             placeholder={paramDef.validation?.message}
           />
@@ -102,7 +104,7 @@ export function ReportViewer({
         return (
           <Input
             type="number"
-            value={value || ""}
+            value={(value as number) ?? ""}
             onChange={(e) => handleParameterChange(paramName, Number(e.target.value))}
             min={paramDef.validation?.min}
             max={paramDef.validation?.max}
@@ -129,12 +131,12 @@ export function ReportViewer({
         return (
           <Input
             type="date"
-            value={value ? new Date(value).toISOString().split('T')[0] : ""}
+            value={value ? new Date(value as string | number | Date).toISOString().split('T')[0] : ""}
             onChange={(e) => handleParameterChange(paramName, e.target.value)}
           />
         );
       
-      case "date_range":
+      case "date_range": {
         const dateRange = value as [Date, Date] || [];
         return (
           <div className="flex space-x-2">
@@ -158,11 +160,12 @@ export function ReportViewer({
             />
           </div>
         );
+      }
       
       case "select":
         return (
           <Select
-            value={value || ""}
+            value={(value as string) || ""}
             onValueChange={(val) => handleParameterChange(paramName, val)}
           >
             <SelectTrigger>
@@ -181,7 +184,7 @@ export function ReportViewer({
       default:
         return (
           <Input
-            value={value || ""}
+            value={(value as string) || ""}
             onChange={(e) => handleParameterChange(paramName, e.target.value)}
           />
         );
@@ -212,7 +215,7 @@ export function ReportViewer({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {vizData.slice(0, 100).map((row: any, rowIndex) => (
+                    {(vizData as Record<string, unknown>[]).slice(0, 100).map((row, rowIndex) => (
                       <TableRow key={rowIndex}>
                         {Object.values(row).map((value, colIndex) => (
                           <TableCell key={colIndex}>
@@ -249,7 +252,7 @@ export function ReportViewer({
                     {t("reporting.visualizations.chart.placeholder")}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {viz.config?.chart_type} chart
+                    {(viz.config as ChartConfig)?.chart_type} chart
                   </p>
                 </div>
               </div>
@@ -268,10 +271,10 @@ export function ReportViewer({
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {viz.config?.metrics?.map((metric: any, metricIndex: number) => (
+                {(viz.config as MetricsConfig)?.metrics?.map((metric, metricIndex) => (
                   <div key={metricIndex} className="text-center p-4 border rounded-md">
                     <div className="text-2xl font-bold text-primary">
-                      {vizData?.[metric.value] || "0"}
+                      {(vizData as Record<string, unknown>)?.[metric.value]?.toString() || "0"}
                     </div>
                     <div className="text-sm text-muted-foreground">
                       {metric.label}
@@ -318,7 +321,7 @@ export function ReportViewer({
           )}
           {onExport && (
             <div className="flex space-x-2">
-              <Select value={selectedFormat} onValueChange={setSelectedFormat as any}>
+              <Select value={selectedFormat} onValueChange={(v) => setSelectedFormat(v as typeof selectedFormat)}>
                 <SelectTrigger className="w-24">
                   <SelectValue />
                 </SelectTrigger>
@@ -411,9 +414,10 @@ export function ReportViewer({
       {result && result.visualizations.length > 0 && (
         <div className="space-y-6">
           <h3 className="text-lg font-semibold">{t("reporting.visualizations.title")}</h3>
-          {result.visualizations.map((_, index) => 
-            renderVisualization(report.visualizations[index], index)
-          )}
+          {result.visualizations.map((_, index) => {
+            const viz = report.visualizations[index];
+            return viz ? renderVisualization(viz, index) : null;
+          })}
         </div>
       )}
 

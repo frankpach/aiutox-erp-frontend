@@ -8,7 +8,7 @@
  */
 export interface WorkflowDefinition {
   steps: WorkflowStep[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -21,8 +21,8 @@ export interface WorkflowStep {
   name: string;
   step_type: string;
   order: number;
-  config: Record<string, any> | null;
-  transitions: Record<string, any>[] | null;
+  config: Record<string, unknown> | null;
+  transitions: Record<string, unknown>[] | null;
   created_at: string;
   updated_at: string;
 }
@@ -37,7 +37,7 @@ export interface Workflow {
   description: string | null;
   enabled: boolean;
   definition: WorkflowDefinition;
-  metadata: Record<string, any> | null;
+  metadata: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
 }
@@ -50,7 +50,7 @@ export interface WorkflowCreate {
   description?: string | null;
   enabled?: boolean;
   definition: WorkflowDefinition;
-  metadata?: Record<string, any> | null;
+  metadata?: Record<string, unknown> | null;
 }
 
 /**
@@ -61,7 +61,7 @@ export interface WorkflowUpdate {
   description?: string | null;
   enabled?: boolean;
   definition?: WorkflowDefinition;
-  metadata?: Record<string, any> | null;
+  metadata?: Record<string, unknown> | null;
 }
 
 /**
@@ -72,8 +72,8 @@ export interface WorkflowStepCreate {
   name: string;
   step_type: string;
   order: number;
-  config?: Record<string, any> | null;
-  transitions?: Record<string, any>[] | null;
+  config?: Record<string, unknown> | null;
+  transitions?: Record<string, unknown>[] | null;
 }
 
 /**
@@ -87,7 +87,7 @@ export interface WorkflowExecution {
   current_step_id: string | null;
   entity_type: string | null;
   entity_id: string | null;
-  execution_data: Record<string, any> | null;
+  execution_data: Record<string, unknown> | null;
   error_message: string | null;
   started_at: string;
   completed_at: string | null;
@@ -100,7 +100,7 @@ export interface WorkflowExecutionCreate {
   workflow_id: string;
   entity_type?: string | null;
   entity_id?: string | null;
-  execution_data?: Record<string, any> | null;
+  execution_data?: Record<string, unknown> | null;
 }
 
 /**
@@ -132,8 +132,8 @@ export interface WorkflowStepFormData {
   name: string;
   step_type: string;
   order: number;
-  config?: Record<string, any> | null;
-  transitions?: Record<string, any>[] | null;
+  config?: Record<string, unknown> | null;
+  transitions?: Record<string, unknown>[] | null;
 }
 
 /**

@@ -60,7 +60,7 @@ export function TaskFilters({ filters, onChange, onReset }: TaskFiltersProps) {
     return new Date().toISOString().split("T")[0];
   };
 
-  const updateFilter = (key: keyof TaskFilters, value: any) => {
+  const updateFilter = (key: keyof TaskFilters, value: string | string[] | boolean | null | undefined) => {
     onChange({
       ...filters,
       [key]: value,
@@ -381,7 +381,7 @@ export function TaskFilters({ filters, onChange, onReset }: TaskFiltersProps) {
               <div className="flex flex-wrap gap-2">
                 {filters.search && (
                   <Badge variant="outline" className="text-xs">
-                    {t("tasks.filtersSearchLabel")}: "{filters.search}"
+                    {t("tasks.filtersSearchLabel")}: &quot;{filters.search}&quot;
                   </Badge>
                 )}
                 {filters.status && (

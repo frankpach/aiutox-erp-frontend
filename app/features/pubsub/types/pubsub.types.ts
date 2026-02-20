@@ -43,7 +43,7 @@ export interface PubSubStream {
 export interface PubSubStreamEntry {
   id: string;
   stream_name: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   timestamp: string;
   sequence: number;
 }
@@ -67,7 +67,7 @@ export interface PubSubGroupEntry {
   consumer_name?: string;
   delivery_count: number;
   last_delivered?: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   timestamp: string;
   sequence: number;
 }
@@ -111,7 +111,7 @@ export interface PubSubCreateGroup {
 
 export interface PubSubAddMessage {
   stream_name: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   max_length?: number;
   id?: string;
 }
@@ -137,7 +137,7 @@ export interface PubSubEvent {
   group_name?: string;
   consumer_name?: string;
   event_type: "message_added" | "message_delivered" | "message_acknowledged" | "group_created" | "consumer_added" | "consumer_removed";
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   timestamp: string;
 }
 

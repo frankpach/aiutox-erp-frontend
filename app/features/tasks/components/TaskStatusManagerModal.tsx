@@ -14,8 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useTranslation } from '~/lib/i18n/useTranslation';
 import { useTaskStatuses } from '../hooks/useTaskStatuses';
 import { showToast } from '~/components/common/Toast';
-import type { TaskStatus, TaskStatusType } from '../types/status.types';
-import { STATUS_TYPE_CONFIG } from '../types/status.types';
+import { STATUS_TYPE_CONFIG, type TaskStatus, type TaskStatusType } from '../types/status.types';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 
 interface TaskStatusManagerModalProps {

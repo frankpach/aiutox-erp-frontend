@@ -122,8 +122,8 @@ export async function executeReport(
 export async function getReportData(
   id: string,
   parameters?: ParameterValues
-): Promise<StandardResponse<any[]>> {
-  const response = await apiClient.get<StandardResponse<any[]>>(`/reporting/reports/${id}/data`, {
+): Promise<StandardResponse<unknown[]>> {
+  const response = await apiClient.get<StandardResponse<unknown[]>>(`/reporting/reports/${id}/data`, {
     params: { parameters },
   });
   return response.data;
@@ -199,7 +199,7 @@ export async function exportReport(
   id: string,
   format: "pdf" | "excel" | "csv" | "json",
   parameters?: ParameterValues,
-  options?: any
+  options?: Record<string, unknown>
 ): Promise<Blob> {
   const response = await apiClient.get(`/reporting/reports/${id}/export/${format}`, {
     params: {
@@ -220,7 +220,7 @@ export async function exportReport(
 export async function exportExecution(
   executionId: string,
   format: "pdf" | "excel" | "csv" | "json",
-  options?: any
+  options?: Record<string, unknown>
 ): Promise<Blob> {
   const response = await apiClient.get(
     `/reporting/executions/${executionId}/export/${format}`,
@@ -278,8 +278,8 @@ export async function scheduleReport(
     recipients: string[];
     parameters?: ParameterValues;
   }
-): Promise<StandardResponse<any>> {
-  const response = await apiClient.post<StandardResponse<any>>(
+): Promise<StandardResponse<unknown>> {
+  const response = await apiClient.post<StandardResponse<unknown>>(
     `/reporting/reports/${id}/schedule`,
     schedule
   );
@@ -292,8 +292,8 @@ export async function scheduleReport(
  * 
  * Requires: reporting.view permission
  */
-export async function getReportSchedules(id: string): Promise<StandardListResponse<any>> {
-  const response = await apiClient.get<StandardListResponse<any>>(
+export async function getReportSchedules(id: string): Promise<StandardListResponse<unknown>> {
+  const response = await apiClient.get<StandardListResponse<unknown>>(
     `/reporting/reports/${id}/schedules`
   );
   return response.data;
@@ -326,8 +326,8 @@ export async function shareReport(
     users: string[];
     permissions: ("view" | "execute" | "export")[];
   }
-): Promise<StandardResponse<any>> {
-  const response = await apiClient.post<StandardResponse<any>>(
+): Promise<StandardResponse<unknown>> {
+  const response = await apiClient.post<StandardResponse<unknown>>(
     `/reporting/reports/${id}/share`,
     sharing
   );
@@ -340,8 +340,8 @@ export async function shareReport(
  * 
  * Requires: reporting.view permission
  */
-export async function getReportSharing(id: string): Promise<StandardResponse<any>> {
-  const response = await apiClient.get<StandardResponse<any>>(`/reporting/reports/${id}/sharing`);
+export async function getReportSharing(id: string): Promise<StandardResponse<unknown>> {
+  const response = await apiClient.get<StandardResponse<unknown>>(`/reporting/reports/${id}/sharing`);
   return response.data;
 }
 

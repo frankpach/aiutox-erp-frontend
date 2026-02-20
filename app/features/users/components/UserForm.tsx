@@ -231,19 +231,20 @@ export function UserForm({
 
       void onSubmit(cleanedData as UserCreate | UserUpdate);
       console.warn("[UserForm] onSubmit completed successfully");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("[UserForm] Error in onSubmitForm:", error);
-      // Log detailed error information
-      if (error.response) {
+      const errObj = error && typeof error === "object" ? error as Record<string, unknown> : {};
+      if ("response" in errObj) {
+        const resp = errObj.response as Record<string, unknown>;
         console.error("[UserForm] Error response details:", {
-          status: error.response.status,
-          statusText: error.response.statusText,
-          data: error.response.data,
+          status: resp.status,
+          statusText: resp.statusText,
+          data: resp.data,
         });
-      } else if (error.request) {
-        console.error("[UserForm] Error request details:", error.request);
-      } else {
-        console.error("[UserForm] Error message:", error.message);
+      } else if ("request" in errObj) {
+        console.error("[UserForm] Error request details:", errObj.request);
+      } else if ("message" in errObj) {
+        console.error("[UserForm] Error message:", errObj.message);
       }
 
       // Log the data that was being sent

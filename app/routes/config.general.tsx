@@ -273,7 +273,7 @@ export default function GeneralConfigPage() {
                 <SelectContent>
                   {CURRENCY_CODES.map((code) => (
                     <SelectItem key={code} value={code}>
-                      {code} - {t(CURRENCY_KEY_MAP[code] as any)}
+                      {code} - {t(CURRENCY_KEY_MAP[code])}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -297,7 +297,7 @@ export default function GeneralConfigPage() {
                 <SelectContent>
                   {LANGUAGE_CODES.map((code) => (
                     <SelectItem key={code} value={code}>
-                      {t(LANGUAGE_KEY_MAP[code] as any)}
+                      {t(LANGUAGE_KEY_MAP[code])}
                     </SelectItem>
                   ))}
                 </SelectContent>

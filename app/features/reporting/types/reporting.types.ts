@@ -276,7 +276,7 @@ export type ExecutionStatus =
 
 // Report result
 export interface ReportResult {
-  data: any[];
+  data: unknown[];
   visualizations: RenderedVisualization[];
   metadata: ResultMetadata;
 }
@@ -284,7 +284,7 @@ export interface ReportResult {
 // Rendered visualization
 export interface RenderedVisualization {
   type: VisualizationType;
-  data: any;
+  data: unknown;
   config: VisualizationConfig;
 }
 
@@ -368,6 +368,8 @@ export interface ReportListParams {
   data_source?: string;
   is_active?: boolean;
   search?: string;
+  start_date?: string;
+  end_date?: string;
 }
 
 // Report statistics

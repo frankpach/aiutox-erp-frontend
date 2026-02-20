@@ -169,7 +169,12 @@ export function usePermissionsByModule(moduleId?: string, tenantId?: string) {
       try {
         const { getModulePermissions } = await import("~/lib/api/modules.api");
         const response = await getModulePermissions(moduleId, tenantId);
-        const permissionStrings = response.data.map((p: any) => p.permission || p);
+        const permissionStrings = response.data.map((p: unknown) => {
+          if (p && typeof p === "object" && "permission" in p) {
+            return String((p as Record<string, unknown>).permission);
+          }
+          return String(p);
+        });
         setPermissions(permissionStrings);
       } catch (err) {
         setError(
@@ -216,7 +221,7 @@ export function useAllPermissionsByModule(tenantId?: string) {
         >();
 
         for (const perm of response.data) {
-          const permissionString = typeof perm === "string" ? perm : (perm as any).permission || "";
+          const permissionString = typeof perm === "string" ? perm : (perm && typeof perm === "object" && "permission" in perm ? String((perm as Record<string, unknown>).permission) : "");
           const moduleId = permissionString.split(".")[0] || "unknown";
           const moduleName = moduleId.charAt(0).toUpperCase() + moduleId.slice(1);
 

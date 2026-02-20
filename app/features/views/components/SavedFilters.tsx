@@ -14,9 +14,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import type { FieldConfig } from "../types/savedFilter.types";
+import type { FieldConfig, SavedFilter as SavedFilterType, SavedFilterCreate } from "../types/savedFilter.types";
 import { useSavedFilters } from "../hooks/useSavedFilters";
-import type { SavedFilter as SavedFilterType, SavedFilterCreate } from "../types/savedFilter.types";
 import { FilterEditorModal } from "./FilterEditorModal";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 

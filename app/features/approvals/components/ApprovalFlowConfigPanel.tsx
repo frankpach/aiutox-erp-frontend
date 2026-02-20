@@ -94,7 +94,7 @@ export function ApprovalFlowConfigPanel({
               <Label htmlFor="flow-description">Descripción</Label>
               <Textarea
                 id="flow-description"
-                value={flowData.description}
+                value={flowData.description ?? ""}
                 onChange={(e) =>
                   setFlowData({ ...flowData, description: e.target.value })
                 }
@@ -109,7 +109,7 @@ export function ApprovalFlowConfigPanel({
               <Select
                 value={flowData.flow_type}
                 onValueChange={(value) =>
-                  setFlowData({ ...flowData, flow_type: value as any })
+                  setFlowData({ ...flowData, flow_type: value as typeof flowData.flow_type })
                 }
                 disabled={!editable}
               >

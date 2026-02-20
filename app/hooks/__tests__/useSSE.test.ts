@@ -33,6 +33,7 @@ class MockEventSource {
   constructor(url: string, options?: EventSourceInit) {
     this.url = url;
     this.options = options;
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     latestEventSource = this;
   }
 }

@@ -4,12 +4,10 @@
  */
 
 import { useState, useEffect, useRef } from "react";
-import { useTranslation } from "~/lib/i18n/useTranslation";
 import { PageLayout } from "~/components/layout/PageLayout";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Separator } from "~/components/ui/separator";
 import { 
   PlugIcon,
   DownloadIcon,
@@ -24,7 +22,6 @@ interface NotificationStreamProps {
 }
 
 export function NotificationStream({ autoConnect = false }: NotificationStreamProps) {
-  const { t } = useTranslation();
   const [isConnected, setIsConnected] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [notifications, setNotifications] = useState<NotificationQueue[]>([]);
@@ -49,6 +46,7 @@ export function NotificationStream({ autoConnect = false }: NotificationStreamPr
         eventSourceRef.current.close();
       }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoConnect]);
 
   const handleConnect = () => {
@@ -93,11 +91,6 @@ export function NotificationStream({ autoConnect = false }: NotificationStreamPr
       console.error("Stream connection error:", error);
     };
 
-    eventSource.onclose = () => {
-      setIsConnected(false);
-      setConnectionStatus("disconnected");
-      console.log("Stream connection closed");
-    };
   };
 
   const handleDisconnect = () => {
@@ -299,7 +292,7 @@ export function NotificationStream({ autoConnect = false }: NotificationStreamPr
                   {notifications.map((notification, index) => (
                     <div key={`${notification.id}-${index}`} className="border-l-4 border-gray-300 pl-4">
                       <div className="flex items-start gap-3 mb-2">
-                        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-blue-500 mt-2" />
+                        <div className="shrink-0 w-2 h-2 rounded-full bg-blue-500 mt-2" />
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="font-medium text-gray-900">

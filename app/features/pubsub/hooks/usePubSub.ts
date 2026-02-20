@@ -491,7 +491,7 @@ export function useUpdatePubSubConfig() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (config: any) => updatePubSubConfig(config),
+    mutationFn: (config: Record<string, unknown>) => updatePubSubConfig(config),
     onSuccess: () => {
       // Invalidate config cache
       queryClient.invalidateQueries({ queryKey: pubsubKeys.config() });

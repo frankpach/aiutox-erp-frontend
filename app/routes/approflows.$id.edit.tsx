@@ -53,7 +53,7 @@ export default function ApprovalFlowEditRoute() {
     updateFlowStepsMutation.mutate(
       {
         flowId: id || "",
-        steps: steps as any,
+        steps: steps as unknown as Parameters<typeof updateFlowStepsMutation.mutate>[0]['steps'],
       },
       {
         onSuccess: () => {

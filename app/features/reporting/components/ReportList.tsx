@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table";
 import { Search, Plus, Edit, Trash2, Play, Download, Eye } from "lucide-react";
-import { Report, ReportListParams } from "~/features/reporting/types/reporting.types";
+import type { Report, ReportListParams } from "~/features/reporting/types/reporting.types";
 
 interface ReportListProps {
   reports: Report[];
@@ -68,7 +68,7 @@ export function ReportList({
     </Badge>
   );
 
-  const getVisualizationCount = (visualizations: any[]) => visualizations.length;
+  const getVisualizationCount = (visualizations: unknown[]) => visualizations.length;
 
   if (loading) {
     return (

@@ -105,7 +105,7 @@ export function ReportExportButtons({
             <label className="text-sm font-medium">
               {t("reporting.export.format")}
             </label>
-            <Select value={selectedFormat} onValueChange={setSelectedFormat as any}>
+            <Select value={selectedFormat} onValueChange={(v) => setSelectedFormat(v as typeof selectedFormat)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>

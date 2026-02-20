@@ -21,7 +21,8 @@ export function sanitizeString(input: string): string {
   }
 
   // Remove null bytes and control characters
-  let sanitized = input.replace(/[\0\x08\x09\x1a\n\r]/g, "");
+  // eslint-disable-next-line no-control-regex
+  let sanitized = input.replace(/[\0\u0008\u0009\u001a\n\r]/g, "");
 
   // Remove script tags and their content (case-insensitive, multiline)
   sanitized = sanitized.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "");
@@ -70,7 +71,8 @@ export function sanitizeEmail(email: string): string {
   let sanitized = email.trim().toLowerCase();
 
   // Remove null bytes, control characters, and potentially dangerous sequences
-  sanitized = sanitized.replace(/[\0\x08\x09\x1a\n\r"'\\\%<>]/g, "");
+  // eslint-disable-next-line no-control-regex
+  sanitized = sanitized.replace(/[\0\u0008\u0009\u001a\n\r"'\\%<>]/g, "");
 
   // Additional check: prevent script injection attempts
   if (/<script|javascript:|data:/i.test(sanitized)) {
@@ -198,7 +200,8 @@ export function sanitizePhone(phone: string): string {
   }
 
   // Remove null bytes and control characters
-  let sanitized = phone.replace(/[\0\x08\x09\x1a\n\r]/g, "");
+  // eslint-disable-next-line no-control-regex
+  let sanitized = phone.replace(/[\0\u0008\u0009\u001a\n\r]/g, "");
 
   // Keep only digits, +, -, spaces, and parentheses
   sanitized = sanitized.replace(/[^\d+\-()\s]/g, "").trim();

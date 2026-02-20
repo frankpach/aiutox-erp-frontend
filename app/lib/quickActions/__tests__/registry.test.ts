@@ -272,7 +272,7 @@ describe('System Quick Actions', () => {
 
   test('should have valid routes for system actions', () => {
     systemQuickActions.forEach(action => {
-      expect(action.route).toMatch(/^\/[a-z0-9\-\/]*$/);
+      expect(action.route).toMatch(/^\/[a-z0-9-/]*$/);
     });
   });
 });

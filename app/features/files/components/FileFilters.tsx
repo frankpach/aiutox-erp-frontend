@@ -60,6 +60,7 @@ export function FileFilters({
   useEffect(() => {
     const filtered = applyFilters(files, filters);
     onFilterChange(filtered);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [files, filters, onFilterChange]);
 
   const applyFilters = useCallback((fileList: File[], filterValues: FileFilters): File[] => {

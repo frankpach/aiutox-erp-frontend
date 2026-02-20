@@ -33,7 +33,6 @@ import type {
   ReportUpdate, 
   ReportListParams,
   ParameterValues,
-  DataSource,
 } from "~/features/reporting/types/reporting.types";
 
 // Reports Query hooks
@@ -122,9 +121,9 @@ export function useExecutionStatus(executionId: string) {
     staleTime: 1000 * 10, // 10 seconds - status changes frequently
     retry: 2,
     enabled: !!executionId,
-    refetchInterval: (data) => {
+    refetchInterval: (query) => {
       // Auto-refetch while running
-      return data?.data?.status === "running" ? 2000 : false;
+      return query.state.data?.data?.status === "running" ? 2000 : false;
     },
   });
 }
@@ -189,7 +188,7 @@ export function useExportReport() {
       id: string; 
       format: "pdf" | "excel" | "csv" | "json"; 
       parameters?: ParameterValues; 
-      options?: any;
+      options?: Record<string, unknown>;
     }) => exportReport(id, format, parameters, options),
     onError: (error) => {
       console.error("Failed to export report:", error);
@@ -206,7 +205,7 @@ export function useExportExecution() {
     }: { 
       executionId: string; 
       format: "pdf" | "excel" | "csv" | "json"; 
-      options?: any;
+      options?: Record<string, unknown>;
     }) => exportExecution(executionId, format, options),
     onError: (error) => {
       console.error("Failed to export execution:", error);

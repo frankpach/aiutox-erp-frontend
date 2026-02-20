@@ -3,29 +3,13 @@
  * Displays Markdown files with support for Mermaid diagrams
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import mermaid from "mermaid";
 import { useFileContent } from "../../hooks/useFiles";
 import { Card, CardContent } from "~/components/ui/card";
 import { useTranslation } from "~/lib/i18n/useTranslation";
-
-// Dynamically import remark-mermaid only when needed (to avoid Node.js dependencies in browser)
-let remarkMermaid: any = null;
-const loadRemarkMermaid = async () => {
-  if (!remarkMermaid) {
-    try {
-      const module = await import("remark-mermaid");
-      remarkMermaid = module.default || module;
-    } catch (error) {
-      console.warn("Failed to load remark-mermaid:", error);
-      // Return a no-op plugin if remark-mermaid fails to load
-      remarkMermaid = () => {};
-    }
-  }
-  return remarkMermaid;
-};
 
 export interface MarkdownPreviewProps {
   fileId: string;
@@ -35,26 +19,9 @@ export interface MarkdownPreviewProps {
 /**
  * MarkdownPreview component
  */
-export function MarkdownPreview({ fileId, fileName }: MarkdownPreviewProps) {
+export function MarkdownPreview({ fileId }: MarkdownPreviewProps) {
   const { t } = useTranslation();
   const { data: content, isLoading, error } = useFileContent(fileId);
-  const [mermaidPlugin, setMermaidPlugin] = useState<any>(null);
-  const [mermaidLoaded, setMermaidLoaded] = useState(false);
-
-  // Load remark-mermaid dynamically
-  useEffect(() => {
-    let isMounted = true;
-    loadRemarkMermaid().then((plugin) => {
-      if (isMounted) {
-        setMermaidPlugin(plugin);
-        setMermaidLoaded(true);
-      }
-    });
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
   // Initialize Mermaid
   useEffect(() => {
     mermaid.initialize({
@@ -66,23 +33,16 @@ export function MarkdownPreview({ fileId, fileName }: MarkdownPreviewProps) {
 
   // Render Mermaid diagrams after content loads
   useEffect(() => {
-    if (content && mermaidLoaded) {
-      // Wait a bit for ReactMarkdown to render
+    if (content) {
       const timer = setTimeout(() => {
         mermaid.run();
       }, 100);
       return () => clearTimeout(timer);
     }
-  }, [content, mermaidLoaded]);
+    return undefined;
+  }, [content]);
 
-  // Build remark plugins array (only include mermaid if loaded)
-  const remarkPlugins = useMemo(() => {
-    const plugins: any[] = [remarkGfm];
-    if (mermaidPlugin) {
-      plugins.push(mermaidPlugin);
-    }
-    return plugins;
-  }, [mermaidPlugin]);
+  const remarkPlugins = useMemo(() => [remarkGfm], []);
 
   if (isLoading) {
     return (

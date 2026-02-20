@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useCallback, useState, useMemo } from "react";
-import { useSearchParams, useNavigate, Link } from "react-router-dom";
+import React, { useEffect, useRef, useCallback, useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { useDebounce } from "use-debounce";
 import { type SearchResultItem } from "../api/search.api";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
@@ -8,7 +8,6 @@ import { Badge } from "~/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 import { cn } from "~/lib/utils";
-import { useToast } from "~/hooks/useToast";
 
 type SearchResultsListProps = {
   results: SearchResultItem[];
@@ -50,7 +49,6 @@ export function SearchResultsList({
 }: SearchResultsListProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [localQuery, setLocalQuery] = useState(searchQuery);
   const [debouncedQuery] = useDebounce(localQuery, debounceDelay);
   const resultRefs = useRef<(HTMLAnchorElement | null)[]>([]);
@@ -103,7 +101,7 @@ export function SearchResultsList({
         if (focusedIndex >= 0 && focusedIndex < results.length) {
           e.preventDefault();
           const result = results[focusedIndex];
-          navigate(result.url);
+          if (result) navigate(result.url);
         } else if (focusedIndex === -1 && results.length > 0) {
           // Focus first result if pressing enter without any focused item
           e.preventDefault();
@@ -145,6 +143,7 @@ export function SearchResultsList({
         container.removeEventListener('keydown', handleKeyDown);
       };
     }
+    return undefined;
   }, [handleKeyDown]);
 
   // Handle click outside to remove focus
@@ -185,6 +184,7 @@ export function SearchResultsList({
         container.removeEventListener('scroll', handleScroll);
       };
     }
+    return undefined;
   }, [handleScroll, onLoadMore]);
 
   // Loading skeleton for search results
@@ -242,7 +242,7 @@ export function SearchResultsList({
         <SearchResultItem 
           key={`${result.type}-${result.id}`} 
           result={result} 
-          ref={el => resultRefs.current[index] = el}
+          ref={el => { resultRefs.current[index] = el; }}
           isFocused={focusedIndex === index}
           onFocus={() => setFocusedIndex(index)}
         />
@@ -314,7 +314,7 @@ const SearchResultItem = React.forwardRef<HTMLAnchorElement, {
               {result.title}
             </CardTitle>
             <Badge variant="outline" className="ml-2">
-              {t(`search.types.${typeConfig.label}`, { defaultValue: result.type })}
+              {t(`search.types.${typeConfig.label}`) || result.type}
             </Badge>
           </div>
           
@@ -352,3 +352,4 @@ const SearchResultItem = React.forwardRef<HTMLAnchorElement, {
     </Card>
   );
 });
+SearchResultItem.displayName = "SearchResultItem";

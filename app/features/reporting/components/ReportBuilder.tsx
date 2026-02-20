@@ -80,7 +80,7 @@ export function ReportBuilder({
     onSubmit(formData);
   };
 
-  const handleFieldChange = (field: keyof (ReportCreate | ReportUpdate), value: any) => {
+  const handleFieldChange = (field: keyof (ReportCreate | ReportUpdate), value: string | number | boolean | string[] | null | undefined) => {
     setFormData(prev => ({
       ...prev,
       [field]: value,

@@ -89,7 +89,7 @@ export function ProductForm({
     }
   }, [product]);
 
-  const handleInputChange = (field: keyof ProductCreate, value: any) => {
+  const handleInputChange = (field: keyof ProductCreate, value: string | number | boolean | null | undefined) => {
     setFormData(prev => ({
       ...prev,
       [field]: value,

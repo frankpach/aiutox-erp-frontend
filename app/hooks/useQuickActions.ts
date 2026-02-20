@@ -29,7 +29,8 @@ export function useQuickActions(maxResults: number = 5): QuickAction[] {
     );
 
     return filteredActions;
-  }, [user?.permissions, location.pathname, maxResults, lastUpdate]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.permissions, location.pathname, maxResults, lastUpdate]); // lastUpdate triggers recompute when registry changes
 }
 
 /**

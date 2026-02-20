@@ -55,10 +55,12 @@ export function useOrganizations(params?: OrganizationsListParams) {
           total_pages: response.meta.total_pages,
         });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Handle 404 gracefully - endpoint might not exist yet
       // This is expected and should not block the UI
-      const status = err?.response?.status || err?.status;
+      const errObj = err && typeof err === "object" ? err as Record<string, unknown> : {};
+      const responseStatus = errObj.response && typeof errObj.response === "object" ? (errObj.response as Record<string, unknown>).status : undefined;
+      const status = (responseStatus ?? errObj.status) as number | undefined;
       if (status === 404) {
         // Endpoint doesn't exist, treat as empty list (not an error)
         setOrganizations([]);

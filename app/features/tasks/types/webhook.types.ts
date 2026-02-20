@@ -32,14 +32,14 @@ export interface WebhookUpdate {
 export interface WebhookTestResponse {
   success: boolean;
   message: string;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
 }
 
 export interface WebhookLog {
   id: string;
   webhook_id: string;
   event_type: string;
-  payload: Record<string, any>;
+  payload: Record<string, unknown>;
   response_status: number | null;
   response_body: string | null;
   error_message: string | null;
@@ -54,7 +54,7 @@ export interface WebhookEvent {
   type: string;
   description: string;
   category: EventCategory;
-  payload_schema?: Record<string, any>;
+  payload_schema?: Record<string, unknown>;
 }
 
 // Module event registry

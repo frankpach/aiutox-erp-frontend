@@ -1,4 +1,13 @@
-# Este workflow ya no es necesario.
-# El flujo de CI/CD se maneja con:
-#   - GitHub Actions (ubuntu-latest) para validación de código
-#   - scripts/50-deploy/build-and-deploy.ps1 para build Docker y deploy local
+name: deprecated-test-runner
+
+on:
+  workflow_dispatch:
+
+jobs:
+  noop:
+    runs-on: ubuntu-latest
+    steps:
+      - name: No-op placeholder
+        run: |
+          echo "Este workflow quedó obsoleto.\n"
+          echo "Validaciones actuales viven en workflows activos y scripts/50-deploy/build-and-deploy.ps1."

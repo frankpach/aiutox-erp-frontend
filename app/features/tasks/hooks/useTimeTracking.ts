@@ -137,9 +137,10 @@ export function useTimeTracking(taskId: string | undefined) {
 
   // Cleanup interval on unmount
   useEffect(() => {
+    const interval = autoSaveRef.current;
     return () => {
-      if (autoSaveRef.current) {
-        clearInterval(autoSaveRef.current);
+      if (interval) {
+        clearInterval(interval);
       }
     };
   }, []);

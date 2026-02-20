@@ -3,7 +3,6 @@
  * Advanced filtering for reports
  */
 
-import { useState } from "react";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -11,12 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Label } from "~/components/ui/label";
 import { Badge } from "~/components/ui/badge";
-import { Calendar } from "~/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
-import { CalendarIcon, Filter, X } from "lucide-react";
-import { format } from "date-fns";
-import { es, enUS } from "date-fns/locale";
-import { ReportListParams } from "~/features/reporting/types/reporting.types";
+import { Filter, X } from "lucide-react";
+import type { ReportListParams } from "~/features/reporting/types/reporting.types";
 
 interface ReportFiltersProps {
   filters: ReportListParams;
@@ -34,9 +30,7 @@ export function ReportFilters({
   dataSources 
 }: ReportFiltersProps) {
   const { t } = useTranslation();
-  const dateLocale = es;
-
-  const handleFilterChange = (key: keyof ReportListParams, value: any) => {
+  const handleFilterChange = (key: keyof ReportListParams, value: string | number | boolean | undefined) => {
     onFiltersChange({
       ...filters,
       [key]: value || undefined,

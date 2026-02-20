@@ -45,7 +45,8 @@ export function ProductDetail({
   const [activeTab, setActiveTab] = useState("details");
 
   // Queries
-  const { data: product, isLoading, error } = useProduct(productId);
+  const { data: productResponse, isLoading, error } = useProduct(productId);
+  const product = productResponse?.data;
   const { data: variants } = useProductVariants(productId);
   const { data: barcodes } = useProductBarcodes(productId);
 
@@ -108,7 +109,7 @@ export function ProductDetail({
     return `${weight} kg`;
   };
 
-  const getDimensionsDisplay = (dimensions?: any) => {
+  const getDimensionsDisplay = (dimensions?: { length: number; width: number; height: number; unit?: string }) => {
     if (!dimensions) return null;
     return `${dimensions.length} × ${dimensions.width} × ${dimensions.height} ${dimensions.unit || 'cm'}`;
   };

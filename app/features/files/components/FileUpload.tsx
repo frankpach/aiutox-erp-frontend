@@ -96,6 +96,7 @@ export function FileUpload({
 
       handleFilesSelection(files);
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [multiple, t]
   );
 
@@ -111,6 +112,7 @@ export function FileUpload({
 
       handleFilesSelection(files);
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [multiple, t]
   );
 

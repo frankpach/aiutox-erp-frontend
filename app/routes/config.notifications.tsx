@@ -44,7 +44,7 @@ export function meta() {
 
 export default function NotificationsConfigPage() {
   const { t } = useTranslation();
-  const [editingTemplate, setEditingTemplate] = useState<any>(null);
+  const [editingTemplate, setEditingTemplate] = useState<unknown>(null);
   const [showTemplateEditor, setShowTemplateEditor] = useState(false);
 
   // Load channels configuration

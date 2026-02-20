@@ -63,7 +63,10 @@ export function useFilePermissions(
   });
 
   const fileData = file || fileResponse?.data;
-  const permissions: FilePermission[] = permissionsResponse?.data || [];
+  const permissions: FilePermission[] = useMemo(
+    () => permissionsResponse?.data || [],
+    [permissionsResponse?.data]
+  );
 
   return useMemo(() => {
     if (!fileId || !user) {

@@ -48,10 +48,12 @@ export function useUsers(params?: UsersListParams) {
     queryKey: userKeys.list(params),
     queryFn: () => listUsers(params),
     staleTime: 1000 * 60 * 2, // 2 minutes
-    retry: (failureCount, error: any) => {
+    retry: (failureCount, error: unknown) => {
       // Don't retry on 403 (permission denied) or 500 (server error)
       // Only retry on network errors or 5xx errors that are not 500
-      const status = error?.response?.status || error?.status;
+      const errObj = error && typeof error === "object" ? error as Record<string, unknown> : {};
+      const responseStatus = errObj.response && typeof errObj.response === "object" ? (errObj.response as Record<string, unknown>).status : undefined;
+      const status = (responseStatus ?? errObj.status) as number | undefined;
       if (status === 403 || status === 500) {
         return false;
       }

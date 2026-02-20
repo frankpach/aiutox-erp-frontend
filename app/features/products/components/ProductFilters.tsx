@@ -27,7 +27,7 @@ export function ProductFilters({ filters, onFiltersChange, onReset }: ProductFil
 
   const categories = categoriesData?.data || [];
 
-  const handleFilterChange = (key: keyof ProductListParams, value: any) => {
+  const handleFilterChange = (key: keyof ProductListParams, value: string | number | boolean | undefined) => {
     onFiltersChange({
       ...filters,
       [key]: value || undefined,

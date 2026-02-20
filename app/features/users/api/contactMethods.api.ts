@@ -45,20 +45,19 @@ export async function getContactMethods(
 
     console.log("[getContactMethods] Success:", response.data);
     return response.data;
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[getContactMethods] Error:", error);
-    // Log more details about the error
-    if (error.response) {
+    if (error && typeof error === "object" && "response" in error) {
+      const axiosError = error as { response: { status: number; statusText: string; data: unknown } };
       console.error("[getContactMethods] Response error:", {
-        status: error.response.status,
-        statusText: error.response.statusText,
-        data: error.response.data,
+        status: axiosError.response.status,
+        statusText: axiosError.response.statusText,
+        data: axiosError.response.data,
       });
-    } else if (error.request) {
-      console.error("[getContactMethods] Request error:", {
-        message: error.message,
-        code: error.code,
-      });
+    } else if (error && typeof error === "object" && "request" in error) {
+      const message = "message" in error ? String((error as Record<string, unknown>).message) : "";
+      const code = "code" in error ? String((error as Record<string, unknown>).code) : "";
+      console.error("[getContactMethods] Request error:", { message, code });
     }
     throw error;
   }

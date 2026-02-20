@@ -27,7 +27,7 @@ export type ConditionOperator =
 export interface ConditionRule {
   field: string;
   operator: ConditionOperator;
-  value: any;
+  value: unknown;
 }
 
 // Condition for edge

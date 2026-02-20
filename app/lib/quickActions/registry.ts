@@ -14,7 +14,7 @@ export interface QuickAction {
   /** Etiqueta para mostrar (debe usar traducciones) */
   label: string;
   /** Icono del componente Hugeicons */
-  icon: any; // Usamos any para compatibilidad con Hugeicons
+  icon: unknown;
   /** Ruta a la que navega la acción */
   route: string;
   /** Permiso requerido para mostrar esta acción */

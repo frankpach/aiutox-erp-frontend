@@ -27,6 +27,59 @@ export function useSSE({
   const toast = useToast();
   const { t } = useTranslation();
 
+  const handleNotificationEvent = useCallback((event: SSEEvent) => {
+    const { type, data } = event;
+
+    switch (type) {
+      case 'task.assigned':
+        toast.success(
+          t('tasks.notifications.assigned'),
+          t('tasks.notifications.assignedDescription').replace('{title}', String(data.task_title))
+        );
+        break;
+
+      case 'task.status_changed':
+        toast.info(
+          t('tasks.notifications.statusChanged'),
+          t('tasks.notifications.statusChangedDescription')
+            .replace('{title}', String(data.task_title))
+            .replace('{status}', String(data.new_status))
+        );
+        break;
+
+      case 'task.due_soon': {
+        const windowVal = String(data.window || 'soon');
+        const windowKey = `tasks.notifications.windows.${windowVal}`;
+        const windowText = t(windowKey);
+
+        toast.warning(
+          t('tasks.notifications.dueSoon'),
+          t('tasks.notifications.dueSoonDescription')
+            .replace('{title}', String(data.task_title))
+            .replace('{window}', windowText)
+        );
+        break;
+      }
+
+      case 'task.overdue':
+        toast.error(
+          t('tasks.notifications.overdue'),
+          t('tasks.notifications.overdueDescription').replace('{title}', String(data.task_title))
+        );
+        break;
+
+      case 'task.completed':
+        toast.success(
+          t('tasks.notifications.completed'),
+          t('tasks.notifications.completedDescription').replace('{title}', String(data.task_title))
+        );
+        break;
+
+      default:
+        break;
+    }
+  }, [t, toast]);
+
   useEffect(() => {
     if (!enabled) {
       return;
@@ -99,60 +152,7 @@ export function useSSE({
         reconnectTimeoutRef.current = null;
       }
     };
-  }, [url, enabled, onEvent, reconnectInterval, t, toast]);
-
-  const handleNotificationEvent = useCallback((event: SSEEvent) => {
-    const { type, data } = event;
-
-    switch (type) {
-      case 'task.assigned':
-        toast.success(
-          t('tasks.notifications.assigned'),
-          t('tasks.notifications.assignedDescription').replace('{title}', data.task_title)
-        );
-        break;
-
-      case 'task.status_changed':
-        toast.info(
-          t('tasks.notifications.statusChanged'),
-          t('tasks.notifications.statusChangedDescription')
-            .replace('{title}', data.task_title)
-            .replace('{status}', data.new_status)
-        );
-        break;
-
-      case 'task.due_soon': {
-        const window = data.window || 'soon';
-        const windowKey = `tasks.notifications.windows.${window}` as any;
-        const windowText = t(windowKey);
-
-        toast.warning(
-          t('tasks.notifications.dueSoon'),
-          t('tasks.notifications.dueSoonDescription')
-            .replace('{title}', data.task_title)
-            .replace('{window}', windowText)
-        );
-        break;
-      }
-
-      case 'task.overdue':
-        toast.error(
-          t('tasks.notifications.overdue'),
-          t('tasks.notifications.overdueDescription').replace('{title}', data.task_title)
-        );
-        break;
-
-      case 'task.completed':
-        toast.success(
-          t('tasks.notifications.completed'),
-          t('tasks.notifications.completedDescription').replace('{title}', data.task_title)
-        );
-        break;
-
-      default:
-        break;
-    }
-  }, [t, toast]);
+  }, [url, enabled, onEvent, reconnectInterval, handleNotificationEvent]);
 
   return {
     isConnected,

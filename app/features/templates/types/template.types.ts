@@ -84,7 +84,7 @@ export interface TemplateVersion {
 
 // Template render context
 export interface TemplateRenderContext {
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 // Template render request

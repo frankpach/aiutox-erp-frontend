@@ -48,7 +48,7 @@ export function TaskView({ task, open, onOpenChange }: TaskViewProps) {
 
     return (
       <Badge variant="outline" className={statusColors[status]}>
-        {t(`tasks.statuses.${status}` as any)}
+        {t(`tasks.statuses.${status}`)}
       </Badge>
     );
   };
@@ -63,7 +63,7 @@ export function TaskView({ task, open, onOpenChange }: TaskViewProps) {
 
     return (
       <Badge variant="outline" className={priorityColors[priority]}>
-        {t(`tasks.priorities.${priority}` as any)}
+        {t(`tasks.priorities.${priority}`)}
       </Badge>
     );
   };
@@ -86,13 +86,13 @@ export function TaskView({ task, open, onOpenChange }: TaskViewProps) {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium text-muted-foreground mb-2 block">
-                {t("tasks.status.title" as any)}
+                {t("tasks.status.title")}
               </label>
               {getStatusBadge(task.status)}
             </div>
             <div>
               <label className="text-sm font-medium text-muted-foreground mb-2 block">
-                {t("tasks.priority.title" as any)}
+                {t("tasks.priority.title")}
               </label>
               {getPriorityBadge(task.priority)}
             </div>

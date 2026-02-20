@@ -202,6 +202,7 @@ export function FlowEditor({
       errors,
       warnings,
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodes, edges, getInputCount]);
 
   // Check for cycles in the flow
@@ -366,7 +367,7 @@ export function FlowEditor({
             requireAll: false,
             minApprovals: 1,
           }),
-        } as any,
+        } as unknown as ApprovalNodeData,
       };
 
       setNodes((nds) => [...nds, newNode]);
@@ -396,7 +397,7 @@ export function FlowEditor({
 
       setNodes((nds) =>
         nds.map((node) =>
-          node.id === selectedNode.id ? { ...node, data: data as any } : node
+          node.id === selectedNode.id ? { ...node, data: data as unknown as typeof node.data } : node
         )
       );
     },
@@ -410,7 +411,7 @@ export function FlowEditor({
 
       setNodes((nds) =>
         nds.map((node) =>
-          node.id === selectedNode.id ? { ...node, data: data as any } : node
+          node.id === selectedNode.id ? { ...node, data: data as unknown as typeof node.data } : node
         )
       );
     },

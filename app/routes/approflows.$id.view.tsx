@@ -160,9 +160,8 @@ export default function ApprovalFlowViewRoute() {
             </div>
           ) : (
             <div className="space-y-3">
-              {steps
-                .sort((a: any, b: any) => a.step_order - b.step_order)
-                .map((step: any) => (
+              {/* eslint-disable @typescript-eslint/no-explicit-any */}
+              {(steps as any[]).sort((a: any, b: any) => a.step_order - b.step_order).map((step: any) => (
                   <div
                     key={step.id}
                     className="bg-white rounded-lg border border-gray-200 p-4"

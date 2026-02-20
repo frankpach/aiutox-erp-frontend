@@ -12,19 +12,19 @@ export function useToast() {
 
   return {
     success: (key: string, fallback?: string) => {
-      const message = t(key as any) || fallback || key;
+      const message = t(key) || fallback || key;
       showToast(message, "success");
     },
     error: (key: string, fallback?: string) => {
-      const message = t(key as any) || fallback || key;
+      const message = t(key) || fallback || key;
       showToast(message, "error");
     },
     info: (key: string, fallback?: string) => {
-      const message = t(key as any) || fallback || key;
+      const message = t(key) || fallback || key;
       showToast(message, "info");
     },
     warning: (key: string, fallback?: string) => {
-      const message = t(key as any) || fallback || key;
+      const message = t(key) || fallback || key;
       showToast(message, "warning");
     },
   };

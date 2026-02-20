@@ -311,7 +311,7 @@ export function TaskCalendar({
   
   // Obtener eventos del calendario
   const { data: eventsData } = useEvents();
-  const calendarEvents = eventsData?.data || [];
+  const calendarEvents = useMemo(() => eventsData?.data || [], [eventsData?.data]);
 
   const resolvedTasks = useMemo(
     () => tasks ?? tasksQuery.data?.data ?? [],
