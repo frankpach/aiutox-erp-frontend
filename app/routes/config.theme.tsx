@@ -235,7 +235,7 @@ export default function ThemeConfigPage() {
       }
       form.updateOriginalValues(mergedValues);
     }
-  }, [themeLight, themeDark, updateTheme]);
+  }, [themeLight, themeDark, updateTheme]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSave = () => {
     updateTheme(form.values, {

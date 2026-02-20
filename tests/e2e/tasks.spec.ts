@@ -1,4 +1,4 @@
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 class TasksPage {
   constructor(private page: Page) {}
@@ -174,6 +174,7 @@ class TasksPage {
 
   async verifyTaskExists(taskId: string, expectedData: {
     title?: string;
+    description?: string;
     status?: string;
     priority?: string;
     assignedTo?: string;
@@ -183,6 +184,10 @@ class TasksPage {
     
     if (expectedData.title) {
       await expect(taskCard.locator('[data-testid="task-title"]')).toHaveText(expectedData.title);
+    }
+    
+    if (expectedData.description) {
+      await expect(taskCard.locator('[data-testid="task-description"]')).toHaveText(expectedData.description);
     }
     
     if (expectedData.status) {
@@ -250,7 +255,7 @@ test.describe('Tasks E2E Tests', () => {
     await expect(page.locator('[data-testid="task-priority"]')).toHaveClass(/priority-high/);
   });
 
-  test('should edit an existing task', async ({ page }) => {
+  test('should edit an existing task', async ({ page: _page }) => {
     await tasksPage.goto();
     
     // First create a task
@@ -279,7 +284,7 @@ test.describe('Tasks E2E Tests', () => {
     });
   });
 
-  test('should delete a task', async ({ page }) => {
+  test('should delete a task', async ({ page: _page }) => {
     await tasksPage.goto();
     
     // Create a task first
@@ -296,7 +301,7 @@ test.describe('Tasks E2E Tests', () => {
     await tasksPage.verifyTaskDoesNotExist(taskId);
   });
 
-  test('should assign task to user', async ({ page }) => {
+  test('should assign task to user', async ({ page: _page }) => {
     await tasksPage.goto();
     
     // Create a task
@@ -315,7 +320,7 @@ test.describe('Tasks E2E Tests', () => {
     });
   });
 
-  test('should update task status', async ({ page }) => {
+  test('should update task status', async ({ page: _page }) => {
     await tasksPage.goto();
     
     // Create a task
@@ -334,7 +339,7 @@ test.describe('Tasks E2E Tests', () => {
     });
   });
 
-  test('should search tasks', async ({ page }) => {
+  test('should search tasks', async ({ page: _page }) => {
     await tasksPage.goto();
     
     // Create multiple tasks
@@ -346,11 +351,11 @@ test.describe('Tasks E2E Tests', () => {
     await tasksPage.searchTasks('Important');
     
     // Verify search results
-    await expect(page.locator('[data-testid="task-card"]')).toHaveCount(1);
-    await expect(page.locator('[data-testid="task-title"]')).toHaveText('Important Task');
+    await expect(_page.locator('[data-testid="task-card"]')).toHaveCount(1);
+    await expect(_page.locator('[data-testid="task-title"]')).toHaveText('Important Task');
   });
 
-  test('should filter tasks', async ({ page }) => {
+  test('should filter tasks', async ({ page: _page }) => {
     await tasksPage.goto();
     
     // Create tasks with different priorities
@@ -362,9 +367,9 @@ test.describe('Tasks E2E Tests', () => {
     await tasksPage.filterTasks({ priority: 'high' });
     
     // Verify filter results
-    await expect(page.locator('[data-testid="task-card"]')).toHaveCount(1);
-    await expect(page.locator('[data-testid="task-title"]')).toHaveText('High Priority Task');
-    await expect(page.locator('[data-testid="task-priority"]')).toHaveClass(/priority-high/);
+    await expect(_page.locator('[data-testid="task-card"]')).toHaveCount(1);
+    await expect(_page.locator('[data-testid="task-title"]')).toHaveText('High Priority Task');
+    await expect(_page.locator('[data-testid="task-priority"]')).toHaveClass(/priority-high/);
   });
 
   test('should handle pagination', async ({ page }) => {
@@ -521,7 +526,7 @@ test.describe('Tasks E2E Tests', () => {
     
     // Navigate with keyboard
     await page.keyboard.press('Tab'); // Focus first task
-    await expect(page.locator('[data-testid="task-card"]:first-child')).toHaveFocus();
+    await expect(page.locator('[data-testid="task-card"]:first-child')).toBeFocused();
     
     await page.keyboard.press('Enter'); // Open task details
     await expect(page.locator('[data-testid="task-details-modal"]')).toBeVisible();
@@ -583,7 +588,7 @@ test.describe('Tasks E2E Tests', () => {
     
     // Check keyboard navigation
     await page.keyboard.press('Tab');
-    await expect(page.locator('[data-testid="create-task-button"]')).toHaveFocus();
+    await expect(page.locator('[data-testid="create-task-button"]')).toBeFocused();
     
     // Check screen reader support
     const createButton = page.locator('[data-testid="create-task-button"]');

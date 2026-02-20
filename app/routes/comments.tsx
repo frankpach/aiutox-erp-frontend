@@ -47,12 +47,12 @@ export default function CommentsPage() {
 
   const handleEdit = (commentId: string, content: string) => {
     // Handle edit logic
-    console.log("Edit comment:", commentId, content);
+    console.warn("Edit comment:", commentId, content);
   };
 
   const handleDelete = (commentId: string) => {
     // Handle delete logic
-    console.log("Delete comment:", commentId);
+    console.warn("Delete comment:", commentId);
   };
 
   const mentions = mentionsData?.data || [];
@@ -122,7 +122,7 @@ export default function CommentsPage() {
                             size="sm"
                             onClick={() => {
                               // Navigate to comment
-                              console.log("Navigate to comment:", mention.comment_id);
+                              console.warn("Navigate to comment:", mention.comment_id);
                             }}
                           >
                             {t("comments.view")}

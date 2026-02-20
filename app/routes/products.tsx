@@ -35,7 +35,6 @@ export default function ProductsPage() {
   // Queries
   const createProductMutation = useCreateProduct();
   const updateProductMutation = useUpdateProduct();
-  const deleteProductMutation = useDeleteProduct();
 
   const handleCreateProduct = () => {
     setSelectedProduct(null);
@@ -62,16 +61,7 @@ export default function ProductsPage() {
     setCurrentTab("barcodes");
   };
 
-  const _handleDeleteProduct = async (_product: Product) => {
-    try {
-      await deleteProductMutation.mutateAsync(_product.id);
-      // Success will be handled by the mutation
-    } catch (error) {
-      console.error("Failed to delete product:", error);
-    }
-  };
-
-  const handleProductSubmit = (product: Product) => {
+  const handleProductSubmit = (_product: Product) => {
     if (showCreateDialog) {
       setShowCreateDialog(false);
     } else if (showEditDialog) {
