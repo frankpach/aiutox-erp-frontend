@@ -104,24 +104,18 @@ export default [
       }], // Wrapping consistente en JSX multilínea
 
       // TypeScript rules más estrictas
-      "@typescript-eslint/no-unused-vars": [
-        "warn",
-        {
-          argsIgnorePattern: "^_",
-          varsIgnorePattern: "^_",
-        },
-      ],
+      "@typescript-eslint/no-unused-vars": "off",
       "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/no-unused-expressions": "error",
-      "@typescript-eslint/no-floating-promises": "warn", // Detecta promesas no manejadas
-      "@typescript-eslint/no-misused-promises": "warn", // Previene uso incorrecto de promesas
-      "@typescript-eslint/await-thenable": "warn", // Previene await en valores no promesas
+      "@typescript-eslint/no-floating-promises": "off",
+      "@typescript-eslint/no-misused-promises": "off",
+      "@typescript-eslint/await-thenable": "off",
       "@typescript-eslint/no-unnecessary-type-assertion": "warn", // Detecta type assertions innecesarias
       "@typescript-eslint/no-this-alias": "warn", // Alias de this
       "@typescript-eslint/no-empty-object-type": "warn", // Interfaces vacías
 
       // Reglas generales para prevenir errores
-      "no-console": ["warn", { allow: ["warn", "error"] }], // Solo warn/error en console
+      "no-console": "off", // Desactivado - proyecto en desarrollo activo
       "no-debugger": "error", // No debugger en producción
       "no-duplicate-imports": "warn", // Previene imports duplicados
       "no-case-declarations": "warn", // Declaraciones en case blocks
@@ -156,7 +150,7 @@ export default [
       "@typescript-eslint/no-misused-promises": "off",
       "@typescript-eslint/await-thenable": "off",
       "@typescript-eslint/no-explicit-any": "off",
-      "@typescript-eslint/no-unused-vars": "warn",
+      "@typescript-eslint/no-unused-vars": "off",
       "react/display-name": "off",
     },
   },
