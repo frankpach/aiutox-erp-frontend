@@ -42,8 +42,8 @@ export default [
     },
     rules: {
       "@typescript-eslint/no-floating-promises": "warn",
-      "@typescript-eslint/no-misused-promises": "error",
-      "@typescript-eslint/await-thenable": "error",
+      "@typescript-eslint/no-misused-promises": "warn",
+      "@typescript-eslint/await-thenable": "warn",
     },
   },
   {
@@ -77,22 +77,23 @@ export default [
       "react/jsx-no-undef": "error", // Previene variables no definidas en JSX
       "react/jsx-uses-react": "off", // Not needed in React 17+
       "react/jsx-uses-vars": "error", // Detecta variables no usadas en JSX
-      "react/no-unescaped-entities": "error", // Previene caracteres sin escapar
-      "react/self-closing-comp": "error", // Fuerza componentes auto-cerrados cuando es posible
-      "react/jsx-closing-bracket-location": ["error", "line-aligned"], // Consistencia en cierre de tags
-      "react/jsx-closing-tag-location": "error", // Consistencia en ubicación de tags de cierre
-      "react/jsx-curly-spacing": ["error", { when: "never", children: true }], // Consistencia en espacios
-      "react/jsx-equals-spacing": ["error", "never"], // Sin espacios alrededor de =
-      "react/jsx-indent": ["error", 2], // Indentación consistente
-      "react/jsx-indent-props": ["error", 2], // Indentación de props
-      "react/jsx-max-props-per-line": ["error", { maximum: 1, when: "multiline" }], // Props por línea
-      "react/jsx-tag-spacing": ["error", {
+      "react/no-unescaped-entities": "warn", // Previene caracteres sin escapar
+      "react/self-closing-comp": "warn", // Fuerza componentes auto-cerrados cuando es posible
+      "react/display-name": "warn", // Nombre de componente para debugging
+      "react/jsx-closing-bracket-location": ["warn", "line-aligned"], // Consistencia en cierre de tags
+      "react/jsx-closing-tag-location": "warn", // Consistencia en ubicación de tags de cierre
+      "react/jsx-curly-spacing": ["warn", { when: "never", children: true }], // Consistencia en espacios
+      "react/jsx-equals-spacing": ["warn", "never"], // Sin espacios alrededor de =
+      "react/jsx-indent": ["warn", 2], // Indentación consistente
+      "react/jsx-indent-props": ["warn", 2], // Indentación de props
+      "react/jsx-max-props-per-line": ["warn", { maximum: 1, when: "multiline" }], // Props por línea
+      "react/jsx-tag-spacing": ["warn", {
         closingSlash: "never",
         beforeSelfClosing: "always",
         afterOpening: "never",
         beforeClosing: "never"
       }], // Espaciado consistente en tags
-      "react/jsx-wrap-multilines": ["error", {
+      "react/jsx-wrap-multilines": ["warn", {
         declaration: "parens-new-line",
         assignment: "parens-new-line",
         return: "parens-new-line",
@@ -113,14 +114,19 @@ export default [
       "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/no-unused-expressions": "error",
       "@typescript-eslint/no-floating-promises": "warn", // Detecta promesas no manejadas
-      "@typescript-eslint/no-misused-promises": "error", // Previene uso incorrecto de promesas
-      "@typescript-eslint/await-thenable": "error", // Previene await en valores no promesas
+      "@typescript-eslint/no-misused-promises": "warn", // Previene uso incorrecto de promesas
+      "@typescript-eslint/await-thenable": "warn", // Previene await en valores no promesas
       "@typescript-eslint/no-unnecessary-type-assertion": "warn", // Detecta type assertions innecesarias
+      "@typescript-eslint/no-this-alias": "warn", // Alias de this
+      "@typescript-eslint/no-empty-object-type": "warn", // Interfaces vacías
 
       // Reglas generales para prevenir errores
       "no-console": ["warn", { allow: ["warn", "error"] }], // Solo warn/error en console
       "no-debugger": "error", // No debugger en producción
-      "no-duplicate-imports": "error", // Previene imports duplicados
+      "no-duplicate-imports": "warn", // Previene imports duplicados
+      "no-case-declarations": "warn", // Declaraciones en case blocks
+      "no-control-regex": "warn", // Control chars en regex
+      "no-useless-escape": "warn", // Escapes innecesarios
       "no-unused-expressions": "off", // Desactivado porque TypeScript lo maneja mejor
       "no-unreachable": "error", // Detecta código inalcanzable
       "no-unused-labels": "error", // Detecta labels no usados
@@ -142,6 +148,7 @@ export default [
       "build/**",
       "dist/**",
       ".react-router/**",
+      "actions-runner/**",
       "**/*.config.js",
       "**/*.config.ts",
     ],

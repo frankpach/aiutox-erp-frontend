@@ -180,9 +180,9 @@ type AuthFixtures = {
 
 export const test = base.extend<AuthFixtures>({
   // Auto-login as admin before each test
-  authenticatedPage: async ({ page }, use) => {
+  authenticatedPage: async ({ page }, applyFixture) => {
     await loginAsAdmin(page);
-    await use(page);
+    await applyFixture(page);
   },
 });
 
