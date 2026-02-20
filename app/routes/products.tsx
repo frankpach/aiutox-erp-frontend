@@ -17,8 +17,7 @@ import { ProductBarcodes } from "~/features/products/components/ProductBarcodes"
 import { 
 //  useProduct, 
   useCreateProduct, 
-  useUpdateProduct, 
-  useDeleteProduct 
+  useUpdateProduct
 } from "~/features/products/hooks/useProducts";
 import type { Product } from "~/features/products/types/product.types";
 
