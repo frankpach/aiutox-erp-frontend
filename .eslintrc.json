@@ -38,6 +38,6 @@
       }
     ]
   },
-  "ignorePatterns": ["dist", "build", "node_modules", ".react-router"]
+  "ignorePatterns": ["dist", "build", "node_modules", ".react-router", "actions-runner"]
 }
 
