@@ -163,7 +163,7 @@ export function RecurrenceEditor({
                   className="w-20"
                 />
                 <span className="text-sm text-muted-foreground">
-                  {intervalLabels[config.type as keyof typeof intervalLabels]}
+                  {intervalLabels[config.type]}
                 </span>
               </div>
             </div>

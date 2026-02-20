@@ -114,7 +114,7 @@ describe("filterUtils", () => {
     });
 
     it("should return operator name for unknown operator", () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       expect(getOperatorLabel("unknown" as any)).toBe("unknown");
     });
   });

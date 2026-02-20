@@ -141,6 +141,25 @@ export default [
       },
     },
   },
+  // Overrides for test files - relax rules that don't apply in test context
+  {
+    files: [
+      "**/__tests__/**/*.{ts,tsx}",
+      "**/*.spec.{ts,tsx}",
+      "**/*.test.{ts,tsx}",
+      "**/fixtures/**/*.{ts,tsx}",
+      "**/helpers/**/*.{ts,tsx}",
+    ],
+    rules: {
+      "no-console": "off",
+      "@typescript-eslint/no-floating-promises": "off",
+      "@typescript-eslint/no-misused-promises": "off",
+      "@typescript-eslint/await-thenable": "off",
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unused-vars": "warn",
+      "react/display-name": "off",
+    },
+  },
   prettier, // Must be last to override other configs
   {
     ignores: [

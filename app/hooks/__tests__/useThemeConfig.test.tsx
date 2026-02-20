@@ -133,7 +133,7 @@ const createWrapper = () => {
     },
   });
 
-  // eslint-disable-next-line react/display-name
+   
   return ({ children }: { children: ReactNode }) => {
     return <HookProviders queryClient={queryClient}>{children}</HookProviders>;
   };

@@ -88,9 +88,9 @@ export function formatRecurrence(
   let baseText = '';
   
   if (interval === 1) {
-    baseText = typeLabels[config.type as keyof typeof typeLabels];
+    baseText = typeLabels[config.type];
   } else {
-    baseText = `${t('calendar.recurrence.interval')} ${interval} ${intervalLabels[config.type as keyof typeof intervalLabels]}`;
+    baseText = `${t('calendar.recurrence.interval')} ${interval} ${intervalLabels[config.type]}`;
   }
 
   // Add days of week for weekly recurrence
