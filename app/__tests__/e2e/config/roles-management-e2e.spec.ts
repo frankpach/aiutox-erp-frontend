@@ -77,7 +77,7 @@ class RolesConfigPage {
     const usersTab = this.page.locator('[role="tab"]:has-text("Usuarios")');
     const tabText = await usersTab.textContent();
     const match = tabText?.match(/\((\d+)\)/);
-    return match ? parseInt(match[1], 10) : 0;
+    return match && match[1] ? parseInt(match[1], 10) : 0;
   }
 
   async isUserInList(userEmail: string): Promise<boolean> {
@@ -153,11 +153,12 @@ test.describe("Roles and Permissions Management", () => {
     await rolesPage.clickUsersTab();
 
     // Search for a user
-    await rolesPage.searchUser(authenticatedUser.email);
+    const adminEmail = "admin@aiutox.com";
+    await rolesPage.searchUser(adminEmail);
 
     // Verify search input has the value
     const searchInput = page.locator('input[placeholder*="Buscar"]');
-    await expect(searchInput).toHaveValue(authenticatedUser.email);
+    await expect(searchInput).toHaveValue(adminEmail);
   });
 
   test("should assign role to user", async ({ authenticatedPage: page }) => {
@@ -259,8 +260,6 @@ test.describe("Roles and Permissions Management", () => {
     await rolesPage.selectRole("staff");
     await rolesPage.clickUsersTab();
 
-    // Verify empty state message if no users
-    const emptyMessage = page.locator('text=/No hay usuarios/i');
     // This might or might not be visible depending on data
     // Just verify the page doesn't crash
     await expect(page.locator("h1")).toBeVisible();

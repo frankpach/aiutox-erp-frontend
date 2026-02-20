@@ -247,7 +247,39 @@ export async function captureFailureScreenshot(
     await page.screenshot({ path: filename, fullPage: true });
     logStep(`Screenshot saved to ${filename}`);
   } catch {
-    logStep("Could not take screenshot");
+    // Ignore screenshot errors
   }
 }
 
+/**
+ * Perform login with given credentials
+ */
+export async function performLogin(
+  page: Page,
+  email: string = ADMIN_EMAIL,
+  password: string = ADMIN_PASSWORD
+): Promise<boolean> {
+  logStep("Performing login", { email });
+  
+  await page.goto(`${FRONTEND_URL}/login`, { waitUntil: "domcontentloaded" });
+  
+  // Fill login form
+  await page.fill('input[name="email"]', email);
+  await page.fill('input[name="password"]', password);
+  await page.click('button[type="submit"]');
+  
+  // Wait for navigation
+  await page.waitForLoadState("domcontentloaded");
+  
+  // Check if login was successful
+  const currentUrl = page.url();
+  const isLoggedIn = !currentUrl.includes("/login") && !currentUrl.includes("/auth");
+  
+  if (isLoggedIn) {
+    logStep("Login successful");
+  } else {
+    logStep("Login failed");
+  }
+  
+  return isLoggedIn;
+}

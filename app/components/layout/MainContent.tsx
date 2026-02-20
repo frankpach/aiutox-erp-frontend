@@ -57,6 +57,8 @@ export const MainContent = memo(({ children }: MainContentProps) => {
   );
 });
 
+MainContent.displayName = "MainContent";
+
 
 
 

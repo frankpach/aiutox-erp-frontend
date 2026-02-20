@@ -39,7 +39,7 @@ export async function getCachedAdminToken(): Promise<string> {
   cachedAdminToken = data.data.access_token;
   cachedAdminTokenExpiry = now + TOKEN_CACHE_DURATION;
 
-  return cachedAdminToken;
+  return cachedAdminToken!; // Non-null assertion since we just assigned it
 }
 
 /**
@@ -83,7 +83,7 @@ export async function loginWithCachedToken(page: any): Promise<void> {
   const userData = meData.data;
 
   // Actualizar store en el contexto de la página con datos reales
-  await page.evaluate(({ token, userData }) => {
+  await page.evaluate(({ token, userData }: { token: string; userData: any }) => {
     // Actualizar localStorage con datos completos del usuario
     localStorage.setItem("auth_token", token);
 

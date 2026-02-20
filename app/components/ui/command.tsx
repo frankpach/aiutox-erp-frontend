@@ -1,7 +1,7 @@
 import * as React from "react";
 import { cn } from "~/lib/utils";
 
-interface CommandProps extends React.HTMLAttributes<HTMLDivElement> {}
+type CommandProps = React.HTMLAttributes<HTMLDivElement>;
 
 const Command = React.forwardRef<HTMLDivElement, CommandProps>(
   ({ className, ...props }, ref) => (
@@ -17,7 +17,7 @@ const Command = React.forwardRef<HTMLDivElement, CommandProps>(
 );
 Command.displayName = "Command";
 
-interface CommandInputProps extends React.HTMLAttributes<HTMLInputElement> {}
+type CommandInputProps = React.HTMLAttributes<HTMLInputElement>;
 
 const CommandInput = React.forwardRef<HTMLInputElement, CommandInputProps>(
   ({ className, ...props }, ref) => (
@@ -64,7 +64,7 @@ const CommandGroup = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "overflow-hidden p-1 text-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground",
+      "overflow-hidden p-1 text-foreground **:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:py-1.5 **:[[cmdk-group-heading]]:text-xs **:[[cmdk-group-heading]]:font-medium **:[[cmdk-group-heading]]:text-muted-foreground",
       className
     )}
     {...props}
@@ -88,7 +88,7 @@ const CommandItem = React.forwardRef<
     <div
       ref={ref}
       className={cn(
-        "relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none aria-selected:bg-accent aria-selected:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 hover:bg-accent hover:text-accent-foreground",
+        "relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none aria-selected:bg-accent aria-selected:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 hover:bg-accent hover:text-accent-foreground",
         className
       )}
       onClick={handleClick}

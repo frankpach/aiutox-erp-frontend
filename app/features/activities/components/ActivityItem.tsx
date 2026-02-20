@@ -5,11 +5,13 @@
 
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { enUS } from "date-fns/locale/en-US";
 import { useTranslation } from "~/lib/i18n/useTranslation";
+import { cn } from "~/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { Activity, ActivityType } from "~/features/activities/types/activity.types";
+import type { Activity, ActivityType } from "~/features/activities/types/activity.types";
 
 interface ActivityItemProps {
   activity: Activity;
@@ -44,15 +46,15 @@ const activityTypeColors: Record<ActivityType, string> = {
 };
 
 export function ActivityItem({ activity, onEdit, onDelete, showActions = false }: ActivityItemProps) {
-  const { t, locale } = useTranslation();
-  const dateLocale = locale === "es" ? es : en;
+  const { t, language } = useTranslation();
+  const dateLocale = language === "es" ? es : enUS;
 
   const formatActivityDate = (dateString: string) => {
     return format(new Date(dateString), "PPP", { locale: dateLocale });
   };
 
   const getActivityTypeLabel = (type: ActivityType) => {
-    return t(`activities.types.${type}`, { defaultValue: type });
+    return t(`activities.types.${type}`);
   };
 
   return (
@@ -120,7 +122,7 @@ export function ActivityItem({ activity, onEdit, onDelete, showActions = false }
             {Object.entries(activity.metadata).map(([key, value]) => (
               <div key={key} className="flex items-center justify-between py-2 border-b border-border">
                 <span className="text-sm font-medium text-muted-foreground">
-                  {t(`activities.metadata.${key}`, { defaultValue: key })}
+                  {t(`activities.metadata.${key}`)}
                 </span>
                 <span className="text-sm">{String(value)}</span>
               </div>

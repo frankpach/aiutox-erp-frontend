@@ -13,12 +13,8 @@ import {
   createFolder,
   updateFolder,
   deleteFolder,
-} from "../api/folders.api";
-import type {
-  Folder,
-  FolderTreeItem,
-  FolderCreate,
-  FolderUpdate,
+  type FolderCreate,
+  type FolderUpdate,
 } from "../api/folders.api";
 
 // Query keys for React Query

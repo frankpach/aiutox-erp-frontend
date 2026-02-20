@@ -16,10 +16,12 @@ import { UserDetailPage } from "../helpers/page-objects/UserDetailPage";
 import {
   createTestUser,
   deleteTestUser,
-  cleanupTestUsers,
 } from "../helpers/api-helpers";
 
 test.describe("Users CRUD E2E", () => {
+  // Store test user ID for cleanup
+  let testUserId: string | null = null;
+  
   // Helper para obtener email único por test (thread-safe)
   function getTestUserEmail(): string {
     // Usar worker ID de Playwright si está disponible
@@ -113,6 +115,9 @@ test.describe("Users CRUD E2E", () => {
     testUserId = userData.data.id;
 
     const userDetailPage = new UserDetailPage(authenticatedPage);
+    if (!testUserId) {
+      throw new Error('Test user ID is null');
+    }
     await userDetailPage.goto(testUserId);
 
     // Click edit
@@ -148,6 +153,9 @@ test.describe("Users CRUD E2E", () => {
     testUserId = userData.data.id;
 
     const userDetailPage = new UserDetailPage(authenticatedPage);
+    if (!testUserId) {
+      throw new Error('Test user ID is null');
+    }
     await userDetailPage.goto(testUserId);
 
     // Click delete

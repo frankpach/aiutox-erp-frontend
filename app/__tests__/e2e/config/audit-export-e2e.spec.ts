@@ -141,7 +141,6 @@ test.describe("Audit Log Export", () => {
   });
 
   test("should export audit logs to CSV", async ({ authenticatedPage: page }) => {
-    const context = page.context();
     const auditPage = new AuditConfigPage(page);
 
     await auditPage.goto();
@@ -163,7 +162,7 @@ test.describe("Audit Log Export", () => {
     }
 
     // Set up download listener BEFORE clicking
-    const downloadPromise = context.waitForEvent("download", { timeout: 30000 });
+    const downloadPromise = page.waitForEvent("download", { timeout: 30000 });
 
     // Select CSV format
     await auditPage.selectExportFormat("csv");
@@ -177,7 +176,7 @@ test.describe("Audit Log Export", () => {
     const download = await downloadPromise;
 
     // Verify download
-    const filename = download.suggestedFilename();
+    const filename = (download as any).suggestedFilename();
     expect(filename).toBeTruthy();
     if (!filename) {
       throw new Error("Download filename is undefined");
@@ -186,7 +185,7 @@ test.describe("Audit Log Export", () => {
 
     // Save file temporarily
     const filePath = path.join(__dirname, "../../../test-results", filename);
-    await download.saveAs(filePath);
+    await (download as any).saveAs(filePath);
 
     // Verify file exists and has content
     expect(fs.existsSync(filePath)).toBe(true);
@@ -202,8 +201,7 @@ test.describe("Audit Log Export", () => {
   });
 
   test("should export audit logs to JSON", async ({ authenticatedPage: page }) => {
-    const context = page.context();
-    const auditPage = new AuditConfigPage(page);
+        const auditPage = new AuditConfigPage(page);
 
     await auditPage.goto();
 
@@ -224,7 +222,7 @@ test.describe("Audit Log Export", () => {
     }
 
     // Set up download listener BEFORE clicking
-    const downloadPromise = context.waitForEvent("download", { timeout: 30000 });
+    const downloadPromise = page.waitForEvent("download", { timeout: 30000 });
 
     // Select JSON format
     await auditPage.selectExportFormat("json");
@@ -238,7 +236,7 @@ test.describe("Audit Log Export", () => {
     const download = await downloadPromise;
 
     // Verify download
-    const filename = download.suggestedFilename();
+    const filename = (download as any).suggestedFilename();
     expect(filename).toBeTruthy();
     if (!filename) {
       throw new Error("Download filename is undefined");
@@ -247,7 +245,7 @@ test.describe("Audit Log Export", () => {
 
     // Save file temporarily
     const filePath = path.join(__dirname, "../../../test-results", filename);
-    await download.saveAs(filePath);
+    await (download as any).saveAs(filePath);
 
     // Verify file exists and is valid JSON
     expect(fs.existsSync(filePath)).toBe(true);
@@ -264,8 +262,7 @@ test.describe("Audit Log Export", () => {
   });
 
   test("should export audit logs to Excel (CSV format)", async ({ authenticatedPage: page }) => {
-    const context = page.context();
-    const auditPage = new AuditConfigPage(page);
+        const auditPage = new AuditConfigPage(page);
 
     await auditPage.goto();
 
@@ -286,7 +283,7 @@ test.describe("Audit Log Export", () => {
     }
 
     // Set up download listener BEFORE clicking
-    const downloadPromise = context.waitForEvent("download", { timeout: 30000 });
+    const downloadPromise = page.waitForEvent("download", { timeout: 30000 });
 
     // Select Excel format
     await auditPage.selectExportFormat("excel");
@@ -300,7 +297,7 @@ test.describe("Audit Log Export", () => {
     const download = await downloadPromise;
 
     // Verify download (Excel uses CSV format)
-    const filename = download.suggestedFilename();
+    const filename = (download as any).suggestedFilename();
     expect(filename).toBeTruthy();
     if (!filename) {
       throw new Error("Download filename is undefined");
@@ -309,7 +306,7 @@ test.describe("Audit Log Export", () => {
 
     // Save file temporarily
     const filePath = path.join(__dirname, "../../../test-results", filename);
-    await download.saveAs(filePath);
+    await (download as any).saveAs(filePath);
 
     // Verify file exists and has content
     expect(fs.existsSync(filePath)).toBe(true);
@@ -323,8 +320,7 @@ test.describe("Audit Log Export", () => {
   });
 
   test("should export filtered audit logs", async ({ authenticatedPage: page }) => {
-    const context = page.context();
-    const auditPage = new AuditConfigPage(page);
+        const auditPage = new AuditConfigPage(page);
 
     await auditPage.goto();
 
@@ -336,7 +332,7 @@ test.describe("Audit Log Export", () => {
     await page.waitForTimeout(2000);
 
     // Set up download listener BEFORE clicking
-    const downloadPromise = context.waitForEvent("download", { timeout: 30000 });
+    const downloadPromise = page.waitForEvent("download", { timeout: 30000 });
 
     // Select CSV format
     await auditPage.selectExportFormat("csv");
@@ -350,7 +346,7 @@ test.describe("Audit Log Export", () => {
     const download = await downloadPromise;
 
     // Verify download
-    const filename = download.suggestedFilename();
+    const filename = (download as any).suggestedFilename();
     expect(filename).toBeTruthy();
     if (!filename) {
       throw new Error("Download filename is undefined");
@@ -359,7 +355,7 @@ test.describe("Audit Log Export", () => {
 
     // Save file temporarily
     const filePath = path.join(__dirname, "../../../test-results", filename);
-    await download.saveAs(filePath);
+    await (download as any).saveAs(filePath);
 
     // Verify file exists
     expect(fs.existsSync(filePath)).toBe(true);
@@ -405,7 +401,7 @@ test.describe("Audit Log Export", () => {
     await auditPage.goto();
 
     // Set date from filter
-    const today = new Date().toISOString().split("T")[0];
+    const today = new Date().toISOString().split("T")[0] || "";
     await auditPage.setDateFilter("date_from", today);
 
     // Verify filter is applied (page should reload)
@@ -436,7 +432,6 @@ test.describe("Audit Log Export", () => {
 
     // Check if pagination exists
     const nextButton = page.locator('button:has-text("Siguiente")');
-    const prevButton = page.locator('button:has-text("Anterior")');
 
     // If pagination exists, test navigation
     if (await nextButton.isVisible() && !(await nextButton.isDisabled())) {

@@ -12,7 +12,6 @@ import {
   removeFileTag,
 } from "../api/files.api";
 import { fileKeys } from "./useFiles";
-import type { Tag } from "../api/files.api";
 
 /**
  * Hook to get tags for a file

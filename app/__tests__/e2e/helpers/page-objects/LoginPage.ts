@@ -2,7 +2,7 @@
  * LoginPage - Page Object Model for Login Page
  */
 
-import { Page, Locator } from "@playwright/test";
+import type { Page, Locator } from '@playwright/test';
 
 export class LoginPage {
   readonly page: Page;

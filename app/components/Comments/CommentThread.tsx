@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useState } from 'react';
+import { Button } from '~/components/ui/button';
+import { Textarea } from '~/components/ui/textarea';
+import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader } from '~/components/ui/card';
+import { Badge } from '~/components/ui/badge';
 import { 
   MessageCircle, 
   Edit2, 
@@ -125,7 +125,7 @@ export function CommentThread({
       commentsApi.addComment(entityId, entityType, content),
     onSuccess: () => {
       setNewComment('');
-      queryClient.invalidateQueries(['comments', entityType, entityId]);
+      queryClient.invalidateQueries({ queryKey: ['comments', entityType, entityId] });
       onCommentAdded?.();
       toast.success('Comentario agregado');
     },
@@ -142,7 +142,7 @@ export function CommentThread({
     onSuccess: () => {
       setEditingComment(null);
       setEditContent('');
-      queryClient.invalidateQueries(['comments', entityType, entityId]);
+      queryClient.invalidateQueries({ queryKey: ['comments', entityType, entityId] });
       toast.success('Comentario actualizado');
     },
     onError: (error: Error) => {
@@ -156,7 +156,7 @@ export function CommentThread({
     mutationFn: (commentId: string) =>
       commentsApi.deleteComment(entityId, entityType, commentId),
     onSuccess: () => {
-      queryClient.invalidateQueries(['comments', entityType, entityId]);
+      queryClient.invalidateQueries({ queryKey: ['comments', entityType, entityId] });
       toast.success('Comentario eliminado');
     },
     onError: (error: Error) => {
@@ -256,7 +256,7 @@ export function CommentThread({
               <p className="text-sm">Sé el primero en comentar</p>
             </div>
           ) : (
-            comments.map((comment) => (
+            comments.map((comment: Comment) => (
               <div key={comment.id} className="flex gap-3 p-3 rounded-lg bg-muted/30">
                 <Avatar className="h-8 w-8 shrink-0">
                   <AvatarImage src={comment.user_email} />

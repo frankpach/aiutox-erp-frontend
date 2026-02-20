@@ -18,13 +18,13 @@ export const Footer = memo(() => {
     .replace("{year}", String(currentYear))
     .replace("{version}", version);
 
-  const tenantInfo = user?.tenant_name
-    ? ` | ${user.tenant_name}`
+  const tenantInfo = user?.tenant_id
+    ? ` | Tenant ${user.tenant_id}`
     : "";
 
   return (
     <footer
-      className="h-12 flex-shrink-0 bg-muted/30 flex items-center justify-center shadow-[0_-2px_8px_rgba(0,0,0,0.03)]"
+      className="h-12 shrink-0 bg-muted/30 flex items-center justify-center shadow-[0_-2px_8px_rgba(0,0,0,0.03)]"
       role="contentinfo"
     >
       <div className="text-sm text-muted-foreground">
@@ -33,6 +33,8 @@ export const Footer = memo(() => {
     </footer>
   );
 });
+
+Footer.displayName = "Footer";
 
 
 

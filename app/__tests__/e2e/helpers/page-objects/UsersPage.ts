@@ -2,7 +2,7 @@
  * UsersPage - Page Object Model for Users Management Page
  */
 
-import { Page, Locator } from "@playwright/test";
+import type { Page, Locator } from '@playwright/test';
 
 export class UsersPage {
   readonly page: Page;
