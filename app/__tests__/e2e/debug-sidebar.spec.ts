@@ -4,7 +4,7 @@
  * Test de debugging para ver exactamente qué contiene el sidebar después del login
  */
 
-import { test, expect } from "@playwright/test";
+import { test } from "@playwright/test";
 
 test.use({
   browserName: "chromium",
@@ -49,15 +49,21 @@ test("Debug: Ver contenido del sidebar", async ({ page }) => {
 
     console.log(`\nBotones encontrados: ${buttons.length}`);
     for (let i = 0; i < Math.min(buttons.length, 10); i++) {
-      const text = await buttons[i].innerText();
-      console.log(`  Button ${i + 1}: "${text}"`);
+      const button = buttons[i];
+      if (button) {
+        const text = await button.innerText();
+        console.log(`  Button ${i + 1}: "${text}"`);
+      }
     }
 
     console.log(`\nEnlaces encontrados: ${links.length}`);
     for (let i = 0; i < Math.min(links.length, 15); i++) {
-      const text = await links[i].innerText();
-      const href = await links[i].getAttribute('href');
-      console.log(`  Link ${i + 1}: "${text}" -> ${href}`);
+      const link = links[i];
+      if (link) {
+        const text = await link.innerText();
+        const href = await link.getAttribute('href');
+        console.log(`  Link ${i + 1}: "${text}" -> ${href}`);
+      }
     }
   }
 

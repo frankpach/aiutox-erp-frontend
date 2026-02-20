@@ -16,7 +16,7 @@ test.describe('PWA - Basics', () => {
     });
   });
 
-  test('should register service worker', async ({ page, context }) => {
+  test('should register service worker', async ({ page }) => {
     await page.goto('/');
 
     // Wait for SW registration

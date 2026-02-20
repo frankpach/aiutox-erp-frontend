@@ -6,7 +6,7 @@
  * frontend/app/__mocks__/virtual-pwa-register-react.ts
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { PWAUpdatePrompt } from '../PWAUpdatePrompt';
 
 describe('PWAUpdatePrompt', () => {

@@ -22,10 +22,6 @@ test.use({
   headless: false, // Run in headed mode to see the browser
 });
 
-// Test user credentials
-const TEST_USER_EMAIL = "testuser@aiutox.com";
-const TEST_USER_PASSWORD = "testpassword123";
-
 // Admin credentials (from user rules)
 const ADMIN_EMAIL = "admin@aiutox.com";
 const ADMIN_PASSWORD = "password";

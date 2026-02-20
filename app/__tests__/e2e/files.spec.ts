@@ -31,13 +31,12 @@ import {
   logStep,
   getCriticalReactErrors,
 } from "./helpers/test-utils";
-import { FilesPage } from "./helpers/page-objects/FilesPage";
 import {
   setupTestFile,
   testFileUploadViaUI,
-  cleanupTestFiles,
   getFileInfoFromList,
 } from "./helpers/files-test-helpers";
+import { FilesPage } from "./helpers/page-objects/FilesPage";
 
 // ============================================
 // TESTS INDEPENDIENTES (Paralelos)
@@ -650,7 +649,7 @@ test.describe("Files Module - Filters (Independent)", () => {
     const networkErrors = (authenticatedPage as any).__networkErrors as Array<{ url: string; status: number; error: string }>;
 
     if (networkErrors && networkErrors.length > 0) {
-      logStep(authenticatedPage, "Network errors detected in test", {
+      logStep("Network errors detected in test", {
         errors: networkErrors,
       });
     }
@@ -658,7 +657,7 @@ test.describe("Files Module - Filters (Independent)", () => {
     if (consoleErrors && consoleErrors.length > 0) {
       const criticalErrors = filterCriticalErrors(consoleErrors);
       if (criticalErrors.length > 0) {
-        logStep(authenticatedPage, "Console errors detected in test", {
+        logStep("Console errors detected in test", {
           errors: criticalErrors,
         });
       }
@@ -666,7 +665,7 @@ test.describe("Files Module - Filters (Independent)", () => {
   });
 
   test("should open filters panel when clicking filters button", async ({ authenticatedPage }) => {
-    logStep(authenticatedPage, "Testing filters button click");
+    logStep("Testing filters button click");
 
     // Clear any previous network errors
     (authenticatedPage as any).__networkErrors = [];
@@ -687,7 +686,7 @@ test.describe("Files Module - Filters (Independent)", () => {
     ).first();
     await filtersPanel.waitFor({ state: "visible", timeout: 5000 }).catch(() => {
       // If panel doesn't open, that's a problem
-      logStep(authenticatedPage, "WARNING: Filters panel did not open");
+      logStep("WARNING: Filters panel did not open");
     });
 
     // Check for network errors (500 status codes)
@@ -697,7 +696,7 @@ test.describe("Files Module - Filters (Independent)", () => {
     ) || [];
 
     if (error500.length > 0) {
-      logStep(authenticatedPage, "ERROR: 500 errors detected when clicking filters", {
+      logStep("ERROR: 500 errors detected when clicking filters", {
         errors: error500,
       });
     }
@@ -710,7 +709,7 @@ test.describe("Files Module - Filters (Independent)", () => {
     const reactErrors = consoleErrors ? getCriticalReactErrors(consoleErrors) : [];
 
     if (reactErrors.length > 0) {
-      logStep(authenticatedPage, "ERROR: React/UI errors detected", {
+      logStep("ERROR: React/UI errors detected", {
         errors: reactErrors,
       });
     }
@@ -727,18 +726,18 @@ test.describe("Files Module - Filters (Independent)", () => {
     );
 
     if (console500.length > 0) {
-      logStep(authenticatedPage, "ERROR: Console 500 errors detected", {
+      logStep("ERROR: Console 500 errors detected", {
         errors: console500,
       });
     }
 
     expect(console500.length).toBe(0);
 
-    logStep(authenticatedPage, "Filters button clicked without errors");
+    logStep("Filters button clicked without errors");
   });
 
   test("should not crash when users API returns error", async ({ authenticatedPage }) => {
-    logStep(authenticatedPage, "Testing filters with users API error");
+    logStep("Testing filters with users API error");
 
     // Clear any previous network errors
     (authenticatedPage as any).__networkErrors = [];
@@ -789,7 +788,7 @@ test.describe("Files Module - Filters (Independent)", () => {
     ) || [];
 
     if (unexpected500.length > 0) {
-      logStep(authenticatedPage, "ERROR: Unexpected 500 errors detected", {
+      logStep("ERROR: Unexpected 500 errors detected", {
         errors: unexpected500,
       });
     }
@@ -804,14 +803,14 @@ test.describe("Files Module - Filters (Independent)", () => {
 
     await expect(filtersPanel).toBeVisible({ timeout: 5000 }).catch(() => {
       // If panel doesn't open, that's okay - the important thing is no crash
-      logStep(authenticatedPage, "Filters panel may not have opened, but no crash occurred");
+      logStep("Filters panel may not have opened, but no crash occurred");
     });
 
-    logStep(authenticatedPage, "Filters handled users API error gracefully");
+    logStep("Filters handled users API error gracefully");
   });
 
   test("should apply filters without crashing", async ({ authenticatedPage }) => {
-    logStep(authenticatedPage, "Testing filter application");
+    logStep("Testing filter application");
 
     // Clear any previous network errors
     (authenticatedPage as any).__networkErrors = [];
@@ -833,7 +832,7 @@ test.describe("Files Module - Filters (Independent)", () => {
     ) || [];
 
     if (error500.length > 0) {
-      logStep(authenticatedPage, "ERROR: 500 errors detected when applying filters", {
+      logStep("ERROR: 500 errors detected when applying filters", {
         errors: error500,
       });
     }
@@ -856,7 +855,7 @@ test.describe("Files Module - Filters (Independent)", () => {
     );
 
     if (filterErrors.length > 0) {
-      logStep(authenticatedPage, "ERROR: Console errors detected when applying filters", {
+      logStep("ERROR: Console errors detected when applying filters", {
         errors: filterErrors,
       });
     }
@@ -868,6 +867,6 @@ test.describe("Files Module - Filters (Independent)", () => {
     const isPageVisible = await pageTitle.isVisible({ timeout: 2000 }).catch(() => false);
     expect(isPageVisible).toBe(true);
 
-    logStep(authenticatedPage, "Filters applied without errors");
+    logStep("Filters applied without errors");
   });
 });

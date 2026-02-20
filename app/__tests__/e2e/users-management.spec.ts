@@ -151,10 +151,9 @@ test.describe("User Management CRUD", () => {
     await expect(modal).toBeVisible();
 
     // Fill form with valid data
-    const timestamp = Date.now();
-    const testEmail = `testuser${timestamp}@example.com`;
+    const testUserEmail = `test-user-${Date.now()}@example.com`;
 
-    await page.fill('input[name="email"]', testEmail);
+    await page.fill('input[name="email"]', testUserEmail);
     await page.fill('input[name="password"]', "TestPassword123!");
     await page.fill('input[name="first_name"]', "Test");
     await page.fill('input[name="last_name"]', "User");
@@ -233,7 +232,7 @@ test.describe("User Management CRUD", () => {
 
     // Try to find the user email in the table
     // The email should be in the first column of the table
-    const userEmailCell = page.locator(`table tbody tr td:first-child:has-text("${testEmail}")`);
+    const userEmailCell = page.locator(`table tbody tr td:first-child:has-text("${testUserEmail}")`);
     await expect(userEmailCell).toBeVisible({ timeout: 15000 });
   });
 
@@ -274,7 +273,6 @@ test.describe("User Management CRUD", () => {
 
     // Get first user email for verification
     const firstRow = page.locator("table tbody tr").first();
-    const userEmail = await firstRow.locator("td").first().textContent();
 
     // Click delete
     await firstRow.locator('button[aria-label*="Acciones"]').click();
@@ -429,10 +427,6 @@ test.describe("User Management - Form Validations", () => {
 
     // Check for validation errors
     const emailInput = page.locator('input[name="email"]');
-    const emailError = await emailInput.evaluate((el) => {
-      const form = el.closest("form");
-      return form?.querySelector('p.text-destructive')?.textContent;
-    });
 
     // Email should be required
     expect(emailInput).toBeVisible();

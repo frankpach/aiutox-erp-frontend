@@ -9,7 +9,6 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PageLayout } from "~/components/layout/PageLayout";
-import { useTranslation } from "~/lib/i18n/useTranslation";
 
 // Mock de useTranslation
 vi.mock("~/lib/i18n/useTranslation", () => ({

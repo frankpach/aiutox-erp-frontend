@@ -21,18 +21,18 @@ test.describe("User Filters E2E", () => {
   });
 
   test("should filter users by search term", async ({ authenticatedPage: page }) => {
-    const usersPage = new UsersPage(page);
-
     // Get initial count
+    const usersPage = new UsersPage(page);
     const initialCount = await usersPage.getUserCount();
 
     // Search for a specific term (use first user's email as test)
     const firstRow = page.locator("table tbody tr").first();
-    const firstUserEmail = await firstRow.locator("td").first().textContent();
+    const firstUserEmail = await firstRow.locator("td").first().textContent() || "";
 
-    if (firstUserEmail) {
+    if (firstUserEmail && firstUserEmail.includes("@")) {
       // Extract part of email for search
-      const searchTerm = firstUserEmail.split("@")[0].substring(0, 5);
+      const emailParts = firstUserEmail.split("@");
+      const searchTerm = emailParts[0] ? emailParts[0].substring(0, 5) : "";
 
       // Type in search input (use the enabled one, not the disabled SavedFilters input)
       const searchInput = page.locator('input[type="text"][placeholder*="Buscar usuarios"]:not([disabled]), input[type="text"][placeholder*="Search users"]:not([disabled])').first();
@@ -54,8 +54,6 @@ test.describe("User Filters E2E", () => {
   });
 
   test("should filter users by active status", async ({ authenticatedPage: page }) => {
-    const usersPage = new UsersPage(page);
-
     // Filter by active users
     const statusSelect = page.locator('select').filter({ hasText: /Todos|All/i });
     await statusSelect.selectOption("active");
@@ -66,7 +64,6 @@ test.describe("User Filters E2E", () => {
     // Verify all visible users are active
     const activeBadges = page.locator('span:has-text("Activo"), span:has-text("Active")');
     const activeCount = await activeBadges.count();
-    const totalRows = await page.locator("table tbody tr").count();
 
     // All visible users should be active
     expect(activeCount).toBeGreaterThan(0);

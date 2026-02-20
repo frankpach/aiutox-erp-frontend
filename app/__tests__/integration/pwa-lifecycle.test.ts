@@ -62,7 +62,23 @@ describe('PWA Lifecycle Integration', () => {
 
     // Setup auth
     useAuthStore.getState().setAuth(
-      { id: '1', email: 'test@example.com', full_name: 'Test', is_active: true },
+      { 
+        id: '1', 
+        email: 'test@example.com', 
+        full_name: 'Test',
+        tenant_id: '1',
+        first_name: 'Test',
+        last_name: 'User',
+        middle_name: null,
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        last_login: null,
+        phone: null,
+        avatar_url: null,
+        roles: [],
+        permissions: []
+      } as any,
       'token',
       'refresh'
     );
@@ -86,7 +102,7 @@ describe('PWA Lifecycle Integration', () => {
 
     Object.defineProperty(navigator, 'serviceWorker', {
       value: {
-        register: vi.fn((url: string) => {
+        register: vi.fn((_url: string) => {
           const registration = {
             installing: null,
             waiting: null,

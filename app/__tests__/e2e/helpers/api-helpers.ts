@@ -151,8 +151,6 @@ export async function getUserByEmail(email: string) {
  * Clean up test data
  */
 export async function cleanupTestUsers(emails: string[]) {
-  const token = await getAdminToken();
-
   for (const email of emails) {
     try {
       const user = await getUserByEmail(email);

@@ -74,7 +74,7 @@ test.describe("User Contact Methods CRUD", () => {
     // Extract user ID from URL
     const url = page.url();
     const match = url.match(/\/users\/([^/]+)$/);
-    userId = match ? match[1] : "";
+    userId = match && match[1] ? match[1] : "";
 
     expect(userId).toBeTruthy();
 

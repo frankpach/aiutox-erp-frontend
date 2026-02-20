@@ -19,7 +19,6 @@ import { test, expect } from "./fixtures/auth.setup";
 import type { Page } from "@playwright/test";
 import {
   logStep,
-  performLogin,
   navigateToProtectedRoute,
   captureFailureScreenshot,
 } from "./helpers/test-utils";

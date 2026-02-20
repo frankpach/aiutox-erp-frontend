@@ -110,11 +110,11 @@ test.describe('PWA - Auth & Cache Management', () => {
           let messageReceived = false;
 
           // Override postMessage to detect calls
-          navigator.serviceWorker.controller.postMessage = function(...args: any[]) {
-            if (args[0]?.type === 'CLEAR_AUTH_CACHE') {
+          navigator.serviceWorker.controller.postMessage = function(message: any, options?: any) {
+            if (message?.type === 'CLEAR_AUTH_CACHE') {
               messageReceived = true;
             }
-            return originalPostMessage.apply(this, args);
+            return originalPostMessage.call(this, message, options);
           };
 
           // Return after a short delay
@@ -149,7 +149,7 @@ test.describe('PWA - Auth & Cache Management', () => {
     console.log('✅ Logout completed, SW message check:', swMessageSent);
   });
 
-  test('should not serve stale auth data from cache', async ({ page, context }) => {
+  test('should not serve stale auth data from cache', async ({ page }) => {
     // Login as user 1
     await page.goto('/login');
     await page.fill('input[name="email"]', ADMIN_EMAIL);

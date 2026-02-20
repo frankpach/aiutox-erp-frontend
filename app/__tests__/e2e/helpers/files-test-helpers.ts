@@ -125,9 +125,18 @@ export async function getFileInfoFromList(
   const fileNames = await filesPage.getFileNames();
   const index = fileNames.findIndex((name) => name.includes(fileName));
 
-  if (index >= 0) {
+  if (index >= 0 && fileNames[index]) {
+    // Helper function to assert non-null without triggering ESLint warning
+    const assertNonNull = <T>(value: T | undefined): T => {
+      if (value === undefined) {
+        throw new Error('Value is undefined');
+      }
+      return value;
+    };
+    
+    const fileName = assertNonNull(fileNames[index]);
     return {
-      fileName: fileNames[index],
+      fileName,
       rowIndex: index,
     };
   }

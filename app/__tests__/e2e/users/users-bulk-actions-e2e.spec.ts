@@ -12,7 +12,6 @@
  */
 
 import { test, expect } from "../fixtures/auth.setup";
-import { UsersPage } from "../helpers/page-objects/UsersPage";
 import {
   createTestUser,
   deleteTestUser,

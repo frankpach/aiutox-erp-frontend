@@ -81,7 +81,7 @@ test.describe("Authentication Flow", () => {
     const consoleErrors = setupConsoleCapture(page);
     const result = await performLogin(page);
 
-    expect(result.success).toBeTruthy();
+    expect(result).toBeTruthy();
     await expect(page.locator('header[role="banner"]')).toBeVisible({ timeout: 10000 });
 
     const criticalErrors = filterCriticalErrors(consoleErrors);
@@ -127,7 +127,7 @@ test.describe("Authentication Flow", () => {
   test("should redirect to dashboard when logging in directly", async ({ page }) => {
     await clearAuthState(page);
     const result = await performLogin(page);
-    expect(result.success).toBeTruthy();
+    expect(result).toBeTruthy();
     expect(page.url()).toContain("/dashboard");
     logStep("✅ Direct login test passed");
   });
@@ -161,7 +161,7 @@ test.describe("Authentication Flow", () => {
   test("should logout successfully", async ({ page }) => {
     await clearAuthState(page);
     const result = await performLogin(page);
-    expect(result.success).toBeTruthy();
+    expect(result).toBeTruthy();
 
     // Open user menu and logout
     const userMenuButton = page.locator('button[aria-label*="usuario"], button[aria-label*="Menú"]').first();
@@ -215,7 +215,7 @@ test.describe("Dashboard & Navigation", () => {
       await loginWithCachedToken(page);
     } catch {
       const result = await performLogin(page);
-      if (!result.success) throw new Error(result.error);
+      if (!result) throw new Error("Login failed");
     }
   });
 
@@ -270,7 +270,7 @@ test.describe("User Management", () => {
       await loginWithCachedToken(page);
     } catch {
       const result = await performLogin(page);
-      if (!result.success) throw new Error(result.error);
+      if (!result) throw new Error("Login failed");
     }
   });
 
@@ -386,7 +386,7 @@ test.describe("Error Handling", () => {
       await loginWithCachedToken(page);
     } catch {
       const result = await performLogin(page);
-      if (!result.success) throw new Error(result.error);
+      if (!result) throw new Error("Login failed");
     }
 
     await page.goto(`${FRONTEND_URL}/unauthorized`);
@@ -410,7 +410,7 @@ test.describe("Responsive Design", () => {
       await loginWithCachedToken(page);
     } catch {
       const result = await performLogin(page);
-      if (!result.success) throw new Error(result.error);
+      if (!result) throw new Error("Login failed");
     }
   });
 
@@ -447,7 +447,7 @@ test.describe("Module Discovery", () => {
       await loginWithCachedToken(page);
     } catch {
       const result = await performLogin(page);
-      if (!result.success) throw new Error(result.error);
+      if (!result) throw new Error("Login failed");
     }
   });
 
@@ -484,7 +484,7 @@ test.describe("Integration Tests", () => {
 
     // 1. Login
     const result = await performLogin(page);
-    expect(result.success).toBeTruthy();
+    expect(result).toBeTruthy();
 
     // 2. Navigate to users if link visible
     const usersLink = page.getByRole("link", { name: /usuarios/i });
@@ -505,7 +505,7 @@ test.describe("Integration Tests", () => {
     await clearAuthState(page);
 
     const result = await performLogin(page);
-    expect(result.success).toBeTruthy();
+    expect(result).toBeTruthy();
 
     // Store token before reload
     const tokenBefore = await page.evaluate(() => localStorage.getItem("auth_token"));
