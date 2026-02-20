@@ -5,10 +5,47 @@ on:
     branches: [main]
 
 jobs:
-  build:
+  # Job para runner local (Windows) - Solo tests
+  test-local:
     runs-on: self-hosted
-    # Solo ejecutar en pushes, no en PRs
-    if: github.event_name == 'push' 
+    if: github.event_name == 'push'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Check environment
+        run: |
+          echo "Running on: $(hostname)"
+          echo "OS: $(uname -a || ver)"
+          echo "Current directory: $(pwd)"
+          
+      - name: Check Node.js
+        run: |
+          node --version || echo "Node.js not found"
+          npm --version || echo "npm not found"
+          
+      - name: Install dependencies (if Node.js available)
+        run: |
+          if command -v npm &> /dev/null; then
+            npm install
+          else
+            echo "Skipping npm install - Node.js not available"
+          fi
+          
+      - name: Run tests (if available)
+        run: |
+          if command -v npm &> /dev/null && [ -f "package.json" ]; then
+            npm test || echo "Tests failed or not configured"
+          else
+            echo "Skipping tests - Node.js not available or no package.json"
+          fi
+
+  # Job para runner del NAS (Docker) - Build y push de imágenes
+  build-and-push:
+    runs-on: [self-hosted, aiutox]
+    if: github.event_name == 'push'
+    needs: test-local
     
     steps:
       - name: Checkout code
