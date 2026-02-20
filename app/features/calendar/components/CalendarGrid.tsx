@@ -92,26 +92,26 @@ export function CalendarGrid({
   // Formatos de fecha personalizados
   const formats = useMemo(
     () => ({
-      timeGutterFormat: (date: Date, culture?: string, localizer?: any) =>
-        localizer.format(date, "HH:mm", culture),
+      timeGutterFormat: (date: Date, culture?: string, loc?: { format: (d: Date, fmt: string, c?: string) => string }) =>
+        loc?.format(date, "HH:mm", culture) ?? "",
       eventTimeRangeFormat: (
         { start, end }: { start: Date; end: Date },
         culture?: string,
-        localizer?: any
+        loc?: { format: (d: Date, fmt: string, c?: string) => string }
       ) =>
-        `${localizer.format(start, "HH:mm", culture)} - ${localizer.format(end, "HH:mm", culture)}`,
+        `${loc?.format(start, "HH:mm", culture) ?? ""} - ${loc?.format(end, "HH:mm", culture) ?? ""}`,
       agendaTimeRangeFormat: (
         { start, end }: { start: Date; end: Date },
         culture?: string,
-        localizer?: any
+        loc?: { format: (d: Date, fmt: string, c?: string) => string }
       ) =>
-        `${localizer.format(start, "HH:mm", culture)} - ${localizer.format(end, "HH:mm", culture)}`,
+        `${loc?.format(start, "HH:mm", culture) ?? ""} - ${loc?.format(end, "HH:mm", culture) ?? ""}`,
       dayRangeHeaderFormat: (
         { start, end }: { start: Date; end: Date },
         culture?: string,
-        localizer?: any
+        loc?: { format: (d: Date, fmt: string, c?: string) => string }
       ) =>
-        `${localizer.format(start, "dd MMM", culture)} - ${localizer.format(end, "dd MMM", culture)}`,
+        `${loc?.format(start, "dd MMM", culture) ?? ""} - ${loc?.format(end, "dd MMM", culture) ?? ""}`,
     }),
     []
   );
@@ -158,14 +158,14 @@ export function CalendarGrid({
         step={step}
         timeslots={timeslots}
         showMultiDayTimes={showMultiDayTimes}
-        eventPropGetter={(event: any) => eventStyleGetter(event.resource)}
+        eventPropGetter={(event: { resource: CalendarEvent }) => eventStyleGetter(event.resource)}
         formats={formats}
         messages={messages}
         culture={language}
         style={{ height: "100%" }}
         views={["month", "week", "day", "agenda"]}
         popup
-        tooltipAccessor={(event: any) =>
+        tooltipAccessor={(event: { resource: CalendarEvent }) =>
           event.resource.description || event.resource.title
         }
       />

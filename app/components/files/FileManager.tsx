@@ -46,7 +46,7 @@ export function FileManager({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [fileToDelete, setFileToDelete] = useState<FileResponse | null>(null);
   const [selectedEntityType, setSelectedEntityType] = useState<string | undefined>(entityType);
-  const [selectedEntityId, setSelectedEntityId] = useState<string | undefined>(entityId);
+  const [selectedEntityId] = useState<string | undefined>(entityId);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["files", selectedEntityType, selectedEntityId],

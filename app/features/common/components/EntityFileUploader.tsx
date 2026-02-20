@@ -37,7 +37,6 @@ export function EntityFileUploader({
   // Usar el hook apropiado según el tipo de entidad
   const attachTaskMutation = useAttachFile();
   const attachEventMutation = useAttachEventFile();
-  const attachMutation = entityType === 'task' ? attachTaskMutation : attachEventMutation;
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -54,23 +53,23 @@ export function EntityFileUploader({
     const maxBytes = maxSizeMB * 1024 * 1024;
     if (file.size > maxBytes) {
       showToast(
-        `El archivo es demasiado grande. Máximo ${maxSizeMB}MB`,
+        t('files.fileTooLarge'),
         'error'
       );
       return;
     }
 
     // Validar tipo
-    if (acceptedTypes[0] !== '*/*' && !acceptedTypes.some(type => file.type.match(type.replace('*', '.*')))) {
+    if (acceptedTypes[0] !== '*/*' && !acceptedTypes.some((type: string) => file.type.match(type.replace('*', '.*')))) {
       showToast(
-        'Tipo de archivo no permitido',
+        t('files.invalidFileType'),
         'error'
       );
       return;
     }
 
     setSelectedFile(file);
-  }, [maxSizeMB, acceptedTypes]);
+  }, [maxSizeMB, acceptedTypes, t]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -135,15 +134,15 @@ export function EntityFileUploader({
       }
 
       setSelectedFile(null);
-      showToast('Archivo subido exitosamente', 'success');
+      showToast(t('files.uploadSuccess'), 'success');
       onUploadComplete?.();
     } catch (error) {
       console.error('Error al subir archivo:', error);
-      showToast('Error al subir archivo', 'error');
+      showToast(t('files.uploadError'), 'error');
     } finally {
       setUploading(false);
     }
-  }, [selectedFile, entityId, entityType, attachTaskMutation, attachEventMutation, onUploadComplete]);
+  }, [selectedFile, entityId, entityType, attachTaskMutation, attachEventMutation, onUploadComplete, t]);
 
   return (
     <Card>
@@ -172,10 +171,10 @@ export function EntityFileUploader({
             
             <div>
               <h3 className="text-sm font-medium">
-                Arrastra y suelta un archivo aquí
+                {t('files.dragDrop')}
               </h3>
               <p className="text-xs text-muted-foreground mt-1">
-                o haz clic para seleccionar
+                {t('files.selectFiles')}
               </p>
             </div>
             
@@ -184,7 +183,7 @@ export function EntityFileUploader({
               variant="outline"
               onClick={() => document.getElementById('file-upload')?.click()}
             >
-              Seleccionar archivo
+              {t('files.selectFiles')}
             </Button>
           </div>
         </div>
@@ -214,7 +213,7 @@ export function EntityFileUploader({
                   onClick={() => void handleUpload()}
                   disabled={uploading}
                 >
-                  {uploading ? 'Subiendo...' : 'Subir'}
+                  {uploading ? t('files.uploading') : t('files.upload')}
                 </Button>
               </div>
             </div>

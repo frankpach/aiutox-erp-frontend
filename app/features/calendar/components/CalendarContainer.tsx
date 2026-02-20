@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { useTranslation } from "~/lib/i18n/useTranslation";
 import {
   addMonths,
   addWeeks,
@@ -37,6 +38,7 @@ export function CalendarContainer({
   onEventCreate,
   className = "",
 }: CalendarContainerProps) {
+  const { t } = useTranslation();
   // Estado local
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewType, setViewType] = useState<CalendarViewType>(defaultView);
@@ -181,7 +183,7 @@ export function CalendarContainer({
         <div className="flex-1 overflow-hidden p-4">
           {eventsLoading ? (
             <div className="flex h-full items-center justify-center">
-              <p className="text-muted-foreground">Cargando eventos...</p>
+              <p className="text-muted-foreground">{t("common.loading")}</p>
             </div>
           ) : (
             <CalendarGrid

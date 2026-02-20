@@ -1,12 +1,12 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Progress } from '@/components/ui/progress';
+import { Card, CardContent, CardHeader } from '~/components/ui/card';
+import { Button } from '~/components/ui/button';
+import { Badge } from '~/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select';
+import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar';
+import { Progress } from '~/components/ui/progress';
 import { 
   Calendar, 
   Clock, 
@@ -19,7 +19,7 @@ import {
   CheckCircle,
   Circle,
   AlertCircle,
-  Loader2,
+  Loader,
   Copy,
   Archive
 } from '@hugeicons/core-free-icons';
@@ -115,10 +115,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   }, [task, onEdit]);
 
   const handleDelete = useCallback(() => {
-    if (window.confirm(t('tasks.confirmDelete', { taskTitle: task.title }))) {
+    if (window.confirm(t('tasks.confirmDelete'))) {
       onDelete(task.id);
     }
-  }, [task.id, task.title, onDelete, t]);
+  }, [task.id, onDelete, t]);
 
   const handleAssign = useCallback(() => {
     // En una implementación real, esto abriría un modal para seleccionar usuario
@@ -165,7 +165,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   return (
     <Card 
       ref={cardRef}
-      className={`relative border-l-4 ${priorityInfo.color} transition-all duration-200 hover:shadow-md hover:shadow-lg ${isHovered ? 'scale-[1.02]' : ''}`}
+      className={`relative border-l-4 ${priorityInfo.color} transition-all duration-200 hover:shadow-lg ${isHovered ? 'scale-[1.02]' : ''}`}
       style={{ borderLeftColor: task.color_override || undefined }}
       tabIndex={0}
       onKeyDown={handleKeyDown}
@@ -212,7 +212,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             >
               <SelectTrigger className="w-32 h-8">
                 {isStatusChanging ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <HugeiconsIcon icon={Loader} size={16} className="animate-spin" />
                 ) : (
                   <SelectValue />
                 )}
@@ -297,14 +297,14 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             {task.created_by && (
               <div className="flex items-center space-x-1 text-xs text-muted-foreground" data-testid="created-user">
                 <HugeiconsIcon icon={User} size={12} />
-                <span>{t('tasks.createdBy', { name: task.created_by.name })}</span>
+                <span>{t('tasks.createdBy')}</span>
               </div>
             )}
           </div>
 
           {isStatusChanging && (
             <div className="text-xs text-primary flex items-center" data-testid="status-changing">
-              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+              <HugeiconsIcon icon={Loader} size={12} className="mr-1 animate-spin" />
               {t('tasks.updating')}
             </div>
           )}
@@ -324,7 +324,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           {task.estimated_duration && (
             <div className="flex items-center space-x-1" data-testid="estimated-duration">
               <HugeiconsIcon icon={Clock} size={14} />
-              <span>{t('tasks.estimatedDuration', { hours: Math.round(task.estimated_duration / 60) })}</span>
+              <span>{t('tasks.estimatedDuration')}</span>
             </div>
           )}
         </div>

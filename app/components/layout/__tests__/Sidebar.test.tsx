@@ -2,15 +2,12 @@
  * Tests for Sidebar component
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import { Sidebar } from "../Sidebar";
-import * as permissionsHook from "~/hooks/usePermissions";
-import { navigationItems } from "~/config/navigation";
 import { useAuthStore } from "~/stores/authStore";
-import { useModulesStore } from "~/stores/modulesStore";
 
 // Mock ThemeProvider
 vi.mock("~/providers", () => ({
@@ -26,11 +23,6 @@ vi.mock("~/stores/authStore", () => ({
   useAuthStore: vi.fn(),
 }));
 
-// Mock useModulesStore
-vi.mock("~/stores/modulesStore", () => ({
-  useModulesStore: vi.fn(),
-}));
-
 // Mock useTranslation
 vi.mock("~/lib/i18n/useTranslation", () => ({
   useTranslation: () => ({
@@ -44,15 +36,12 @@ vi.mock("../TenantSwitcher", () => ({
 }));
 
 // Variable global para almacenar el estado de los permisos
-let mockHasPermission = (perm: string) => true;
+let mockHasPermission = (_perm: string) => true;
 
 // Mock usePermissions
 vi.mock("~/hooks/usePermissions", () => ({
   usePermissions: () => ({
-    permissions: [],
-    roles: [],
     hasPermission: mockHasPermission,
-    hasRole: () => false,
     hasAnyPermission: () => true,
     hasAnyRole: () => false,
     hasAllPermissions: () => true,
@@ -63,7 +52,7 @@ vi.mock("~/hooks/usePermissions", () => ({
 
 // Mock NavigationTree component (Sidebar uses NavigationTree, not NavItem directly)
 vi.mock("../NavigationTree", () => ({
-  NavigationTree: ({ isCollapsed }: { isCollapsed: boolean }) => (
+  NavigationTree: ({ isCollapsed: _isCollapsed }: { isCollapsed: boolean }) => (
     <div data-testid="navigation-tree">
       <div data-testid="nav-item-home">Dashboard</div>
       {mockHasPermission("users.view") && (
@@ -112,16 +101,10 @@ const createWrapper = () => {
 describe("Sidebar", () => {
   beforeEach(() => {
     // Reset mock permission to default (allow all)
-    mockHasPermission = (perm: string) => true;
+    mockHasPermission = (_perm: string) => true;
 
     // Mock auth store to return authenticated user
     vi.mocked(useAuthStore).mockReturnValue(true);
-
-    // Mock modules store
-    vi.mocked(useModulesStore).mockReturnValue({
-      isInitialized: true,
-      loadModules: vi.fn().mockResolvedValue(undefined),
-    });
   });
 
   it("should render navigation items", () => {
@@ -135,7 +118,7 @@ describe("Sidebar", () => {
 
   it("should filter items by permissions", () => {
     // Mock hasPermission to return false for users.view
-    mockHasPermission = (perm: string) => perm !== "users.view";
+    mockHasPermission = (_perm: string) => _perm !== "users.view";
 
     const { getByTestId, queryByTestId } = render(<Sidebar isOpen={true} />, {
       wrapper: createWrapper(),

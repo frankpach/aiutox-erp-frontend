@@ -6,6 +6,7 @@
 import { useState } from "react";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 import { DataTable } from "~/components/common/DataTable";
+import type { DataTableColumn } from "~/components/common";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
@@ -15,8 +16,6 @@ import { LoadingState } from "~/components/common/LoadingState";
 import { ErrorState } from "~/components/common/ErrorState";
 import { 
   useAutomationRules, 
-  useCreateAutomationRule, 
-  useUpdateAutomationRule, 
   useDeleteAutomationRule,
   useExecuteAutomationRule,
   useEnableAutomationRule,
@@ -41,8 +40,6 @@ export function AutomationRuleList({ onCreate, onEdit, onView, onExecutions }: A
 
   // Queries
   const { data: rulesData, isLoading, error, refetch } = useAutomationRules();
-  const createRuleMutation = useCreateAutomationRule();
-  const updateRuleMutation = useUpdateAutomationRule();
   const deleteRuleMutation = useDeleteAutomationRule();
   const executeRuleMutation = useExecuteAutomationRule();
   const enableRuleMutation = useEnableAutomationRule();
@@ -82,7 +79,7 @@ export function AutomationRuleList({ onCreate, onEdit, onView, onExecutions }: A
     try {
       await executeRuleMutation.mutateAsync({
         id: selectedRule.id,
-        payload: { trigger_data: {} }
+        payload: { rule_id: selectedRule.id, trigger_data: {} }
       });
       setShowExecuteDialog(false);
       setSelectedRule(null);
@@ -132,11 +129,11 @@ export function AutomationRuleList({ onCreate, onEdit, onView, onExecutions }: A
   };
 
   // Table columns
-  const columns = [
+  const columns: DataTableColumn<AutomationRule>[] = [
     {
       key: "name",
-      title: t("automation.rules.table.name"),
-      render: (rule: AutomationRule) => (
+      header: t("automation.rules.table.name"),
+      cell: (rule: AutomationRule) => (
         <div>
           <div className="font-medium">{rule.name}</div>
           <div className="text-sm text-gray-500">{rule.description}</div>
@@ -145,8 +142,8 @@ export function AutomationRuleList({ onCreate, onEdit, onView, onExecutions }: A
     },
     {
       key: "trigger",
-      title: t("automation.rules.table.trigger"),
-      render: (rule: AutomationRule) => (
+      header: t("automation.rules.table.trigger"),
+      cell: (rule: AutomationRule) => (
         <div>
           <Badge variant="outline">{rule.trigger.type}</Badge>
           {rule.trigger.event_type && (
@@ -157,38 +154,38 @@ export function AutomationRuleList({ onCreate, onEdit, onView, onExecutions }: A
     },
     {
       key: "conditions",
-      title: t("automation.rules.table.conditions"),
-      render: (rule: AutomationRule) => (
+      header: t("automation.rules.table.conditions"),
+      cell: (rule: AutomationRule) => (
         <Badge variant="secondary">{rule.conditions.length}</Badge>
       ),
     },
     {
-      key: "actions",
-      title: t("automation.rules.table.actions"),
-      render: (rule: AutomationRule) => (
+      key: "actions_count",
+      header: t("automation.rules.table.actions"),
+      cell: (rule: AutomationRule) => (
         <Badge variant="secondary">{rule.actions.length}</Badge>
       ),
     },
     {
       key: "priority",
-      title: t("automation.rules.table.priority"),
-      render: (rule: AutomationRule) => (
+      header: t("automation.rules.table.priority"),
+      cell: (rule: AutomationRule) => (
         <Badge variant="outline">{rule.priority}</Badge>
       ),
     },
     {
       key: "status",
-      title: t("automation.rules.table.status"),
-      render: (rule: AutomationRule) => (
+      header: t("automation.rules.table.status"),
+      cell: (rule: AutomationRule) => (
         <Badge variant={rule.is_active ? "default" : "secondary"}>
           {rule.is_active ? t("automation.status.active") : t("automation.status.inactive")}
         </Badge>
       ),
     },
     {
-      key: "actions",
-      title: t("automation.rules.table.actions"),
-      render: (rule: AutomationRule) => (
+      key: "row_actions",
+      header: t("automation.rules.table.actions"),
+      cell: (rule: AutomationRule) => (
         <div className="flex items-center space-x-2">
           <Button
             variant="ghost"
@@ -292,10 +289,10 @@ export function AutomationRuleList({ onCreate, onEdit, onView, onExecutions }: A
             data={rules}
             columns={columns}
             pagination={{
-              currentPage: meta?.page || 1,
-              totalPages: meta?.total_pages || 1,
-              onPageChange: (page) => {
-                // Handle page change
+              page: meta?.page || 1,
+              pageSize: meta?.page_size || 20,
+              total: meta?.total || 0,
+              onPageChange: () => {
                 refetch();
               },
             }}
@@ -310,7 +307,7 @@ export function AutomationRuleList({ onCreate, onEdit, onView, onExecutions }: A
             <DialogTitle>{t("automation.rules.delete.title")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p>{t("automation.rules.delete.confirm", { name: selectedRule?.name })}</p>
+            <p>{t("automation.rules.delete.confirm")}</p>
             <div className="flex justify-end space-x-2">
               <Button
                 variant="outline"
@@ -337,7 +334,7 @@ export function AutomationRuleList({ onCreate, onEdit, onView, onExecutions }: A
             <DialogTitle>{t("automation.rules.execute.title")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p>{t("automation.rules.execute.confirm", { name: selectedRule?.name })}</p>
+            <p>{t("automation.rules.execute.confirm")}</p>
             <div className="flex justify-end space-x-2">
               <Button
                 variant="outline"

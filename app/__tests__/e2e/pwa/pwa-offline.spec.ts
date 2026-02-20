@@ -130,7 +130,7 @@ test.describe('PWA - Offline Functionality', () => {
     await context.setOffline(true);
 
     // Try to visit a page
-    const response = await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 10000 }).catch(e => null);
+    const response = await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 10000 }).catch(() => null);
 
     // Should either show offline page or error
     if (!response) {

@@ -22,7 +22,7 @@ import {
   useConditionOperators,
   useValidateAutomationRule
 } from "~/features/automation/hooks/useAutomation";
-import type { AutomationRule, AutomationRuleCreate } from "~/features/automation/types/automation.types";
+import type { AutomationRule } from "~/features/automation/types/automation.types";
 
 // Mock api client
 const mockApiClient = {
@@ -52,9 +52,6 @@ vi.mock("~/features/automation/hooks/useAutomation", () => ({
   useConditionOperators: vi.fn(),
   useValidateAutomationRule: vi.fn(),
 }));
-
-// Import the mocked hooks
-const mockedUseAutomation = vi.mocked(import("~/features/automation/hooks/useAutomation"));
 
 // Mock data
 const mockAutomationRule: AutomationRule = {
@@ -124,7 +121,6 @@ vi.mock("~/lib/i18n/useTranslation", () => ({
         "automation.rules.table.actions": "Actions",
         "automation.rules.table.priority": "Priority",
         "automation.rules.table.status": "Status",
-        "automation.rules.table.actions": "Actions",
         "automation.status.active": "Active",
         "automation.status.inactive": "Inactive",
         "automation.rules.executions": "Executions",
@@ -256,67 +252,32 @@ describe("Automation Module", () => {
       isLoading: false,
       error: null,
       refetch: vi.fn(),
-    });
-    vi.mocked(useCreateAutomationRule).mockReturnValue({
-      mutate: vi.fn(),
-      isPending: false,
-      error: null,
-    });
-    vi.mocked(useUpdateAutomationRule).mockReturnValue({
-      mutate: vi.fn(),
-      isPending: false,
-      error: null,
-    });
-    vi.mocked(useDeleteAutomationRule).mockReturnValue({
-      mutate: vi.fn(),
-      isPending: false,
-      error: null,
-    });
-    vi.mocked(useExecuteAutomationRule).mockReturnValue({
-      mutate: vi.fn(),
-      isPending: false,
-      error: null,
-    });
-    vi.mocked(useEnableAutomationRule).mockReturnValue({
-      mutate: vi.fn(),
-      isPending: false,
-      error: null,
-    });
-    vi.mocked(useDisableAutomationRule).mockReturnValue({
-      mutate: vi.fn(),
-      isPending: false,
-      error: null,
-    });
-    vi.mocked(useCloneAutomationRule).mockReturnValue({
-      mutate: vi.fn(),
-      isPending: false,
-      error: null,
-    });
-    vi.mocked(useTestAutomationRule).mockReturnValue({
-      mutate: vi.fn(),
-      isPending: false,
-      error: null,
-    });
+    } as unknown as ReturnType<typeof useAutomationRules>);
+    const mockMutation = { mutate: vi.fn(), isPending: false, error: null };
+    vi.mocked(useCreateAutomationRule).mockReturnValue(mockMutation as unknown as ReturnType<typeof useCreateAutomationRule>);
+    vi.mocked(useUpdateAutomationRule).mockReturnValue(mockMutation as unknown as ReturnType<typeof useUpdateAutomationRule>);
+    vi.mocked(useDeleteAutomationRule).mockReturnValue(mockMutation as unknown as ReturnType<typeof useDeleteAutomationRule>);
+    vi.mocked(useExecuteAutomationRule).mockReturnValue(mockMutation as unknown as ReturnType<typeof useExecuteAutomationRule>);
+    vi.mocked(useEnableAutomationRule).mockReturnValue(mockMutation as unknown as ReturnType<typeof useEnableAutomationRule>);
+    vi.mocked(useDisableAutomationRule).mockReturnValue(mockMutation as unknown as ReturnType<typeof useDisableAutomationRule>);
+    vi.mocked(useCloneAutomationRule).mockReturnValue(mockMutation as unknown as ReturnType<typeof useCloneAutomationRule>);
+    vi.mocked(useTestAutomationRule).mockReturnValue(mockMutation as unknown as ReturnType<typeof useTestAutomationRule>);
     vi.mocked(useTriggerTypes).mockReturnValue({
       data: [{ value: "event", label: "Event" }],
       isLoading: false,
       error: null,
-    });
+    } as unknown as ReturnType<typeof useTriggerTypes>);
     vi.mocked(useActionTypes).mockReturnValue({
       data: [{ value: "send_notification", label: "Send Notification" }],
       isLoading: false,
       error: null,
-    });
+    } as unknown as ReturnType<typeof useActionTypes>);
     vi.mocked(useConditionOperators).mockReturnValue({
       data: [{ value: "gt", label: "Greater Than" }],
       isLoading: false,
       error: null,
-    });
-    vi.mocked(useValidateAutomationRule).mockReturnValue({
-      mutate: vi.fn(),
-      isPending: false,
-      error: null,
-    });
+    } as unknown as ReturnType<typeof useConditionOperators>);
+    vi.mocked(useValidateAutomationRule).mockReturnValue(mockMutation as unknown as ReturnType<typeof useValidateAutomationRule>);
 
     // Default mock for apiClient.get
     mockApiClient.get = vi.fn().mockResolvedValue({
@@ -353,8 +314,7 @@ describe("Automation Module", () => {
         error: null,
       },
     });
-
-    });
+  });
 
   const renderWithClient = (component: React.ReactElement) => {
     return render(
@@ -399,8 +359,7 @@ describe("Automation Module", () => {
     });
 
     it("shows loading state initially", () => {
-      const apiClient = mockApiClient;
-      (apiClient.get as any).mockImplementation(
+      vi.mocked(mockApiClient.get).mockImplementation(
         () => new Promise(() => {}) // Never resolves
       );
 
@@ -411,8 +370,7 @@ describe("Automation Module", () => {
     });
 
     it("shows error state when API fails", async () => {
-      const apiClient = mockApiClient;
-      (apiClient.get as any).mockRejectedValue(
+      vi.mocked(mockApiClient.get).mockRejectedValue(
         new Error("Failed to load automation rules")
       );
 
@@ -507,8 +465,7 @@ describe("Automation Module", () => {
     });
 
     it("shows empty state when no rules", async () => {
-      const apiClient = mockApiClient;
-      (apiClient.get as any).mockResolvedValue({
+      vi.mocked(mockApiClient.get).mockResolvedValue({
         data: {
           data: [],
           meta: {
@@ -570,7 +527,9 @@ describe("Automation Module", () => {
       // Click executions button to go to executions tab
       await waitFor(() => {
         const executionsButton = screen.getAllByText("Executions")[0];
-        fireEvent.click(executionsButton);
+        if (executionsButton) {
+          fireEvent.click(executionsButton);
+        }
       });
 
       await waitFor(() => {
@@ -585,7 +544,9 @@ describe("Automation Module", () => {
       // Click executions button to go to executions tab
       await waitFor(() => {
         const executionsButton = screen.getAllByText("Executions")[0];
-        fireEvent.click(executionsButton);
+        if (executionsButton) {
+          fireEvent.click(executionsButton);
+        }
       });
 
       await waitFor(() => {
@@ -600,7 +561,9 @@ describe("Automation Module", () => {
       // Click executions button to go to executions tab
       await waitFor(() => {
         const executionsButton = screen.getAllByText("Executions")[0];
-        fireEvent.click(executionsButton);
+        if (executionsButton) {
+          fireEvent.click(executionsButton);
+        }
       });
 
       await waitFor(() => {

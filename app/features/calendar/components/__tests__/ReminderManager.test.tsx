@@ -109,7 +109,9 @@ describe("ReminderManager", () => {
     );
 
     const deleteButtons = screen.getAllByText("×");
-    fireEvent.click(deleteButtons[0]);
+    if (deleteButtons[0]) {
+      fireEvent.click(deleteButtons[0]);
+    }
 
     expect(mockOnDeleteReminder).toHaveBeenCalledWith("1");
   });

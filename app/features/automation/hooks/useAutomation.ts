@@ -188,7 +188,7 @@ export function useTestAutomationRule() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, triggerData }: { id: string; triggerData?: Record<string, any> }) => 
+    mutationFn: ({ id, triggerData }: { id: string; triggerData?: Record<string, unknown> }) => 
       testAutomationRule(id, triggerData),
     onSuccess: (_, { id }) => {
       // Invalidate specific rule cache to refresh test results

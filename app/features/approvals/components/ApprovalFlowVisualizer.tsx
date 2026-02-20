@@ -59,19 +59,23 @@ export function ApprovalFlowVisualizer({
     const sortedSteps = [...steps].sort((a, b) => a.step_order - b.step_order);
 
     for (let i = 0; i < sortedSteps.length - 1; i++) {
-      edges.push({
-        id: `e${sortedSteps[i].id}-${sortedSteps[i + 1].id}`,
-        source: sortedSteps[i].id,
-        target: sortedSteps[i + 1].id,
-        type: "smoothstep",
-        animated: true,
-      });
+      const currentStep = sortedSteps[i];
+      const nextStep = sortedSteps[i + 1];
+      if (currentStep && nextStep) {
+        edges.push({
+          id: `e${currentStep.id}-${nextStep.id}`,
+          source: currentStep.id,
+          target: nextStep.id,
+          type: "smoothstep",
+          animated: true,
+        });
+      }
     }
 
     return edges;
   }, [steps]);
 
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [nodes, _setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
   const onConnect = useCallback(
@@ -90,10 +94,13 @@ export function ApprovalFlowVisualizer({
       if (stepIndex === -1) return;
 
       const updatedSteps = [...steps];
-      const newStepOrder = Math.floor(node.position.x / 250) + 1;
+      const currentStep = updatedSteps[stepIndex];
+      if (!currentStep) return;
+      
+      const newStepOrder = node.position ? Math.floor(node.position.x / 250) + 1 : currentStep.step_order;
 
-      if (newStepOrder !== updatedSteps[stepIndex].step_order) {
-        updatedSteps[stepIndex].step_order = newStepOrder;
+      if (newStepOrder !== currentStep.step_order) {
+        currentStep.step_order = newStepOrder;
         onStepsChange(updatedSteps);
       }
     },

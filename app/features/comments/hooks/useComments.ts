@@ -16,7 +16,6 @@ import {
   listMentions,
 } from "~/features/comments/api/comments.api";
 import type { 
-  CommentCreate, 
   CommentUpdate, 
   CommentFilters,
   CommentAttachmentCreate,

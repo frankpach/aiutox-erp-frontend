@@ -14,7 +14,7 @@ import { Badge } from "~/components/ui/badge";
 import type { EventReminder, ReminderType } from "../types/calendar.types";
 
 interface ReminderManagerProps {
-  eventId: string;
+  eventId?: string;
   reminders: EventReminder[];
   onAddReminder: (reminder: Omit<EventReminder, "id">) => void;
   onUpdateReminder: (id: string, reminder: Omit<EventReminder, "id">) => void;
@@ -23,7 +23,6 @@ interface ReminderManagerProps {
 }
 
 export function ReminderManager({
-  eventId,
   reminders,
   onAddReminder,
   onUpdateReminder,

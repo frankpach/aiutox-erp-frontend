@@ -3,7 +3,7 @@
  * Type definitions for Automation module
  */
 
-import type { StandardResponse, StandardListResponse } from "~/lib/api/types/common.types";
+import type { StandardListResponse } from "~/lib/api/types/common.types";
 
 // Automation Rule entity
 export interface AutomationRule {
@@ -59,7 +59,7 @@ export interface AutomationTrigger {
 export interface AutomationCondition {
   field: string;
   operator: "eq" | "ne" | "gt" | "gte" | "lt" | "lte" | "in" | "nin" | "contains" | "not_contains";
-  value: any;
+  value: unknown;
   logical_operator?: "and" | "or";
 }
 
@@ -71,19 +71,19 @@ export interface AutomationAction {
   recipients?: string[];
   entity_type?: string;
   entity_id?: string;
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
   webhook_url?: string;
   event_type?: string;
-  event_data?: Record<string, any>;
+  event_data?: Record<string, unknown>;
 }
 
 // Automation execution
 export interface AutomationExecution {
   id: string;
   rule_id: string;
-  trigger_data: Record<string, any>;
+  trigger_data: Record<string, unknown>;
   status: "pending" | "running" | "completed" | "failed";
-  result?: Record<string, any>;
+  result?: Record<string, unknown>;
   error_message?: string;
   started_at: string;
   completed_at?: string;
@@ -93,7 +93,7 @@ export interface AutomationExecution {
 // Automation execution payload
 export interface AutomationExecutionCreate {
   rule_id: string;
-  trigger_data?: Record<string, any>;
+  trigger_data?: Record<string, unknown>;
 }
 
 // Automation list parameters
@@ -136,7 +136,7 @@ export interface AutomationStats {
 export interface AutomationTestResult {
   success: boolean;
   message: string;
-  trigger_data?: Record<string, any>;
+  trigger_data?: Record<string, unknown>;
   conditions_result?: Array<{
     condition: AutomationCondition;
     result: boolean;

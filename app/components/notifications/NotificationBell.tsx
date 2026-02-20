@@ -7,7 +7,6 @@ import { Button } from "~/components/ui/button";
 import { useNotificationStream } from "~/hooks/useNotificationStream";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 import { cn } from "~/lib/utils";
-import type { NotificationQueue } from "~/lib/api/notifications.api";
 
 interface NotificationBellProps {
   className?: string;

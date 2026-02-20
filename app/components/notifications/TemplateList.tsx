@@ -171,9 +171,7 @@ export function TemplateList({ onEdit, onCreate }: TemplateListProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>{t("config.notifications.templateDeleteTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t("config.notifications.templateDeleteMessage", {
-                name: templateToDelete?.name || "",
-              })}
+              {t("config.notifications.templateDeleteMessage")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

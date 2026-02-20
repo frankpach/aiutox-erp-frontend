@@ -21,7 +21,7 @@ export function NavItem({ item, isActive, isCollapsed }: NavItemProps) {
 
   return (
     <Link
-      to={item.to}
+      to={item.to || "#"}
       className={cn(
         "flex items-center gap-3 px-4 py-2.5 rounded-md text-sm font-medium",
         "transition-all duration-200 ease-in-out",

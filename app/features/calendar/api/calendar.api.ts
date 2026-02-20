@@ -20,12 +20,6 @@ import type {
   EventReminderCreate,
   CalendarListParams,
   EventListParams,
-  CalendarResource,
-  CalendarResourceCreate,
-  CalendarResourceUpdate,
-  EventResource,
-  EventResourceCreate,
-  ResourceListParams,
 } from "~/features/calendar/types/calendar.types";
 
 // Calendars API functions

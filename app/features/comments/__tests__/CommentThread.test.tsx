@@ -9,7 +9,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { CommentThread } from "~/features/comments/components/CommentThread";
 import { CommentItem } from "~/features/comments/components/CommentItem";
 import { CommentForm } from "~/features/comments/components/CommentForm";
-import { Comment, CommentThread as CommentThreadType } from "~/features/comments/types/comment.types";
+import type { Comment, CommentThread as CommentThreadType } from "~/features/comments/types/comment.types";
 
 // Mock data
 const mockComment: Comment = {
@@ -111,7 +111,9 @@ describe("Comments Module", () => {
       );
 
       const deleteButtons = screen.getAllByText("comments.delete");
-      fireEvent.click(deleteButtons[0]);
+      if (deleteButtons[0]) {
+        fireEvent.click(deleteButtons[0]);
+      }
 
       await waitFor(() => {
         expect(onDelete).toHaveBeenCalledWith("1");

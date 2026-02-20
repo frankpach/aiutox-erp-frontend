@@ -12,8 +12,6 @@ import type {
   AutomationExecution,
   AutomationExecutionCreate,
   AutomationRuleListParams,
-  AutomationRuleListResponse,
-  AutomationExecutionListResponse,
   AutomationStats,
   AutomationTestResult,
   AutomationOperationResult,
@@ -129,7 +127,7 @@ export async function getAutomationExecution(id: string): Promise<StandardRespon
  * @param triggerData - Test trigger data
  * @returns Promise<StandardResponse<AutomationTestResult>>
  */
-export async function testAutomationRule(id: string, triggerData?: Record<string, any>): Promise<StandardResponse<AutomationTestResult>> {
+export async function testAutomationRule(id: string, triggerData?: Record<string, unknown>): Promise<StandardResponse<AutomationTestResult>> {
   const response = await apiClient.post<StandardResponse<AutomationTestResult>>(
     `/api/v1/automation/rules/${id}/test`,
     { trigger_data: triggerData }

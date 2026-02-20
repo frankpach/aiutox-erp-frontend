@@ -27,7 +27,6 @@ import type {
   EventUpdate,
   EventListParams,
   EventReminderCreate,
-  EventReminder,
 } from "~/features/calendar/types/calendar.types";
 
 // Calendars Query hooks

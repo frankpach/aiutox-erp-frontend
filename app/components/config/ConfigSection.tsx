@@ -29,7 +29,6 @@ export function ConfigSection({
   description,
   children,
   className,
-  collapsible = false,
 }: ConfigSectionProps) {
   return (
     <Card className={cn("", className)}>

@@ -24,7 +24,6 @@ export function CalendarSidebar({
   calendars,
   selectedCalendarIds,
   onToggleCalendar,
-  onDateSelect,
   currentDate,
   showMiniCalendar = true,
   showFilters = true,

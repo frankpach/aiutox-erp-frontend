@@ -101,7 +101,6 @@ export function ConfigColorInput({
     }
   };
 
-  const displayValue = inputValue || "#000000";
   const showError = error || (!isValid && inputValue);
 
   return (

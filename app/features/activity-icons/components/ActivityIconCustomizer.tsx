@@ -60,7 +60,10 @@ export function ActivityIconCustomizer() {
         if (!iconsMap[config.activity_type]) {
           iconsMap[config.activity_type] = {};
         }
-        iconsMap[config.activity_type][config.status] = config.icon;
+        const activityMap = iconsMap[config.activity_type];
+        if (activityMap && config.status) {
+          activityMap[config.status] = config.icon;
+        }
       });
       setSelectedIcons(iconsMap);
     } else if (defaults) {
@@ -69,8 +72,9 @@ export function ActivityIconCustomizer() {
         if (statuses) {
           defaultsMap[activityType] = {};
           Object.entries(statuses).forEach(([status, config]) => {
-            if (config && defaultsMap[activityType]) {
-              defaultsMap[activityType][status] = config.icon;
+            const activityMap = defaultsMap[activityType];
+            if (config && activityMap && status) {
+              activityMap[status] = config.icon;
             }
           });
         }
@@ -102,8 +106,9 @@ export function ActivityIconCustomizer() {
         if (statuses) {
           resetIcons[activityType] = {};
           Object.entries(statuses).forEach(([status, config]) => {
-            if (config && resetIcons[activityType]) {
-              resetIcons[activityType][status] = config.icon;
+            const activityMap = resetIcons[activityType];
+            if (config && activityMap && status) {
+              activityMap[status] = config.icon;
             }
           });
         }

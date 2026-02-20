@@ -7,9 +7,8 @@ import { useTranslation } from "~/lib/i18n/useTranslation";
 import { ConfigSection } from "~/components/config/ConfigSection";
 import { ConfigFormField } from "~/components/config/ConfigFormField";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
-import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
-import { useStorageConfig, useStorageConfigUpdate, useS3ConnectionTest } from "~/hooks/useFilesConfig";
+import { useS3ConnectionTest } from "~/hooks/useFilesConfig";
 import type { StorageConfigUpdate } from "~/lib/api/files-config.api";
 import { Loader2 } from "lucide-react";
 
@@ -20,7 +19,6 @@ export interface StorageConfigProps {
 
 export function StorageConfig({ value, onChange }: StorageConfigProps) {
   const { t } = useTranslation();
-  const { data: currentConfig } = useStorageConfig();
   const { mutate: testConnection, isPending: isTesting } = useS3ConnectionTest();
 
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);

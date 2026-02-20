@@ -42,15 +42,15 @@ export function AutomationExecutionList({ ruleId, onBack }: AutomationExecutionL
   const columns = [
     {
       key: "id",
-      title: t("automation.executions.table.id"),
-      render: (execution: AutomationExecution) => (
+      header: t("automation.executions.table.id"),
+      cell: (execution: AutomationExecution) => (
         <div className="font-mono text-sm">{execution.id.substring(0, 8)}...</div>
       ),
     },
     {
       key: "status",
-      title: t("automation.executions.table.status"),
-      render: (execution: AutomationExecution) => {
+      header: t("automation.executions.table.status"),
+      cell: (execution: AutomationExecution) => {
         const statusColors = {
           pending: "secondary",
           running: "default",
@@ -59,7 +59,7 @@ export function AutomationExecutionList({ ruleId, onBack }: AutomationExecutionL
         } as const;
         
         return (
-          <Badge variant={statusColors[execution.status]}>
+          <Badge variant={statusColors[execution.status] ?? "secondary"}>
             {t(`automation.executions.status.${execution.status}`)}
           </Badge>
         );
@@ -67,8 +67,8 @@ export function AutomationExecutionList({ ruleId, onBack }: AutomationExecutionL
     },
     {
       key: "started_at",
-      title: t("automation.executions.table.startedAt"),
-      render: (execution: AutomationExecution) => (
+      header: t("automation.executions.table.startedAt"),
+      cell: (execution: AutomationExecution) => (
         <div className="text-sm">
           {new Date(execution.started_at).toLocaleString()}
         </div>
@@ -76,8 +76,8 @@ export function AutomationExecutionList({ ruleId, onBack }: AutomationExecutionL
     },
     {
       key: "completed_at",
-      title: t("automation.executions.table.completedAt"),
-      render: (execution: AutomationExecution) => (
+      header: t("automation.executions.table.completedAt"),
+      cell: (execution: AutomationExecution) => (
         <div className="text-sm">
           {execution.completed_at 
             ? new Date(execution.completed_at).toLocaleString()
@@ -88,8 +88,8 @@ export function AutomationExecutionList({ ruleId, onBack }: AutomationExecutionL
     },
     {
       key: "duration",
-      title: t("automation.executions.table.duration"),
-      render: (execution: AutomationExecution) => {
+      header: t("automation.executions.table.duration"),
+      cell: (execution: AutomationExecution) => {
         if (!execution.completed_at) return "-";
         
         const duration = new Date(execution.completed_at).getTime() - new Date(execution.started_at).getTime();
@@ -104,8 +104,8 @@ export function AutomationExecutionList({ ruleId, onBack }: AutomationExecutionL
     },
     {
       key: "actions",
-      title: t("automation.executions.table.actions"),
-      render: (execution: AutomationExecution) => (
+      header: t("automation.executions.table.actions"),
+      cell: (execution: AutomationExecution) => (
         <Button
           variant="ghost"
           size="sm"
@@ -154,10 +154,10 @@ export function AutomationExecutionList({ ruleId, onBack }: AutomationExecutionL
             data={executions}
             columns={columns}
             pagination={{
-              currentPage: meta?.page || 1,
-              totalPages: meta?.total_pages || 1,
-              onPageChange: (page) => {
-                // Handle page change
+              page: meta?.page || 1,
+              pageSize: meta?.page_size || 20,
+              total: meta?.total || 0,
+              onPageChange: () => {
                 refetch();
               },
             }}
@@ -174,57 +174,57 @@ export function AutomationExecutionList({ ruleId, onBack }: AutomationExecutionL
           <CardContent>
             {detailLoading ? (
               <LoadingState />
-            ) : executionDetail ? (
+            ) : executionDetail?.data ? (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <h4 className="font-medium">{t("automation.executions.executionId")}</h4>
-                    <p className="font-mono text-sm">{executionDetail.id}</p>
+                    <p className="font-mono text-sm">{executionDetail.data.id}</p>
                   </div>
                   <div>
                     <h4 className="font-medium">{t("automation.executions.status")}</h4>
-                    <Badge variant={executionDetail.status === "completed" ? "default" : executionDetail.status === "failed" ? "destructive" : "secondary"}>
-                      {t(`automation.executions.status.${executionDetail.status}`)}
+                    <Badge variant={executionDetail.data.status === "completed" ? "default" : executionDetail.data.status === "failed" ? "destructive" : "secondary"}>
+                      {t(`automation.executions.status.${executionDetail.data.status}`)}
                     </Badge>
                   </div>
                   <div>
                     <h4 className="font-medium">{t("automation.executions.startedAt")}</h4>
-                    <p>{new Date(executionDetail.started_at).toLocaleString()}</p>
+                    <p>{new Date(executionDetail.data.started_at).toLocaleString()}</p>
                   </div>
                   <div>
                     <h4 className="font-medium">{t("automation.executions.completedAt")}</h4>
                     <p>
-                      {executionDetail.completed_at 
-                        ? new Date(executionDetail.completed_at).toLocaleString()
+                      {executionDetail.data.completed_at 
+                        ? new Date(executionDetail.data.completed_at).toLocaleString()
                         : "-"
                       }
                     </p>
                   </div>
                 </div>
 
-                {executionDetail.trigger_data && (
+                {executionDetail.data.trigger_data && (
                   <div>
                     <h4 className="font-medium mb-2">{t("automation.executions.triggerData")}</h4>
                     <pre className="bg-gray-100 p-4 rounded-md text-sm overflow-auto">
-                      {JSON.stringify(executionDetail.trigger_data, null, 2)}
+                      {JSON.stringify(executionDetail.data.trigger_data, null, 2)}
                     </pre>
                   </div>
                 )}
 
-                {executionDetail.result && (
+                {executionDetail.data.result && (
                   <div>
                     <h4 className="font-medium mb-2">{t("automation.executions.result")}</h4>
                     <pre className="bg-gray-100 p-4 rounded-md text-sm overflow-auto">
-                      {JSON.stringify(executionDetail.result, null, 2)}
+                      {JSON.stringify(executionDetail.data.result, null, 2)}
                     </pre>
                   </div>
                 )}
 
-                {executionDetail.error_message && (
+                {executionDetail.data.error_message && (
                   <div>
                     <h4 className="font-medium mb-2 text-red-600">{t("automation.executions.error")}</h4>
                     <div className="bg-red-50 border border-red-200 p-4 rounded-md">
-                      <p className="text-red-800">{executionDetail.error_message}</p>
+                      <p className="text-red-800">{executionDetail.data.error_message}</p>
                     </div>
                   </div>
                 )}

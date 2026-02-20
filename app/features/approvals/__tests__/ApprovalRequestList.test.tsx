@@ -7,7 +7,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { ApprovalRequestList } from "~/features/approvals/components/ApprovalRequestList";
-import { ApprovalRequest, ApprovalStatus, StepStatus } from "~/features/approvals/types/approval.types";
+import type { ApprovalRequest, ApprovalStatus } from "~/features/approvals/types/approval.types";
 
 // Mock data
 const mockRequests: ApprovalRequest[] = [
@@ -20,20 +20,9 @@ const mockRequests: ApprovalRequest[] = [
     title: "Purchase Order Approval",
     description: "Approve purchase order for office supplies",
     requested_by: "user-1",
+    requested_at: "2025-01-01T00:00:00Z",
     current_step: 1,
     status: "pending",
-    steps: [
-      {
-        id: "step-1",
-        request_id: "1",
-        step_number: 1,
-        approver_id: "manager-1",
-        approver_name: "John Manager",
-        status: "pending",
-        created_at: "2025-01-01T00:00:00Z",
-        updated_at: "2025-01-01T00:00:00Z",
-      },
-    ],
     metadata: { amount: 5000 },
     created_at: "2025-01-01T00:00:00Z",
     updated_at: "2025-01-01T00:00:00Z",
@@ -47,32 +36,9 @@ const mockRequests: ApprovalRequest[] = [
     title: "Leave Request Approval",
     description: "Approve vacation leave request",
     requested_by: "user-2",
+    requested_at: "2025-01-01T00:00:00Z",
     current_step: 2,
-    status: "in_progress",
-    steps: [
-      {
-        id: "step-1",
-        request_id: "2",
-        step_number: 1,
-        approver_id: "supervisor-1",
-        approver_name: "Jane Supervisor",
-        status: "approved",
-        decision: { action: "approve", comments: "Approved" },
-        decided_at: "2025-01-02T00:00:00Z",
-        created_at: "2025-01-01T00:00:00Z",
-        updated_at: "2025-01-02T00:00:00Z",
-      },
-      {
-        id: "step-2",
-        request_id: "2",
-        step_number: 2,
-        approver_id: "hr-1",
-        approver_name: "HR Department",
-        status: "pending",
-        created_at: "2025-01-01T00:00:00Z",
-        updated_at: "2025-01-01T00:00:00Z",
-      },
-    ],
+    status: "pending",
     metadata: { days: 5 },
     created_at: "2025-01-01T00:00:00Z",
     updated_at: "2025-01-01T00:00:00Z",
@@ -208,23 +174,14 @@ describe("Approvals Module", () => {
   describe("Approval Status and Step Status", () => {
     it("has correct approval status values", () => {
       const statuses: ApprovalStatus[] = [
-        "pending", "in_progress", "approved", "rejected", "cancelled", "expired"
+        "pending", "approved", "rejected", "cancelled", "delegated"
       ];
 
-      expect(statuses).toHaveLength(6);
+      expect(statuses).toHaveLength(5);
       expect(statuses).toContain("pending");
       expect(statuses).toContain("approved");
     });
 
-    it("has correct step status values", () => {
-      const stepStatuses: StepStatus[] = [
-        "pending", "approved", "rejected", "skipped", "delegated"
-      ];
-
-      expect(stepStatuses).toHaveLength(5);
-      expect(stepStatuses).toContain("pending");
-      expect(stepStatuses).toContain("approved");
-    });
   });
 
   describe("Approval Request Data Structure", () => {
@@ -241,30 +198,8 @@ describe("Approvals Module", () => {
       expect(request).toHaveProperty("requested_by");
       expect(request).toHaveProperty("current_step");
       expect(request).toHaveProperty("status");
-      expect(request).toHaveProperty("steps");
       expect(request).toHaveProperty("created_at");
       expect(request).toHaveProperty("updated_at");
-    });
-
-    it("has correct step structure", () => {
-      const step = mockRequests[0].steps[0];
-
-      expect(step).toHaveProperty("id");
-      expect(step).toHaveProperty("request_id");
-      expect(step).toHaveProperty("step_number");
-      expect(step).toHaveProperty("approver_id");
-      expect(step).toHaveProperty("approver_name");
-      expect(step).toHaveProperty("status");
-      expect(step.status).toBe("pending");
-    });
-
-    it("has approved step with decision", () => {
-      const approvedStep = mockRequests[1].steps[0];
-
-      expect(approvedStep.status).toBe("approved");
-      expect(approvedStep).toHaveProperty("decision");
-      expect(approvedStep.decision?.action).toBe("approve");
-      expect(approvedStep).toHaveProperty("decided_at");
     });
   });
 });

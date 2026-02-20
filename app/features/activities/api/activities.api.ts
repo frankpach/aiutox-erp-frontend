@@ -14,7 +14,6 @@ import type {
   ActivityCreate,
   ActivityUpdate,
   ActivityListParams,
-  ActivityTimelineResponse,
   EntityActivitiesParams,
 } from "~/features/activities/types/activity.types";
 

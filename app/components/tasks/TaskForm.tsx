@@ -3,18 +3,18 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
+import { Button } from '~/components/ui/button';
+import { Badge } from '~/components/ui/badge';
+import { Input } from '~/components/ui/input';
+import { Textarea } from '~/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select';
+import { Label } from '~/components/ui/label';
 import { 
   Plus,
   X,
   Upload,
-  Loader2,
+  Loader,
   Save,
   ArrowLeft,
   CheckCircle,
@@ -323,7 +323,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
               </Label>
               <Select
                 value={watchedValues.status}
-                onValueChange={(value) => setValue('status', value as TaskStatus)}
+                onValueChange={(value: string) => setValue('status', value as TaskStatus)}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -344,7 +344,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
               </Label>
               <Select
                 value={watchedValues.priority}
-                onValueChange={(value) => setValue('priority', value as TaskPriority)}
+                onValueChange={(value: string) => setValue('priority', value as TaskPriority)}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -525,7 +525,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                 />
                 <Input
                   value={item.title}
-                  onChange={(e) => handleUpdateChecklistItem(item.id, e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleUpdateChecklistItem(item.id, e.target.value)}
                   placeholder={t('tasks.form.checklist.placeholder')}
                   className="flex-1"
                 />
@@ -621,7 +621,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
             <div className="flex gap-2">
               <Input
                 placeholder={t('tasks.tags')}
-                onKeyDown={(e) => {
+                onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
                     handleAddTag(e.currentTarget.value);
@@ -684,7 +684,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
         >
           {isSubmitting || loading ? (
             <>
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <HugeiconsIcon icon={Loader} size={16} className="animate-spin" />
               {t('tasks.form.saving')}
             </>
           ) : (

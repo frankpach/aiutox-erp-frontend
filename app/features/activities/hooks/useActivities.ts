@@ -6,7 +6,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { listActivities, getActivity, createActivity, updateActivity, deleteActivity, listEntityActivities } from "~/features/activities/api/activities.api";
-import type { ActivityCreate, ActivityUpdate, ActivityListParams, EntityActivitiesParams } from "~/features/activities/types/activity.types";
+import type { ActivityUpdate, ActivityListParams, EntityActivitiesParams } from "~/features/activities/types/activity.types";
 
 // Query hooks
 export function useActivities(params?: ActivityListParams) {

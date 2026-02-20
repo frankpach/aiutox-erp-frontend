@@ -4,9 +4,8 @@
  * Verifica que el componente renderiza correctamente con diferentes props
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { render, screen, cleanup } from '@testing-library/react';
 import { MemoryRouter } from "react-router";
 import { ConfigPageLayout } from "../ConfigPageLayout";
 

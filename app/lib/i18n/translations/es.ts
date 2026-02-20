@@ -1014,6 +1014,7 @@ export const translations = {
     dragDropActive: "Suelta los archivos aquí",
     selectFiles: "Seleccionar archivos",
     uploading: "Subiendo...",
+    fileTooLarge: "El archivo es demasiado grande. Máximo {maxSize}MB",
     uploadProgress: "Subiendo: {progress}%",
     versions: "Versiones",
     permissions: "Permisos",
@@ -1038,8 +1039,6 @@ export const translations = {
     permissionsError: "Error al actualizar permisos",
     previewNotAvailable: "Vista previa no disponible",
     previewError: "Error al cargar vista previa",
-    fileTooLarge:
-      "El archivo es demasiado grande para previsualizar. Por favor, descárgalo.",
     invalidJson: "Formato JSON inválido",
     showingFirstRows: "Mostrando las primeras {count} filas de {total}",
     invalidFileType: "Tipo de archivo no válido",

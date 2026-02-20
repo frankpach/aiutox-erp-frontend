@@ -103,10 +103,10 @@ const renderWithQueryClient = (component: React.ReactElement) => {
 };
 
 describe("RecurrenceEditor", () => {
-  let onChange: vi.MockedFunction<(config: RecurrenceConfig | null) => void>;
+  let onChange: (config: RecurrenceConfig | null) => void;
 
   beforeEach(() => {
-    onChange = vi.fn();
+    onChange = vi.fn() as unknown as (config: RecurrenceConfig | null) => void;
   });
 
   it("renders correctly with no recurrence", () => {

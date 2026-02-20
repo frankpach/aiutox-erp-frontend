@@ -4,12 +4,12 @@
  */
 
 import { format } from "date-fns";
-import { es, enUS } from "date-fns/locale";
+import { es } from "date-fns/locale";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { Comment } from "~/features/comments/types/comment.types";
+import type { Comment } from "~/features/comments/types/comment.types";
 
 interface CommentItemProps {
   comment: Comment;

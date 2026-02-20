@@ -23,16 +23,6 @@ interface AgendaViewProps {
 
 const DEFAULT_EVENT_COLOR = "#023E87";
 
-const getEventTextColor = (bgColor: string): string => {
-  // Simple luminance check
-  const hex = bgColor.replace("#", "");
-  const r = parseInt(hex.slice(0, 2), 16);
-  const g = parseInt(hex.slice(2, 4), 16);
-  const b = parseInt(hex.slice(4, 6), 16);
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return luminance > 0.5 ? "#000000" : "#FFFFFF";
-};
-
 export function AgendaView({
   events,
   currentDate,
@@ -150,7 +140,6 @@ export function AgendaView({
             <div className="space-y-2">
               {dayEvents.map((event) => {
                 const eventColor = resolveEventColor(event);
-                const _textColor = getEventTextColor(eventColor);
 
                 return (
                   <button

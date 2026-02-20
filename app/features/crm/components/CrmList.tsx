@@ -2,7 +2,7 @@ import { useTranslation } from "~/lib/i18n/useTranslation";
 
 import { usePipelines } from "../hooks/useCrm";
 
-export function CrmList(): JSX.Element {
+export function CrmList() {
   const { t } = useTranslation();
   const { data, isLoading, isError } = usePipelines({ page: 1, page_size: 20 });
 

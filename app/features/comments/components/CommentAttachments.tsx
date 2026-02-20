@@ -7,7 +7,7 @@ import { useTranslation } from "~/lib/i18n/useTranslation";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
-import { CommentAttachment } from "~/features/comments/types/comment.types";
+import type { CommentAttachment } from "~/features/comments/types/comment.types";
 
 interface CommentAttachmentsProps {
   attachments: CommentAttachment[];
@@ -26,7 +26,7 @@ export function CommentAttachments({
     return null;
   }
 
-  const getFileIcon = (fileId: string) => {
+  const getFileIcon = (_fileId: string) => {
     // Simple file type detection based on file ID or extension
     // In a real implementation, this would use the file metadata
     return "📎";

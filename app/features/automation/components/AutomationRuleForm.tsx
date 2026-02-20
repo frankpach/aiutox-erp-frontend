@@ -12,7 +12,6 @@ import { Textarea } from "~/components/ui/textarea";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
-import { Badge } from "~/components/ui/badge";
 import { 
   useCreateAutomationRule, 
   useUpdateAutomationRule,
@@ -42,9 +41,9 @@ export function AutomationRuleForm({ rule, onSubmit, onCancel, loading }: Automa
     priority: rule?.priority || 1,
   });
 
-  const { data: triggerTypes } = useTriggerTypes();
-  const { data: actionTypes } = useActionTypes();
-  const { data: conditionOperators } = useConditionOperators();
+  useTriggerTypes();
+  useActionTypes();
+  useConditionOperators();
 
   const createRuleMutation = useCreateAutomationRule();
   const updateRuleMutation = useUpdateAutomationRule();
@@ -67,15 +66,15 @@ export function AutomationRuleForm({ rule, onSubmit, onCancel, loading }: Automa
         result = await createRuleMutation.mutateAsync(formData as AutomationRuleCreate);
       }
       
-      if (result.success && result.rule) {
-        onSubmit?.(result.rule);
+      if (result?.data) {
+        onSubmit?.(result.data);
       }
     } catch (error) {
       console.error("Failed to save rule:", error);
     }
   };
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: string, value: unknown) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -94,7 +93,7 @@ export function AutomationRuleForm({ rule, onSubmit, onCancel, loading }: Automa
     }));
   };
 
-  const updateCondition = (index: number, field: string, value: any) => {
+  const updateCondition = (index: number, field: string, value: unknown) => {
     setFormData(prev => ({
       ...prev,
       conditions: prev.conditions?.map((condition, i) => 
@@ -122,7 +121,7 @@ export function AutomationRuleForm({ rule, onSubmit, onCancel, loading }: Automa
     }));
   };
 
-  const updateAction = (index: number, field: string, value: any) => {
+  const updateAction = (index: number, field: string, value: unknown) => {
     setFormData(prev => ({
       ...prev,
       actions: prev.actions?.map((action, i) => 
@@ -304,7 +303,7 @@ export function AutomationRuleForm({ rule, onSubmit, onCancel, loading }: Automa
           {formData.conditions?.map((condition, index) => (
             <div key={index} className="border rounded-lg p-4 space-y-4">
               <div className="flex items-center justify-between">
-                <h4 className="font-medium">{t("automation.form.condition", { index: index + 1 })}</h4>
+                <h4 className="font-medium">{t("automation.form.condition")}</h4>
                 <Button
                   type="button"
                   variant="outline"
@@ -352,7 +351,7 @@ export function AutomationRuleForm({ rule, onSubmit, onCancel, loading }: Automa
                 <div>
                   <Label>{t("automation.form.value")}</Label>
                   <Input
-                    value={condition.value}
+                    value={String(condition.value ?? "")}
                     onChange={(e) => updateCondition(index, "value", e.target.value)}
                     placeholder={t("automation.form.valuePlaceholder")}
                   />
@@ -396,7 +395,7 @@ export function AutomationRuleForm({ rule, onSubmit, onCancel, loading }: Automa
           {formData.actions?.map((action, index) => (
             <div key={index} className="border rounded-lg p-4 space-y-4">
               <div className="flex items-center justify-between">
-                <h4 className="font-medium">{t("automation.form.action", { index: index + 1 })}</h4>
+                <h4 className="font-medium">{t("automation.form.action")}</h4>
                 <Button
                   type="button"
                   variant="outline"
@@ -460,7 +459,7 @@ export function AutomationRuleForm({ rule, onSubmit, onCancel, loading }: Automa
                       <Label>{t("automation.form.recipients")}</Label>
                       <Input
                         value={action.recipients?.join(", ") || ""}
-                        onChange={(e) => updateAction(index, "recipients", e.target.value.split(",").map(r => r.trim()))}
+                        onChange={(e) => updateAction(index, "recipients", e.target.value.split(",").map((r: string) => r.trim()))}
                         placeholder={t("automation.form.recipientsPlaceholder")}
                       />
                     </div>

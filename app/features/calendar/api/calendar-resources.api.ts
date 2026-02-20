@@ -200,10 +200,10 @@ export async function resizeEvent(
  * This would typically be a backend endpoint
  */
 export async function checkResourceAvailability(
-  resourceId: string,
-  startTime: string,
-  endTime: string,
-  excludeEventId?: string
+  _resourceId: string,
+  _startTime: string,
+  _endTime: string,
+  _excludeEventId?: string
 ): Promise<{ available: boolean }> {
   // TODO: Implement backend endpoint
   // For now, return mock data

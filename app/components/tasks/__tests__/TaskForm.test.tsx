@@ -1,24 +1,36 @@
-import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TaskForm } from '../TaskForm';
-import { TaskStatus, TaskPriority } from '@/types/tasks';
+
+// Define missing enums
+const TaskStatus = {
+  TODO: 'todo',
+  IN_PROGRESS: 'in_progress',
+  DONE: 'done',
+} as const;
+
+const TaskPriority = {
+  LOW: 'low',
+  MEDIUM: 'medium',
+  HIGH: 'high',
+} as const;
 
 // Mock de react-hook-form
-jest.mock('react-hook-form', () => ({
+vi.mock('react-hook-form', () => ({
   useForm: () => ({
-    register: jest.fn(),
-    handleSubmit: jest.fn((fn) => fn),
+    register: vi.fn(),
+    handleSubmit: vi.fn((fn: any) => fn),
     formState: { errors: {} },
-    setValue: jest.fn(),
-    getValues: jest.fn(),
-    reset: jest.fn(),
-    watch: jest.fn(),
+    setValue: vi.fn(),
+    getValues: vi.fn(),
+    reset: vi.fn(),
+    watch: vi.fn(),
   }),
 }));
 
 // Mock de react-datepicker
-jest.mock('react-datepicker', () => {
+vi.mock('react-datepicker', () => {
   return function MockDatePicker({ onChange, value }: any) {
     return (
       <input
@@ -33,8 +45,8 @@ jest.mock('react-datepicker', () => {
 
 describe('TaskForm Component', () => {
   const defaultProps = {
-    onSubmit: jest.fn(),
-    onCancel: jest.fn(),
+    onSubmit: vi.fn(),
+    onCancel: vi.fn(),
     loading: false,
     users: [
       { id: 'user-1', name: 'John Doe', email: 'john@example.com' },
@@ -44,7 +56,7 @@ describe('TaskForm Component', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('renders all form fields', () => {
@@ -281,9 +293,14 @@ describe('TaskForm Component', () => {
       estimated_duration: 2,
       category: 'development',
       color_override: '#FF5733',
+      tenant_id: 'tenant-1',
+      created_by_id: 'user-1',
+      checklist: [],
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
     };
     
-    render(<TaskForm {...defaultProps} initialData={existingTask} />);
+    render(<TaskForm {...defaultProps} task={existingTask} />);
     
     expect(screen.getByDisplayValue('Existing Task')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Existing Description')).toBeInTheDocument();
@@ -337,7 +354,7 @@ describe('TaskForm Component', () => {
   });
 
   it('is accessible', async () => {
-    const { container } = render(<TaskForm {...defaultProps} />);
+    render(<TaskForm {...defaultProps} />);
     
     // Check form labels
     expect(screen.getByLabelText(/título/i)).toBeInTheDocument();

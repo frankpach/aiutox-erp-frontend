@@ -3,7 +3,7 @@
  * Form for creating and editing approval requests
  */
 
-import { useState, useEffect } from "react";
+import React, { useState } from 'react';
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -198,7 +198,7 @@ export function ApprovalRequestForm({
                       No hay entidades disponibles
                     </SelectItem>
                   ) : (
-                    entities.map((entity: any) => (
+                    entities.map((entity: { id: string; name?: string; title?: string }) => (
                       <SelectItem key={entity.id} value={entity.id}>
                         {entity.name || entity.title || entity.id}
                       </SelectItem>

@@ -5,10 +5,7 @@
 
 import type { Node, Edge } from "reactflow";
 import type {
-  FlowNode,
-  FlowEdge,
   ApprovalNodeData,
-  ConcentratorNodeData,
 } from "../types/flow-editor.types";
 import type { ApprovalStepResponse } from "../types/approval.types";
 
