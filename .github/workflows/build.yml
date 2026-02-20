@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    runs-on: [self-hosted, aiutox]
+    runs-on: self-hosted
     # Solo ejecutar en pushes, no en PRs
     if: github.event_name == 'push'
     

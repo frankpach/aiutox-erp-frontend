@@ -1,0 +1,11 @@
+# .github/workflows/test-runner.yml
+name: Test Runner
+
+on:
+  workflow_dispatch:  # Permite ejecutar manualmente
+
+jobs:
+  test:
+    runs-on: [self-hosted, aiutox]
+    steps:
+      - run: echo "Runner test at $(date)"
