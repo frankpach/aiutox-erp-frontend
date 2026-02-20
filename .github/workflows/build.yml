@@ -7,7 +7,7 @@ on:
 jobs:
   # Job para runner local (Windows) - Solo tests
   test-local:
-    runs-on: self-hosted
+    runs-on: [self-hosted, Windows, AiutoX]
     if: github.event_name == 'push'
     
     steps:
