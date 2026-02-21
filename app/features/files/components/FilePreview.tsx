@@ -52,12 +52,11 @@ export function FilePreview({
         window.URL.revokeObjectURL(url);
       };
     }
-    return;
   }, [previewBlob]);
 
   const handleDownload = () => {
     downloadFile(fileId, {
-      onSuccess: (blob: any) => {
+      onSuccess: (blob: Blob) => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;

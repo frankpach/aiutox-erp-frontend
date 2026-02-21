@@ -76,7 +76,7 @@ export function useAuth() {
           is_active: true, // /me endpoint requires authentication, so user is active
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-          roles: (userData.roles || []) as any[], // Cast string[] to UserRole[]
+          roles: (userData.roles || []) as unknown as User["roles"], // Cast string[] to UserRole[]
           permissions: userData.permissions || [],
         };
 

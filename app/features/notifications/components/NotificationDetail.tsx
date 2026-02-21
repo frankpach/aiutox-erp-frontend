@@ -16,6 +16,7 @@ import {
   DeleteIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import type { NotificationQueue } from "~/features/notifications/types/notifications.types";
 
 export function NotificationDetail() {
   const params = useParams();
@@ -24,7 +25,7 @@ export function NotificationDetail() {
   // const { data: notificationResponse, isLoading, error } = useNotification(id);
   const isLoading = false;
   const error = null;
-  const notification = { id, event_type: "Test", recipient_id: "test@test.com", channel: "email", status: "pending", created_at: new Date().toISOString() } as any;
+  const notification = { id, event_type: "Test", recipient_id: "test@test.com", channel: "email", status: "pending", created_at: new Date().toISOString() } as unknown as NotificationQueue;
 
 
   const getStatusBadge = (status: string): string => {

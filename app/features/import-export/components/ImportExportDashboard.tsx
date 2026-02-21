@@ -40,14 +40,14 @@ export function ImportExportDashboard({
   const { data: exportJobs, isLoading: exportJobsLoading } = useExportJobs({ page_size: 10 });
 
   const handleImportJobClick = (job: ImportJob | ExportJob) => {
-    if (job && 'progress' in job) {
-      onImportJobClick?.(job as ImportJob);
+    if (!('export_format' in job)) {
+      onImportJobClick?.(job);
     }
   };
 
   const handleExportJobClick = (job: ImportJob | ExportJob) => {
-    if (job && 'export_format' in job) {
-      onExportJobClick?.(job as ExportJob);
+    if ('export_format' in job) {
+      onExportJobClick?.(job);
     }
   };
 

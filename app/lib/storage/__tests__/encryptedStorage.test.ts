@@ -39,7 +39,6 @@ vi.mock("../encryptedStorage", async () => {
     setEncrypted: vi.fn().mockImplementation(async (key, data, _tenantId, _secret) => {
       const encrypted = btoa(JSON.stringify({ data, timestamp: Date.now(), ttl: 2592000000 }));
       localStorage.setItem(`encrypted:${key}`, encrypted);
-      return;
     }),
     getEncrypted: vi.fn().mockImplementation(async (key, _tenantId, _secret) => {
       const stored = localStorage.getItem(`encrypted:${key}`);
@@ -148,7 +147,6 @@ describe("encryptedStorage", () => {
     it("should return null for expired data", async () => {
       // Set data with very short TTL - this test needs to be adjusted since setEncrypted doesn't accept TTL
       // For now, we'll skip this test as the mock doesn't support TTL
-      return;
     });
   });
 
@@ -166,7 +164,6 @@ describe("encryptedStorage", () => {
     it("should clear expired entries", async () => {
       // Set some data with short TTL - this test needs to be adjusted since setEncrypted doesn't accept TTL
       // For now, we'll skip this test as the mock doesn't support TTL
-      return;
     });
   });
 });

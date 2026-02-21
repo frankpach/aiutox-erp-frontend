@@ -23,14 +23,14 @@ import type { NotificationQueue, NotificationSendRequest } from "~/features/noti
 
 export function NotificationsQueue() {
   const sendNotification = useSendNotification();
-  const { data: queueResponse, isLoading, error, refetch } = useNotificationQueue() as any;
+  const { data: queueResponse, isLoading, error, refetch } = useNotificationQueue() as { data: { data: NotificationQueue[] } | undefined; isLoading: boolean; error: Error | null; refetch: () => void };
 
-  const queue = queueResponse?.data?.data || [];
+  const queue: NotificationQueue[] = queueResponse?.data || [];
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [channelFilter, setChannelFilter] = useState<string>("");
 
-  const filteredQueue = queue.filter((item: any) => {
+  const filteredQueue = queue.filter((item) => {
     const matchesSearch = item.event_type.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          item.recipient_id.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = !statusFilter || item.status === statusFilter;
@@ -94,7 +94,7 @@ export function NotificationsQueue() {
 
   if (error) {
     return (
-      <PageLayout title="Notifications Queue" error={error as Error}>
+      <PageLayout title="Notifications Queue" error={error ?? undefined}>
         <div className="text-center py-12">
           <p className="text-gray-500 mb-4">Error loading notifications queue</p>
           <Button onClick={() => refetch()}>
@@ -169,7 +169,7 @@ export function NotificationsQueue() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-yellow-600">
-                {queue.filter((q: any) => q.status === "pending").length}
+                {queue.filter((q) => q.status === "pending").length}
               </div>
               <p className="text-sm text-gray-600">Pending notifications</p>
             </CardContent>
@@ -181,7 +181,7 @@ export function NotificationsQueue() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-green-600">
-                {queue.filter((q: any) => q.status === "sent").length}
+                {queue.filter((q) => q.status === "sent").length}
               </div>
               <p className="text-sm text-gray-600">Sent notifications</p>
             </CardContent>
@@ -193,7 +193,7 @@ export function NotificationsQueue() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-red-600">
-                {queue.filter((q: any) => q.status === "failed").length}
+                {queue.filter((q) => q.status === "failed").length}
               </div>
               <p className="text-sm text-gray-600">Failed notifications</p>
             </CardContent>
@@ -217,7 +217,7 @@ export function NotificationsQueue() {
               </div>
             ) : (
               <div className="space-y-4">
-                {filteredQueue.map((item: any) => (
+                {filteredQueue.map((item) => (
                   <div key={item.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex-1">

@@ -11,7 +11,7 @@ import { Textarea } from "~/components/ui/textarea";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import type { Workflow, WorkflowCreate, WorkflowUpdate, WorkflowStepFormData } from "../types/workflow.types";
+import type { Workflow, WorkflowCreate, WorkflowUpdate, WorkflowStep, WorkflowStepFormData } from "../types/workflow.types";
 import { Plus, Trash2, GripVertical } from "lucide-react";
 
 interface WorkflowFormProps {
@@ -59,7 +59,7 @@ export function WorkflowForm({
           order: idx + 1,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-        })) as any[], // Cast to WorkflowStep[]
+        })) as WorkflowStep[], // Cast to WorkflowStep[]
       },
       metadata: null,
     };

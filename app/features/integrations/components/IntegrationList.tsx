@@ -36,7 +36,7 @@ export function IntegrationList() {
   const [typeFilter, setTypeFilter] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
 
-  const filteredIntegrations = integrations.filter((integration: any) => {
+  const filteredIntegrations = integrations.filter((integration) => {
     const matchesSearch = integration.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          integration.type.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = !typeFilter || integration.type === typeFilter;

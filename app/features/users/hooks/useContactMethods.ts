@@ -89,7 +89,7 @@ export function useContactMethod(contactMethodId: string | null) {
     queryKey: contactMethodKeys.detail(contactMethodId || ""),
     queryFn: () => {
       if (!contactMethodId) {
-        return Promise.resolve({ data: null, meta: null, error: null } as any);
+        return Promise.resolve({ data: null, meta: null, error: null } as unknown as Awaited<ReturnType<typeof getContactMethod>>);
       }
       return getContactMethod(contactMethodId);
     },

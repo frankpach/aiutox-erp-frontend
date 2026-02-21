@@ -5,7 +5,7 @@
 
 import { useState } from "react";
 import { useTranslation } from "~/lib/i18n/useTranslation";
-import { DataTable } from "~/components/common/DataTable";
+import { DataTable, type DataTableColumn } from "~/components/common/DataTable";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
@@ -237,7 +237,7 @@ export function PubSubGroupView({ streamName, groupName, onBack, onConsumerView 
           </div>
         ),
       },
-    ] as any[];
+    ] as DataTableColumn<PubSubConsumer>[];
 
     return (
       <Card>

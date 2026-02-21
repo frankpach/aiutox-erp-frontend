@@ -3,7 +3,7 @@
  * Displays JSON files with syntax highlighting
  */
 
-import { useMemo } from "react";
+import { useMemo, type CSSProperties } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import pkg from "react-syntax-highlighter/dist/esm/styles/prism/vsc-dark-plus";
 const { vscDarkPlus } = pkg;
@@ -85,7 +85,7 @@ export function JsonPreview({ fileId }: JsonPreviewProps) {
           {isValidJson ? (
             <SyntaxHighlighter
               language="json"
-              style={vscDarkPlus as any}
+              style={vscDarkPlus as Record<string, CSSProperties>}
               customStyle={{
                 margin: 0,
                 borderRadius: "0.375rem",

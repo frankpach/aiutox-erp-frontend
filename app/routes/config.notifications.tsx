@@ -514,7 +514,7 @@ export default function NotificationsConfigPage() {
             <TemplateList
               onEdit={(template: Template) => {
                 // Convert back to NotificationTemplate if needed
-                setEditingTemplate(template as any);
+                setEditingTemplate(template as unknown as NotificationTemplate);
                 setShowTemplateEditor(true);
               }}
               onCreate={() => {

@@ -20,7 +20,7 @@ import {
   useIntegrationLogs,
   useIntegrationEvents
 } from "~/features/integrations/hooks/useIntegrations";
-import type { Integration } from "~/features/integrations/types/integrations.types";
+import type { Integration, IntegrationEvent, IntegrationEventListResponse } from "~/features/integrations/types/integrations.types";
 
 interface IntegrationCardProps {
   integration: Integration;
@@ -40,11 +40,11 @@ export function IntegrationCard({
 
   const { data: healthResponse } = useIntegrationHealth(integration.id);
   const { data: logsResponse } = useIntegrationLogs(integration.id);
-  const { data: eventsResponse } = useIntegrationEvents(integration.id) as any;
+  const { data: eventsResponse } = useIntegrationEvents(integration.id) as { data: IntegrationEventListResponse | undefined };
 
   const health = healthResponse?.data;
   const logs = logsResponse?.data || [];
-  const events = eventsResponse?.data?.data || [];
+  const events = eventsResponse?.data || [];
 
   const getStatusColor = (status: string): string => {
     switch (status) {
@@ -334,7 +334,7 @@ export function IntegrationCard({
                 </div>
                 
                 <div className="space-y-2">
-                  {events.slice(0, 3).map((event: any) => (
+                  {events.slice(0, 3).map((event: IntegrationEvent) => (
                     <div key={event.id} className="border-l-4 border-gray-200 pl-4 py-2">
                       <div className="flex items-center gap-2 mb-1">
                         <div className={`w-2 h-2 rounded-full ${

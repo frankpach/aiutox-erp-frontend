@@ -13,7 +13,9 @@ import { LoadingSpinner } from "~/components/common/LoadingSpinner";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 import { useUserPermissions, usePermissionsByModule } from "../hooks/useUserPermissions";
 import { ModulePermissionsView } from "./ModulePermissionsView";
-import type { User } from "../types/user.types";
+import type { User, DelegatedPermission } from "../types/user.types";
+
+type DelegatedPermissionWithStatus = DelegatedPermission & { is_active?: boolean };
 
 interface UserPermissionsManagerProps {
   user: User;
@@ -51,7 +53,7 @@ export function UserPermissionsManager({
   );
 
   // Group delegated permissions by module
-  const delegatedByModule = new Map<string, Array<any>>();
+  const delegatedByModule = new Map<string, DelegatedPermissionWithStatus[]>();
   if (permissions?.delegated_permissions) {
     for (const delegated of permissions.delegated_permissions) {
       const module = delegated.permission?.split(".")[0] || "unknown";

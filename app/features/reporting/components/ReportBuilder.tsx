@@ -136,7 +136,7 @@ export function ReportBuilder({
     if (newParameter.type && newParameter.name) {
       const paramName = newParameter.name;
       const paramDef: ParameterDefinition = {
-        type: newParameter.type!,
+        type: newParameter.type,
         required: newParameter.required ?? false,
         default: newParameter.default,
         options: newParameter.options,

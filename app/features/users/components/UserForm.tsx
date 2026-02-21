@@ -149,7 +149,7 @@ export function UserForm({
       data,
     });
 
-    let cleanedData: Partial<UserCreate | UserUpdate> = {};
+    const cleanedData: Partial<UserCreate | UserUpdate> = {};
 
     try {
       // Si hay un archivo de avatar, subirlo primero
