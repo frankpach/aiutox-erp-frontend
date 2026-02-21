@@ -5,7 +5,7 @@
 
 import { describe, it, expect, vi } from "vitest";
 // import { TaskList } from "~/features/tasks/components/TaskList"; // Component not exported
-import type { Task, TaskStatus, TaskPriority } from "~/features/tasks/types/task.types"; 
+import type { Task, TaskStatus, TaskPriority } from "~/features/tasks/types/task.types";
 
 // Mock useTranslation
 vi.mock("~/lib/i18n/useTranslation", () => ({
