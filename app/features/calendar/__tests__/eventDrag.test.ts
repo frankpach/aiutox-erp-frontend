@@ -26,8 +26,9 @@ describe("eventDrag utils", () => {
     const targetDate = new Date("2025-01-12T00:00:00.000Z");
     const result = buildMovedEventTimes(baseEvent, targetDate);
 
-    expect(new Date(result.start_time).toISOString()).toBe("2025-01-11T09:00:00.000Z");
-    expect(new Date(result.end_time).toISOString()).toBe("2025-01-11T10:00:00.000Z");
+    // preserveTime=true: UTC time-of-day (09:00Z) is preserved on the target date (Jan 12)
+    expect(new Date(result.start_time).toISOString()).toBe("2025-01-12T09:00:00.000Z");
+    expect(new Date(result.end_time).toISOString()).toBe("2025-01-12T10:00:00.000Z");
   });
 
   it("moves event using target time when preserveTime is false", () => {
@@ -39,7 +40,10 @@ describe("eventDrag utils", () => {
   });
 
   it("resizes event using target date while keeping valid range", () => {
-    const targetDate = new Date("2025-01-10T00:00:00.000Z");
+    // targetDate midnight UTC + preserveTime → end becomes 10:00Z (same as original end)
+    // 10:00Z > start 09:00Z → valid, not null
+    // Use a date before start_time to get null
+    const targetDate = new Date("2025-01-09T00:00:00.000Z");
     const result = buildResizedEventTimes(baseEvent, targetDate);
 
     expect(result).toBeNull();

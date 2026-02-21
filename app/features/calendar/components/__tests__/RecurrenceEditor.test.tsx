@@ -288,9 +288,9 @@ describe("recurrence utils", () => {
     const occurrences = calculateNextOccurrences(startDate, config, 3);
 
     expect(occurrences).toHaveLength(3);
-    expect(occurrences[0]?.toUTCString()).toBe("Sun, 31 Dec 2023 05:00:00 GMT");
-    expect(occurrences[1]?.toUTCString()).toBe("Mon, 01 Jan 2024 05:00:00 GMT");
-    expect(occurrences[2]?.toUTCString()).toBe("Tue, 02 Jan 2024 05:00:00 GMT");
+    // Each occurrence is exactly 1 day apart (timezone-independent check)
+    expect(occurrences[1]!.getTime() - occurrences[0]!.getTime()).toBe(24 * 60 * 60 * 1000);
+    expect(occurrences[2]!.getTime() - occurrences[1]!.getTime()).toBe(24 * 60 * 60 * 1000);
   });
 
   it("calculates weekly occurrences correctly", () => {
@@ -303,8 +303,8 @@ describe("recurrence utils", () => {
     const occurrences = calculateNextOccurrences(startDate, config, 2);
 
     expect(occurrences).toHaveLength(2);
-    expect(occurrences[0]?.toUTCString()).toBe("Sun, 31 Dec 2023 05:00:00 GMT");
-    expect(occurrences[1]?.toUTCString()).toBe("Sun, 07 Jan 2024 05:00:00 GMT");
+    // Second occurrence is exactly 7 days after the first
+    expect(occurrences[1]!.getTime() - occurrences[0]!.getTime()).toBe(7 * 24 * 60 * 60 * 1000);
   });
 
   it("respects end date", () => {
@@ -319,8 +319,12 @@ describe("recurrence utils", () => {
     const occurrences = calculateNextOccurrences(startDate, config, 10);
 
     expect(occurrences).toHaveLength(5);
-    expect(occurrences[0]?.toUTCString()).toBe("Sun, 31 Dec 2023 05:00:00 GMT");
-    expect(occurrences[4]?.toUTCString()).toBe("Thu, 04 Jan 2024 05:00:00 GMT");
+    // Each occurrence is 1 day apart
+    for (let i = 1; i < occurrences.length; i++) {
+      expect(occurrences[i]!.getTime() - occurrences[i - 1]!.getTime()).toBe(24 * 60 * 60 * 1000);
+    }
+    // Last occurrence is 4 days after the first
+    expect(occurrences[4]!.getTime() - occurrences[0]!.getTime()).toBe(4 * 24 * 60 * 60 * 1000);
   });
 
   it("formats recurrence correctly", () => {

@@ -27,14 +27,14 @@ export function buildMovedEventTimes(
 
   const newStart = new Date(targetDate);
   if (!event.all_day && preserveTime) {
-    newStart.setHours(
-      originalStart.getHours(),
-      originalStart.getMinutes(),
-      originalStart.getSeconds(),
-      originalStart.getMilliseconds()
+    newStart.setUTCHours(
+      originalStart.getUTCHours(),
+      originalStart.getUTCMinutes(),
+      originalStart.getUTCSeconds(),
+      originalStart.getUTCMilliseconds()
     );
   } else if (event.all_day) {
-    newStart.setHours(0, 0, 0, 0);
+    newStart.setUTCHours(0, 0, 0, 0);
   }
 
   const newEnd = new Date(newStart.getTime() + duration);
@@ -54,11 +54,11 @@ export function buildResizedEventTimes(
   const originalEnd = new Date(event.end_time);
 
   if (!event.all_day && preserveTime) {
-    newEnd.setHours(
-      originalEnd.getHours(),
-      originalEnd.getMinutes(),
-      originalEnd.getSeconds(),
-      originalEnd.getMilliseconds()
+    newEnd.setUTCHours(
+      originalEnd.getUTCHours(),
+      originalEnd.getUTCMinutes(),
+      originalEnd.getUTCSeconds(),
+      originalEnd.getUTCMilliseconds()
     );
   }
 
