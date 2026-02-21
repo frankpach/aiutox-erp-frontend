@@ -8,19 +8,41 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor-query': ['@tanstack/react-query'],
-          'vendor-ui': ['@radix-ui/react-dialog', '@radix-ui/react-select', '@radix-ui/react-dropdown-menu'],
-          'vendor-date': ['date-fns'],
-          'tasks-core': [
-            './app/features/tasks/components/TaskList.tsx',
-            './app/features/tasks/components/TaskQuickAdd.tsx',
-          ],
-          'tasks-advanced': [
-            './app/features/tasks/components/BoardView.tsx',
-            './app/features/tasks/components/TaskCalendar.tsx',
-          ],
+        manualChunks(id) {
+          // react/react-dom/react-router-dom are external in SSR — skip them
+          if (
+            id.includes('node_modules/react/') ||
+            id.includes('node_modules/react-dom/') ||
+            id.includes('node_modules/react-router-dom/')
+          ) {
+            return undefined;
+          }
+          if (id.includes('node_modules/@tanstack/react-query')) {
+            return 'vendor-query';
+          }
+          if (
+            id.includes('node_modules/@radix-ui/react-dialog') ||
+            id.includes('node_modules/@radix-ui/react-select') ||
+            id.includes('node_modules/@radix-ui/react-dropdown-menu')
+          ) {
+            return 'vendor-ui';
+          }
+          if (id.includes('node_modules/date-fns')) {
+            return 'vendor-date';
+          }
+          if (
+            id.includes('app/features/tasks/components/TaskList') ||
+            id.includes('app/features/tasks/components/TaskQuickAdd')
+          ) {
+            return 'tasks-core';
+          }
+          if (
+            id.includes('app/features/tasks/components/BoardView') ||
+            id.includes('app/features/tasks/components/TaskCalendar')
+          ) {
+            return 'tasks-advanced';
+          }
+          return undefined;
         },
       },
     },
