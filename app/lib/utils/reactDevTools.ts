@@ -45,7 +45,7 @@ export function initializeReactDevTools() {
       if (hook.renderers) {
         // React 18+ usa renderers
         for (const renderer of hook.renderers.values()) {
-          if (renderer && typeof renderer.findFiberByHostInstance === "function") {
+          if (renderer && typeof renderer === 'object' && 'findFiberByHostInstance' in renderer && typeof renderer.findFiberByHostInstance === "function") {
             // Renderer válido encontrado
             console.debug("[React DevTools] Renderer configurado correctamente");
           }

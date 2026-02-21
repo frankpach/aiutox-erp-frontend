@@ -4,7 +4,6 @@
  */
 
 import { useState } from "react";
-import { useTranslation } from "~/lib/i18n/useTranslation";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -24,32 +23,38 @@ export function TaskChecklist({
   onChange,
   readonly = false,
 }: TaskChecklistProps) {
-  const { t } = useTranslation();
+  // const { t } = useTranslation(); // Unused for now
   const [newItemText, setNewItemText] = useState("");
 
   const toggleItem = (index: number) => {
     if (readonly) return;
 
     const updatedItems = [...items];
-    updatedItems[index] = {
-      ...updatedItems[index],
-      completed: !updatedItems[index].completed,
-      completed_at: !updatedItems[index].completed
-        ? new Date().toISOString()
-        : undefined,
-    };
+    const currentItem = updatedItems[index];
+    if (currentItem) {
+      updatedItems[index] = {
+        ...currentItem,
+        completed: !currentItem.completed,
+        completed_at: !currentItem.completed
+          ? new Date().toISOString()
+          : undefined,
+      };
+    }
 
     onChange?.(updatedItems);
   };
 
-  const updateItemText = (index: number, text: string) => {
+  const updateItemText = (index: number, title: string) => {
     if (readonly) return;
 
     const updatedItems = [...items];
-    updatedItems[index] = {
-      ...updatedItems[index],
-      text,
-    };
+    const currentItem = updatedItems[index];
+    if (currentItem) {
+      updatedItems[index] = {
+        ...currentItem,
+        title,
+      };
+    }
 
     onChange?.(updatedItems);
   };
@@ -66,7 +71,7 @@ export function TaskChecklist({
 
     const newItem: ChecklistItem = {
       id: `new-${Date.now()}`,
-      text: newItemText.trim(),
+      title: newItemText.trim(),
       completed: false,
     };
 
@@ -128,7 +133,7 @@ export function TaskChecklist({
                   <span
                     className={`block w-full ${item.completed ? "line-through text-gray-500" : ""}`}
                   >
-                    {item.text}
+                    {item.title}
                   </span>
                 ) : (
                   <Input

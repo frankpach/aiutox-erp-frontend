@@ -16,13 +16,11 @@ import { ErrorState } from "~/components/common/ErrorState";
 import { 
   usePubSubStream,
   usePubSubGroups,
-  useCreatePubSubGroup,
   useDeletePubSubGroup,
-  useAddPubSubMessage,
   useClearPubSubStream,
   useTrimPubSubStream
 } from "../hooks/usePubSub";
-import type { PubSubStream, PubSubGroup, PubSubStreamEntry } from "../types/pubsub.types";
+import type { PubSubGroup, PubSubStreamEntry } from "../types/pubsub.types";
 
 interface PubSubStreamViewProps {
   streamName: string;
@@ -38,23 +36,10 @@ export function PubSubStreamView({ streamName, onBack, onGroupView }: PubSubStre
   const { data: stream, isLoading: streamLoading, error: streamError, refetch: refetchStream } = usePubSubStream(streamName);
   const { data: groups, isLoading: groupsLoading, error: groupsError, refetch: refetchGroups } = usePubSubGroups(streamName);
 
-  const createGroupMutation = useCreatePubSubGroup();
   const deleteGroupMutation = useDeletePubSubGroup();
-  const addMessageMutation = useAddPubSubMessage();
   const clearStreamMutation = useClearPubSubStream();
   const trimStreamMutation = useTrimPubSubStream();
 
-  const handleCreateGroup = async (groupName: string) => {
-    try {
-      await createGroupMutation.mutateAsync({
-        name: groupName,
-        stream_name: streamName,
-      });
-      refetchGroups();
-    } catch (error) {
-      console.error("Failed to create group:", error);
-    }
-  };
 
   const handleDeleteGroup = async (groupName: string) => {
     try {
@@ -68,17 +53,6 @@ export function PubSubStreamView({ streamName, onBack, onGroupView }: PubSubStre
     }
   };
 
-  const handleAddMessage = async (data: Record<string, unknown>) => {
-    try {
-      await addMessageMutation.mutateAsync({
-        stream_name: streamName,
-        data,
-      });
-      refetchStream();
-    } catch (error) {
-      console.error("Failed to add message:", error);
-    }
-  };
 
   const handleClearStream = async () => {
     try {
@@ -123,33 +97,33 @@ export function PubSubStreamView({ streamName, onBack, onGroupView }: PubSubStre
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <h4 className="font-medium">{t("pubsub.stream.name")}</h4>
-                <p className="text-sm text-gray-600">{stream?.name}</p>
+                <p className="text-sm text-gray-600">{stream?.data?.name}</p>
               </div>
               <div>
                 <h4 className="font-medium">{t("pubsub.stream.length")}</h4>
-                <p className="text-sm text-gray-600">{stream?.length}</p>
+                <p className="text-sm text-gray-600">{stream?.data?.length}</p>
               </div>
               <div>
                 <h4 className="font-medium">{t("pubsub.stream.groups")}</h4>
-                <p className="text-sm text-gray-600">{stream?.groups}</p>
+                <p className="text-sm text-gray-600">{stream?.data?.groups}</p>
               </div>
               <div>
                 <h4 className="font-medium">{t("pubsub.stream.pending")}</h4>
-                <p className="text-sm text-gray-600">{stream?.pending}</p>
+                <p className="text-sm text-gray-600">{stream?.data?.pending}</p>
               </div>
               <div>
                 <h4 className="font-medium">{t("pubsub.stream.firstEntry")}</h4>
-                <p className="text-sm text-gray-600">{stream?.first_entry_id || "-"}</p>
+                <p className="text-sm text-gray-600">{stream?.data?.first_entry_id || "-"}</p>
               </div>
               <div>
                 <h4 className="font-medium">{t("pubsub.stream.lastEntry")}</h4>
-                <p className="text-sm text-gray-600">{stream?.last_entry_id || "-"}</p>
+                <p className="text-sm text-gray-600">{stream?.data?.last_entry_id || "-"}</p>
               </div>
               <div>
                 <h4 className="font-medium">{t("pubsub.stream.lastRead")}</h4>
                 <p className="text-sm text-gray-600">
-                  {stream?.last_read 
-                    ? new Date(stream.last_read).toLocaleString()
+                  {stream?.data?.last_read 
+                    ? new Date(stream.data.last_read).toLocaleString()
                     : "-"
                   }
                 </p>
@@ -157,8 +131,8 @@ export function PubSubStreamView({ streamName, onBack, onGroupView }: PubSubStre
               <div>
                 <h4 className="font-medium">{t("pubsub.stream.createdAt")}</h4>
                 <p className="text-sm text-gray-600">
-                  {stream?.created_at 
-                    ? new Date(stream.created_at).toLocaleString()
+                  {stream?.data?.created_at 
+                    ? new Date(stream.data.created_at).toLocaleString()
                     : "-"
                   }
                 </p>
@@ -218,8 +192,8 @@ export function PubSubStreamView({ streamName, onBack, onGroupView }: PubSubStre
     const columns = [
       {
         key: "name",
-        title: t("pubsub.groups.table.name"),
-        render: (group: PubSubGroup) => (
+        header: t("pubsub.groups.table.name"),
+        cell: (group: PubSubGroup) => (
           <div>
             <div className="font-medium">{group.name}</div>
             <div className="text-sm text-gray-500">{group.consumers} consumers</div>
@@ -228,8 +202,8 @@ export function PubSubStreamView({ streamName, onBack, onGroupView }: PubSubStre
       },
       {
         key: "pending",
-        title: t("pubsub.groups.table.pending"),
-        render: (group: PubSubGroup) => (
+        header: t("pubsub.groups.table.pending"),
+        cell: (group: PubSubGroup) => (
           <Badge variant={group.pending > 0 ? "destructive" : "secondary"}>
             {group.pending}
           </Badge>
@@ -237,8 +211,8 @@ export function PubSubStreamView({ streamName, onBack, onGroupView }: PubSubStre
       },
       {
         key: "last_delivered",
-        title: t("pubsub.groups.table.lastDelivered"),
-        render: (group: PubSubGroup) => (
+        header: t("pubsub.groups.table.lastDelivered"),
+        cell: (group: PubSubGroup) => (
           <div className="text-sm">
             {group.last_delivered_id 
               ? group.last_delivered_id.substring(0, 8) + "..."
@@ -249,8 +223,8 @@ export function PubSubStreamView({ streamName, onBack, onGroupView }: PubSubStre
       },
       {
         key: "created_at",
-        title: t("pubsub.groups.table.createdAt"),
-        render: (group: PubSubGroup) => (
+        header: t("pubsub.groups.table.createdAt"),
+        cell: (group: PubSubGroup) => (
           <div className="text-sm">
             {group.created_at 
               ? new Date(group.created_at).toLocaleString()
@@ -261,8 +235,8 @@ export function PubSubStreamView({ streamName, onBack, onGroupView }: PubSubStre
       },
       {
         key: "actions",
-        title: t("pubsub.groups.table.actions"),
-        render: (group: PubSubGroup) => (
+        header: t("pubsub.groups.table.actions"),
+        cell: (group: PubSubGroup) => (
           <div className="flex items-center space-x-2">
             <Button
               variant="ghost"
@@ -283,7 +257,7 @@ export function PubSubStreamView({ streamName, onBack, onGroupView }: PubSubStre
           </div>
         ),
       },
-    ];
+    ] as any[];
 
     return (
       <Card>
@@ -310,9 +284,9 @@ export function PubSubStreamView({ streamName, onBack, onGroupView }: PubSubStre
       return <ErrorState message={t("pubsub.error.loading")} />;
     }
 
-    const messages = stream?.entries || [];
+    const streamEntries = stream?.data?.entries || [];
 
-    if (messages.length === 0) {
+    if (streamEntries.length === 0) {
       return (
         <EmptyState
           title={t("pubsub.messages.empty.title")}
@@ -324,15 +298,15 @@ export function PubSubStreamView({ streamName, onBack, onGroupView }: PubSubStre
     const columns = [
       {
         key: "id",
-        title: t("pubsub.messages.table.id"),
-        render: (entry: PubSubStreamEntry) => (
+        header: t("pubsub.messages.table.id"),
+        cell: (entry: PubSubStreamEntry) => (
           <div className="font-mono text-sm">{entry.id.substring(0, 8)}...</div>
         ),
       },
       {
         key: "data",
-        title: t("pubsub.messages.table.data"),
-        render: (entry: PubSubStreamEntry) => (
+        header: t("pubsub.messages.table.data"),
+        cell: (entry: PubSubStreamEntry) => (
           <div className="text-sm">
             <pre className="bg-gray-100 p-2 rounded text-xs overflow-auto max-w-xs">
               {JSON.stringify(entry.data, null, 2)}
@@ -342,8 +316,8 @@ export function PubSubStreamView({ streamName, onBack, onGroupView }: PubSubStre
       },
       {
         key: "timestamp",
-        title: t("pubsub.messages.table.timestamp"),
-        render: (entry: PubSubStreamEntry) => (
+        header: t("pubsub.messages.table.timestamp"),
+        cell: (entry: PubSubStreamEntry) => (
           <div className="text-sm">
             {new Date(entry.timestamp).toLocaleString()}
           </div>
@@ -351,12 +325,12 @@ export function PubSubStreamView({ streamName, onBack, onGroupView }: PubSubStre
       },
       {
         key: "sequence",
-        title: t("pubsub.messages.table.sequence"),
-        render: (entry: PubSubStreamEntry) => (
+        header: t("pubsub.messages.table.sequence"),
+        cell: (entry: PubSubStreamEntry) => (
           <div className="text-sm">{entry.sequence}</div>
         ),
       },
-    ];
+    ] as any[];
 
     return (
       <Card>
@@ -365,7 +339,7 @@ export function PubSubStreamView({ streamName, onBack, onGroupView }: PubSubStre
         </CardHeader>
         <CardContent>
           <DataTable
-            data={messages}
+            data={streamEntries}
             columns={columns}
           />
         </CardContent>

@@ -52,9 +52,14 @@ export function WorkflowForm({
       enabled,
       definition: {
         steps: steps.map((s, idx) => ({
+          id: `temp-${idx}`, // Temporary ID for new steps
+          workflow_id: workflow?.id || 'temp',
+          tenant_id: 'temp', // Will be set by backend
           ...s,
           order: idx + 1,
-        })),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })) as any[], // Cast to WorkflowStep[]
       },
       metadata: null,
     };
@@ -71,7 +76,7 @@ export function WorkflowForm({
         order: steps.length + 1,
         config: null,
         transitions: null,
-      },
+      } as WorkflowStepFormData,
     ]);
   };
 
@@ -81,7 +86,12 @@ export function WorkflowForm({
 
   const updateStep = (index: number, field: keyof WorkflowStepFormData, value: string | number | Record<string, unknown> | Record<string, unknown>[] | null) => {
     const newSteps = [...steps];
-    newSteps[index] = { ...newSteps[index], [field]: value };
+    // Ensure name is never undefined when updating
+    const updatedStep = { ...newSteps[index], [field]: value } as WorkflowStepFormData;
+    if (field === 'name' && !updatedStep.name) {
+      updatedStep.name = `Step ${index + 1}`;
+    }
+    newSteps[index] = updatedStep;
     setSteps(newSteps);
   };
 

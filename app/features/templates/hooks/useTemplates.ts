@@ -20,13 +20,11 @@ import {
   getVersion,
 } from "~/features/templates/api/templates.api";
 import type { 
-  TemplateCreate, 
-  TemplateUpdate, 
   TemplateListParams,
-  TemplateCategoryCreate,
-  TemplateCategoryUpdate,
   TemplateRenderRequest,
   TemplateVersionListParams,
+  TemplateUpdate,
+  TemplateCategoryUpdate,
 } from "~/features/templates/types/template.types";
 
 // Templates Query hooks
@@ -140,12 +138,12 @@ export function useUpdateCategory() {
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: TemplateCategoryUpdate }) =>
       updateCategory(id, payload),
-    onSuccess: (_, variables) => {
+    onSuccess: () => {
       // Invalidate categories list queries
       queryClient.invalidateQueries({ queryKey: ["template-categories"] });
     },
-    onError: (error) => {
-      console.error("Failed to update category:", error);
+    onError: (_error) => {
+      console.error("Failed to update category:", _error);
     },
   });
 }

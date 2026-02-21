@@ -4,7 +4,7 @@
  */
 
 import { useNavigate } from "react-router";
-import { useTranslation } from "~/lib/i18n/useTranslation";
+// import { useTranslation } from "~/lib/i18n/useTranslation"; // Unused for now
 import { PageLayout } from "~/components/layout/PageLayout";
 import {
   Card,
@@ -18,8 +18,8 @@ import type { ApprovalFlowCreate } from "~/features/approvals/types/approval.typ
 
 import { ApprovalFlowForm } from "~/features/approvals/components/ApprovalFlowForm";
 
-export default function CreateApprovalFlowPage() {
-  const { t } = useTranslation();
+export default function ApprovalsCreatePage() {
+  // const { t } = useTranslation(); // Unused for now
   const navigate = useNavigate();
   const createApprovalFlow = useCreateApprovalFlow();
 

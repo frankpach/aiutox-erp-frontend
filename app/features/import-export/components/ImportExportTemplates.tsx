@@ -34,7 +34,7 @@ export function ImportExportTemplates({
   onTemplateCreate,
 }: ImportExportTemplatesProps) {
   const { t } = useTranslation();
-  const [selectedModule, setSelectedModule] = useState<string>("");
+  const [selectedModule] = useState<string>("");
 
   // Queries
   const { data: templates, isLoading } = useImportTemplates({

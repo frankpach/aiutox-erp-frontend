@@ -38,7 +38,6 @@ import {
   useCreateStatusDefinition,
   useUpdateStatusDefinition,
   useDeleteStatusDefinition,
-  useReorderStatusDefinitions,
 } from '../hooks/useTaskStatusDefinitions';
 import type {
   TaskStatusDefinition,
@@ -80,7 +79,6 @@ export function StatusCustomizer() {
   const createMutation = useCreateStatusDefinition();
   const updateMutation = useUpdateStatusDefinition();
   const deleteMutation = useDeleteStatusDefinition();
-  const reorderMutation = useReorderStatusDefinitions();
 
   const [showDialog, setShowDialog] = useState(false);
   const [editingStatus, setEditingStatus] = useState<TaskStatusDefinition | null>(
@@ -282,7 +280,7 @@ export function StatusCustomizer() {
               <Label>{t('tasks.statusCustomizer.type') || 'Tipo'}</Label>
               <Select
                 value={formData.type}
-                onValueChange={(value: TaskStatusType) =>
+                onValueChange={(value: 'open' | 'in_progress' | 'closed') =>
                   setFormData({ ...formData, type: value })
                 }
               >

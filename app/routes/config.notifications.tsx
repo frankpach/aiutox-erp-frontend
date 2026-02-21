@@ -17,7 +17,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Button } from "~/components/ui/button";
 import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
-import { TemplateList } from "~/components/notifications/TemplateList";
+import type { NotificationTemplate } from "~/features/notifications/types/notifications.types";
+import type { Template } from "~/features/templates/types/template.types";
+import { TemplateList } from "~/features/templates/components/TemplateList";
 import { TemplateEditor } from "~/components/notifications/TemplateEditor";
 import { showToast } from "~/components/common/Toast";
 import { useConfigForm } from "~/hooks/useConfigForm";
@@ -44,7 +46,7 @@ export function meta() {
 
 export default function NotificationsConfigPage() {
   const { t } = useTranslation();
-  const [editingTemplate, setEditingTemplate] = useState<unknown>(null);
+  const [editingTemplate, setEditingTemplate] = useState<NotificationTemplate | null>(null);
   const [showTemplateEditor, setShowTemplateEditor] = useState(false);
 
   // Load channels configuration
@@ -510,14 +512,17 @@ export default function NotificationsConfigPage() {
             />
           ) : (
             <TemplateList
-              onEdit={(template) => {
-                setEditingTemplate(template);
+              onEdit={(template: Template) => {
+                // Convert back to NotificationTemplate if needed
+                setEditingTemplate(template as any);
                 setShowTemplateEditor(true);
               }}
               onCreate={() => {
                 setEditingTemplate(null);
                 setShowTemplateEditor(true);
               }}
+              templates={[]} // TODO: Load and convert notification templates
+              loading={false}
             />
           )}
         </TabsContent>

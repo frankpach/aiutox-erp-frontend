@@ -439,9 +439,7 @@ export function TagManagerModal({
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog
         open={deleteConfirm.open}
-        onOpenChange={(open) =>
-          setDeleteConfirm({ open, tagId: deleteConfirm.tagId })
-        }
+        onClose={() => setDeleteConfirm({ open: false, tagId: deleteConfirm.tagId })}
         onConfirm={confirmDelete}
         title={t("tags.deleteConfirm") || "Delete Tag"}
         description={
@@ -451,7 +449,7 @@ export function TagManagerModal({
         confirmText={t("savedFilters.delete") || t("users.delete") || "Delete"}
         cancelText={t("savedFilters.cancel") || t("users.cancel") || "Cancel"}
         variant="destructive"
-        isLoading={deleting}
+        loading={deleting}
       />
     </>
   );

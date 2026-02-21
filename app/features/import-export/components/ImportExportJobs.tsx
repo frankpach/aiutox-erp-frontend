@@ -3,7 +3,6 @@
  * Component for displaying import/export jobs list
  */
 
-import { useState } from "react";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -17,7 +16,6 @@ import {
   DownloadIcon as RefreshIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { showToast } from "~/components/common/Toast";
 import type { ImportJob, ExportJob } from "../types/import-export.types";
 
 export interface ImportExportJobsProps {
@@ -97,7 +95,7 @@ export function ImportExportJobs({
     {
       key: "type",
       header: t("importExport.table.type"),
-      cell: (job) => (
+      cell: () => (
         <div className="flex items-center gap-2">
           <HugeiconsIcon 
             icon={type === "import" ? UploadIcon : DownloadIcon} 
@@ -128,17 +126,20 @@ export function ImportExportJobs({
     {
       key: "progress",
       header: t("importExport.table.progress"),
-      cell: (job) => (
-        <div className="w-full max-w-[100px]">
-          {job.status === "processing" ? (
-            <Progress value={job.progress} className="h-2" />
-          ) : (
-            <span className="text-sm text-muted-foreground">
-              {job.progress}%
-            </span>
-          )}
-        </div>
-      ),
+      cell: (job) => {
+        const progress = 'progress' in job ? job.progress : 0;
+        return (
+          <div className="w-full max-w-[100px]">
+            {job.status === "processing" ? (
+              <Progress value={progress} className="h-2" />
+            ) : (
+              <span className="text-sm text-muted-foreground">
+                {progress}%
+              </span>
+            )}
+          </div>
+        );
+      },
     },
     {
       key: "file_name",

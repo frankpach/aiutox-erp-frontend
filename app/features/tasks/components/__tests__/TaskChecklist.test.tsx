@@ -36,22 +36,19 @@ describe("TaskChecklist component", () => {
   const sampleChecklistItems: ChecklistItem[] = [
     {
       id: "item1",
-      text: "First task item",
+      title: "First task item",
       completed: false,
-      created_at: "2024-01-01T00:00:00Z",
     },
     {
       id: "item2", 
-      text: "Second task item",
+      title: "Second task item",
       completed: true,
       completed_at: "2024-01-02T10:00:00Z",
-      created_at: "2024-01-01T00:00:00Z",
     },
     {
       id: "item3",
-      text: "Third task item",
+      title: "Third task item",
       completed: false,
-      created_at: "2024-01-03T00:00:00Z",
     },
   ];
 
@@ -383,9 +380,8 @@ describe("TaskChecklist component", () => {
       const itemsWithLongText: ChecklistItem[] = [
         {
           id: "long1",
-          text: longText,
+          title: longText,
           completed: false,
-          created_at: "2024-01-01T00:00:00Z",
         },
       ];
 
@@ -399,9 +395,8 @@ describe("TaskChecklist component", () => {
       const itemsWithSpecialChars: ChecklistItem[] = [
         {
           id: "special1",
-          text: specialText,
+          title: specialText,
           completed: false,
-          created_at: "2024-01-01T00:00:00Z",
         },
       ];
 

@@ -3,8 +3,6 @@
  * Filters for notification queue and stream
  */
 
-import { useState } from "react";
-import { useTranslation } from "~/lib/i18n/useTranslation";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -17,7 +15,6 @@ import {
   UploadIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import type { NotificationQueue } from "~/features/notifications/types/notifications.types";
 
 export interface NotificationFilters {
   search?: string;
@@ -36,7 +33,6 @@ interface NotificationFiltersProps {
 }
 
 export function NotificationFilters({ filters, onChange, onReset }: NotificationFiltersProps) {
-  const { t } = useTranslation();
 
   const updateFilter = (key: keyof NotificationFilters, value: string | boolean | string[] | null | undefined) => {
     onChange({

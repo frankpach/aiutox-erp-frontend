@@ -9,7 +9,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { TemplateList } from "~/features/templates/components/TemplateList";
 import { TemplateForm } from "~/features/templates/components/TemplateForm";
 import { TemplatePreview } from "~/features/templates/components/TemplatePreview";
-import { Template, TemplateType, TemplateCategory } from "~/features/templates/types/template.types";
+import type { Template, TemplateType, TemplateCategory } from "~/features/templates/types/template.types";
 
 // Mock the translation system
 vi.mock("~/lib/i18n/useTranslation", () => ({
@@ -108,21 +108,12 @@ const mockCategory: TemplateCategory = {
   updated_at: "2025-01-01T00:00:00Z",
 };
 
-const createQueryClient = () => {
-  return new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: false,
-      },
-    },
-  });
-};
 
 describe("Templates Module", () => {
-  let queryClient: QueryClient;
+  // let queryClient: QueryClient; // Unused for now
 
   beforeEach(() => {
-    queryClient = createQueryClient();
+    // queryClient = createQueryClient(); // Unused for now
     vi.clearAllMocks();
   });
 
@@ -153,7 +144,9 @@ describe("Templates Module", () => {
       );
 
       const editButtons = screen.getAllByText("Editar");
-      fireEvent.click(editButtons[0]);
+      if (editButtons[0]) {
+        fireEvent.click(editButtons[0]);
+      }
 
       await waitFor(() => {
         expect(onEdit).toHaveBeenCalledWith(mockTemplate);
@@ -170,7 +163,9 @@ describe("Templates Module", () => {
       );
 
       const deleteButtons = screen.getAllByText("Eliminar");
-      fireEvent.click(deleteButtons[0]);
+      if (deleteButtons[0]) {
+        fireEvent.click(deleteButtons[0]);
+      }
 
       await waitFor(() => {
         expect(onDelete).toHaveBeenCalledWith(mockTemplate);
@@ -187,7 +182,9 @@ describe("Templates Module", () => {
       );
 
       const previewButtons = screen.getAllByText("Ver");
-      fireEvent.click(previewButtons[0]);
+      if (previewButtons[0]) {
+        fireEvent.click(previewButtons[0]);
+      }
 
       await waitFor(() => {
         expect(onPreview).toHaveBeenCalledWith(mockTemplate);
@@ -204,7 +201,9 @@ describe("Templates Module", () => {
       );
 
       const renderButtons = screen.getAllByText("Renderizar");
-      fireEvent.click(renderButtons[0]);
+      if (renderButtons[0]) {
+        fireEvent.click(renderButtons[0]);
+      }
 
       await waitFor(() => {
         expect(onRender).toHaveBeenCalledWith(mockTemplate);
@@ -288,7 +287,9 @@ describe("Templates Module", () => {
       fireEvent.click(categoryButton);
       
       const categoryOption = screen.getAllByText("Email Templates")[1];
-      fireEvent.click(categoryOption);
+      if (categoryOption) {
+        fireEvent.click(categoryOption);
+      }
 
       const contentTextarea = screen.getByLabelText("Contenido");
       fireEvent.change(contentTextarea, { target: { value: "Template content" } });

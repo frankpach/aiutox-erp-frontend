@@ -88,8 +88,8 @@ export default function ImportExportConfigPage() {
           completed: { label: t("config.importExport.statusCompleted"), variant: "default" },
           failed: { label: t("config.importExport.statusFailed"), variant: "destructive" },
         };
-        const status = statusMap[job.status] || statusMap.pending;
-        return <Badge variant={status.variant}>{status.label}</Badge>;
+        const status = statusMap[job.status || "pending"] || statusMap.pending;
+        return <Badge variant={status?.variant || "outline"}>{status?.label || "Unknown"}</Badge>;
       },
     },
     {

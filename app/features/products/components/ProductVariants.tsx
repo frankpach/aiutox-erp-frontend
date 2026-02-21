@@ -37,20 +37,20 @@ export function ProductVariants({ product, onBack }: ProductVariantsProps) {
   const [editingVariant, setEditingVariant] = useState<ProductVariant | null>(null);
 
   // Queries
-  const { data: variantsData, isLoading, refetch } = useProductVariants(product.id);
+  const { data: variantsData, refetch } = useProductVariants(product.id);
   const createVariantMutation = useCreateVariant(product.id);
   const updateVariantMutation = useUpdateVariant(product.id);
   const deleteVariantMutation = useDeleteVariant(product.id);
 
   const variants = variantsData?.data || [];
 
-  const handleCreateVariant = async (data: ProductVariantCreate) => {
+  const handleCreateVariant = async (data: ProductVariantCreate | ProductVariantUpdate) => {
     try {
-      await createVariantMutation.mutateAsync(data);
+      await createVariantMutation.mutateAsync(data as ProductVariantCreate);
       setShowCreateDialog(false);
       refetch();
     } catch (error) {
-      console.error("Failed to create variant:", error);
+      console.error("Error creating variant:", error);
     }
   };
 

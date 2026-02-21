@@ -17,7 +17,7 @@ export interface MermaidPreviewProps {
 /**
  * MermaidPreview component
  */
-export function MermaidPreview({ fileId, fileName }: MermaidPreviewProps) {
+export function MermaidPreview({ fileId }: MermaidPreviewProps) {
   const { t } = useTranslation();
   const { data: content, isLoading, error } = useFileContent(fileId);
   const mermaidRef = useRef<HTMLDivElement>(null);

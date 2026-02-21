@@ -5,7 +5,6 @@
 
 import { useState } from "react";
 import { PageLayout } from "~/components/layout/PageLayout";
-import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { ApprovalRequestList } from "~/features/approvals/components/ApprovalRequestList";

@@ -1,15 +1,15 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { useNavigate } from "@remix-run/react";
+import { useNavigate } from "react-router"; // Fix import
 import { Search as SearchIcon, X, Clock, ChevronRight } from "lucide-react";
 import { useDebounce } from "use-debounce";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getSearchSuggestions, getRecentSearches, saveRecentSearch } from "../api/search.api";
+import { getSearchSuggestions, getRecentSearches, saveRecentSearch, clearSearchHistory } from "../api/search.api";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { useTranslation } from "~/lib/i18n/useTranslation";
-import { useToast } from "~/components/ui/use-toast";
+import { useToast } from "~/hooks/useToast";
 
 interface SearchBarProps {
   /** Additional CSS classes */
@@ -37,7 +37,7 @@ export function SearchBar({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { toast } = useToast();
+  const toast = useToast();
   const [query, setQuery] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -61,7 +61,7 @@ export function SearchBar({
   });
 
   // Fetch recent searches
-  const { data: recentSearches = [], refetch: refetchRecentSearches } = useQuery({
+  const { data: recentSearches = [] } = useQuery({
     queryKey: ["search", "recent"],
     queryFn: () => getRecentSearches(),
     enabled: showRecentSearches && isFocused && !query,
@@ -94,11 +94,7 @@ export function SearchBar({
         setShowDropdown(false);
       } catch (error) {
         console.error("Error saving search:", error);
-        toast({
-          title: t("common.error"),
-          description: t("search.error.saveFailed"),
-          variant: "destructive",
-        });
+        toast.error(t("search.error.saveFailed"));
       }
     },
     [query, onSearch, navigate, t, queryClient, toast]
@@ -152,16 +148,12 @@ export function SearchBar({
   const handleClearRecentSearches = async () => {
     try {
       // Call API to clear recent searches
-      // await clearSearchHistory();
-      // Just clear the local state for now
-      queryClient.setQueryData(["search", "recent"], []);
+      await clearSearchHistory();
+      // Invalidate recent searches to refetch
+      await queryClient.invalidateQueries({ queryKey: ["search", "recent"] });
     } catch (error) {
       console.error("Error clearing recent searches:", error);
-      toast({
-        title: t("common.error"),
-        description: t("search.error.clearFailed"),
-        variant: "destructive",
-      });
+      toast.error(t("search.error.clearFailed"));
     }
   };
   return (
@@ -251,7 +243,7 @@ export function SearchBar({
                       role="option"
                       aria-selected="false"
                     >
-                      <SearchIcon className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                      <SearchIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
                       <span className="truncate">{suggestion}</span>
                     </button>
                   ))
@@ -280,7 +272,7 @@ export function SearchBar({
                       role="option"
                       aria-selected="false"
                     >
-                      <Clock className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                      <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />
                       <span className="truncate">{recent}</span>
                       <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                     </button>

@@ -2,65 +2,36 @@
  * Tests for ApprovalWidget component
  */
 
-import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ApprovalWidget } from "~/features/approvals/components/ApprovalWidget";
-import type { ApprovalWidgetData } from "~/features/approvals/types/approval.types";
-
-const mockWidgetData: ApprovalWidgetData = {
-  request: {
-    id: "req-1",
-    title: "Aprobación de Orden #123",
-    description: "Orden por $5,000",
-    status: "pending",
-    current_step: 1,
-    entity_type: "order",
-    entity_id: "order-1",
-    requested_by: "user-1",
-    requested_at: "2025-01-12T10:00:00Z",
-    completed_at: null,
-  },
-  flow: {
-    id: "flow-1",
-    name: "Aprobación de Órdenes",
-    flow_type: "sequential",
-  },
-  current_step: {
-    id: "step-1",
-    step_order: 1,
-    name: "Aprobación Gerencial",
-    description: "Aprobación inicial por el gerente de departamento",
-    approver_type: "role",
-    rejection_required: true,
-  },
-  permissions: {
-    can_approve: true,
-  },
-  timeline: [],
-};
-
-const createMockQueryClient = () => {
-  return new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: false,
-      },
-      mutations: {
-        retry: false,
-      },
-    },
-  });
-};
-
-const renderWithQueryClient = (component: React.ReactElement) => {
-  const queryClient = createMockQueryClient();
-  return render(
-    <QueryClientProvider client={queryClient}>{component}</QueryClientProvider>
-  );
-};
 
 describe("ApprovalWidget", () => {
+  let queryClient: QueryClient;
+
+  beforeEach(() => {
+    queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    });
+  });
+
+  const renderWithQueryClient = (component: React.ReactElement) => {
+    return render(
+      <QueryClientProvider client={queryClient}>{component}</QueryClientProvider>
+    );
+  };
+
+  it("debería renderizar el widget correctamente", () => {
+    renderWithQueryClient(
+      <ApprovalWidget requestId="req-1" variant="full" />
+    );
+  });
+
   describe("Variante full", () => {
     it("debería renderizar el widget completo", () => {
       renderWithQueryClient(
@@ -121,10 +92,6 @@ describe("ApprovalWidget", () => {
 
   describe("Estados de aprobación", () => {
     it("debería mostrar estado aprobado", () => {
-      const approvedData = {
-        ...mockWidgetData,
-        request: { ...mockWidgetData.request, status: "approved" as const },
-      };
       renderWithQueryClient(
         <ApprovalWidget requestId="req-1" variant="full" />
       );
@@ -132,10 +99,6 @@ describe("ApprovalWidget", () => {
     });
 
     it("debería mostrar estado rechazado", () => {
-      const rejectedData = {
-        ...mockWidgetData,
-        request: { ...mockWidgetData.request, status: "rejected" as const },
-      };
       renderWithQueryClient(
         <ApprovalWidget requestId="req-1" variant="full" />
       );
@@ -143,10 +106,6 @@ describe("ApprovalWidget", () => {
     });
 
     it("debería mostrar estado cancelado", () => {
-      const cancelledData = {
-        ...mockWidgetData,
-        request: { ...mockWidgetData.request, status: "cancelled" as const },
-      };
       renderWithQueryClient(
         <ApprovalWidget requestId="req-1" variant="full" />
       );

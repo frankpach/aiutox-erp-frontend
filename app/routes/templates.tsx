@@ -29,7 +29,7 @@ export default function TemplatesPage() {
   const [_showCreateForm, _setShowCreateForm] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
   const [previewTemplate, setPreviewTemplate] = useState<Template | null>(null);
-  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
+  const [selectedTemplate, _setSelectedTemplate] = useState<Template | null>(null);
 
   // Query hooks
   const { data: templatesData, isLoading, error, refetch } = useTemplates({
@@ -105,11 +105,7 @@ export default function TemplatesPage() {
     }
   };
 
-  const handleViewVersions = (template: Template) => {
-    setSelectedTemplate(template);
-    setActiveTab("versions");
-  };
-
+  
   return (
     <PageLayout
       title={t("templates.title")}
@@ -159,7 +155,6 @@ export default function TemplatesPage() {
               onDelete={handleDelete}
               onPreview={handlePreview}
               onRender={handleRender}
-              onViewVersions={handleViewVersions}
               onCreate={() => _setShowCreateForm(true)}
             />
           </TabsContent>

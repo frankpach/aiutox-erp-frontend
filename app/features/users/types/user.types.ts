@@ -105,6 +105,7 @@ export interface UsersListParams {
   search?: string;
   is_active?: boolean;
   tenant_id?: string;
+  saved_filter_id?: string;
 }
 
 /**

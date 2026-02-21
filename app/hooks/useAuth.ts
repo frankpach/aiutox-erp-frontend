@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { useAuthStore } from "~/stores/authStore";
 import apiClient, { scheduleProactiveRefresh } from "~/lib/api/client";
 import type { TokenResponse } from "~/lib/api/types/auth.types";
+import type { User } from "~/features/users/types/user.types";
 
 interface LoginCredentials {
   email: string;
@@ -48,13 +49,34 @@ export function useAuth() {
         const userData = meResponse.data.data;
 
         // Map to User interface expected by authStore
-        const user = {
+        const user: User = {
           id: userData.id,
           email: userData.email,
-          full_name: userData.full_name,
-          is_active: true, // /me endpoint requires authentication, so user is active
           tenant_id: userData.tenant_id,
-          roles: userData.roles || [],
+          full_name: userData.full_name,
+          first_name: null,
+          last_name: null,
+          middle_name: null,
+          date_of_birth: null,
+          gender: null,
+          nationality: null,
+          marital_status: null,
+          job_title: null,
+          department: null,
+          employee_id: null,
+          preferred_language: "en",
+          timezone: null,
+          avatar_url: null,
+          bio: null,
+          notes: null,
+          last_login_at: null,
+          email_verified_at: null,
+          phone_verified_at: null,
+          two_factor_enabled: false,
+          is_active: true, // /me endpoint requires authentication, so user is active
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          roles: (userData.roles || []) as any[], // Cast string[] to UserRole[]
           permissions: userData.permissions || [],
         };
 

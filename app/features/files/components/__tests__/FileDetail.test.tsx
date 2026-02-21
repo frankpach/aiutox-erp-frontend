@@ -3,8 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { FileDetail } from "../FileDetail";
 import * as useFilesHook from "../../hooks/useFiles";
@@ -68,6 +67,14 @@ describe("FileDetail", () => {
     metadata: null,
     version_number: 1,
     is_current: true,
+    folder_id: null,
+    uploaded_by_user: {
+      id: "user-1",
+      email: "user@example.com",
+      full_name: "Test User",
+    },
+    tags: null,
+    deleted_at: null,
     updated_at: "2025-12-30T10:00:00Z",
   };
 

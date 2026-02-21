@@ -47,7 +47,7 @@ export function FileTags({ fileId, fileTags }: FileTagsProps) {
   const [loadingTags, setLoadingTags] = useState(false);
 
   const { tags, loading, refetch } = useFileTags(fileId);
-  const { mutate: addTags, isPending: adding } = useAddFileTags(fileId);
+  const { mutate: addTags } = useAddFileTags(fileId);
   const { mutate: removeTag, isPending: removing } = useRemoveFileTag(fileId);
   const filePermissions = useFilePermissions(fileId);
   const hasFilesManage = useHasPermission("files.manage");

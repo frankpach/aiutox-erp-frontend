@@ -2,10 +2,10 @@
  * Tests for useThemeConfig hook
  */
 
-import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient } from "@tanstack/react-query";
-import React, { type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { useThemeConfig } from "../useThemeConfig";
 import { getThemeConfig, setThemeConfig, updateThemeConfigProperty } from "~/features/config/api/config.api";
 import { HookProviders } from "~/__tests__/helpers/test-providers";

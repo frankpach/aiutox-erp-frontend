@@ -3,7 +3,7 @@
  * Displays detailed information about a single task
  */
 
-import { useState, useEffect } from "react";
+// import { useState, useEffect } from "react"; // Unused for now
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 import { PageLayout } from "~/components/layout/PageLayout";
@@ -21,7 +21,6 @@ import { useTask, useUpdateTask } from "~/features/tasks/hooks/useTasks";
 import { SubtaskTree } from "~/features/tasks/components/SubtaskTree";
 import { TimeTracker } from "~/features/tasks/components/TimeTracker";
 import type {
-  Task,
   TaskStatus,
   TaskPriority,
 } from "~/features/tasks/types/task.types";
@@ -118,8 +117,8 @@ export function TaskDetail() {
   return (
     <PageLayout
       title={task.title}
-      subtitle="Task Details"
-      breadcrumbs={[{ label: "Tasks", href: "/tasks" }, { label: task.title }]}
+      // subtitle="Task Details" // Property not supported by PageLayout
+      breadcrumb={[{ label: "Tasks", href: "/tasks" }, { label: task.title }]}
     >
       <div className="space-y-6">
         {/* Actions */}

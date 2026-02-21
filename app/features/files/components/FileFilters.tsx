@@ -53,8 +53,8 @@ export function FileFilters({
   const { t } = useTranslation();
   const [filters, setFilters] = useState<FileFilters>({});
   const [isOpen, setIsOpen] = useState(false);
-  const [availableTags, setAvailableTags] = useState<Array<{ id: string; name: string; color: string | null }>>([]);
-  const [loadingTags, setLoadingTags] = useState(false);
+  const [availableTags] = useState<Array<{ id: string; name: string; color: string | null }>>([]);
+  const [loadingTags] = useState(false);
 
   // Apply filters whenever filters or files change
   useEffect(() => {

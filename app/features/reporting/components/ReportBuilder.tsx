@@ -13,19 +13,20 @@ import { Switch } from "~/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Label } from "~/components/ui/label";
 import { Badge } from "~/components/ui/badge";
-import { Plus, Trash2, Settings, BarChart3, Table, PieChart } from "lucide-react";
-import { 
+import { Plus, Trash2, Settings, BarChart3, Table } from "lucide-react";
+import type { 
   Report, 
   ReportCreate, 
   ReportUpdate, 
   DataSource, 
   ReportVisualization,
-  ReportQuery,
-  ReportParameters,
   VisualizationType,
+  ChartConfig,
   ChartType,
   ParameterType,
   ParameterDefinition,
+  AggregationType,
+  ReportQuery,
 } from "~/features/reporting/types/reporting.types";
 
 interface ReportBuilderProps {
@@ -62,17 +63,18 @@ export function ReportBuilder({
   });
 
   const [selectedDataSource, setSelectedDataSource] = useState<DataSource | null>(
-    dataSources.find(ds => ds.name === formData.data_source) || dataSources[0] || null
+    report ? dataSources.find(ds => ds.name === report.data_source) || dataSources[0] || null : dataSources[0] || null
   );
 
   const [newVisualization, setNewVisualization] = useState<Partial<ReportVisualization>>({
     type: "table",
-    config: {},
+    config: { columns: [] },
   });
 
-  const [newParameter, setNewParameter] = useState<Partial<ParameterDefinition>>({
+  const [newParameter, setNewParameter] = useState<Partial<ParameterDefinition> & { name?: string }>({
     type: "string",
     required: false,
+    name: "",
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -87,13 +89,30 @@ export function ReportBuilder({
     }));
   };
 
+  const handleQueryChange = (queryUpdate: Partial<ReportQuery>) => {
+    setFormData(prev => ({
+      ...prev,
+      query: {
+        ...prev.query,
+        ...queryUpdate,
+      },
+    }));
+  };
+
   const handleDataSourceChange = (dataSourceName: string) => {
     const ds = dataSources.find(d => d.name === dataSourceName);
     setSelectedDataSource(ds || null);
-    handleFieldChange("data_source", dataSourceName);
-    if (ds) {
-      handleFieldChange("module", ds.module);
+    // Update form data differently for create vs update
+    if (report) {
+      // For update, we can't change data_source or module
+      return;
     }
+    // For create, set both data_source and module
+    setFormData(prev => ({
+      ...prev,
+      data_source: dataSourceName,
+      module: ds?.module || "",
+    } as ReportCreate));
   };
 
   const addVisualization = () => {
@@ -102,7 +121,7 @@ export function ReportBuilder({
         ...prev,
         visualizations: [...(prev.visualizations || []), newVisualization as ReportVisualization],
       }));
-      setNewVisualization({ type: "table", config: {} });
+      setNewVisualization({ type: "table", config: { columns: [] } });
     }
   };
 
@@ -115,14 +134,22 @@ export function ReportBuilder({
 
   const addParameter = () => {
     if (newParameter.type && newParameter.name) {
+      const paramName = newParameter.name;
+      const paramDef: ParameterDefinition = {
+        type: newParameter.type!,
+        required: newParameter.required ?? false,
+        default: newParameter.default,
+        options: newParameter.options,
+        validation: newParameter.validation,
+      } as ParameterDefinition;
       setFormData(prev => ({
         ...prev,
         parameters: {
-          ...(prev.parameters || {}),
-          [newParameter.name!]: newParameter as ParameterDefinition,
+          ...prev.parameters,
+          [paramName]: paramDef,
         },
       }));
-      setNewParameter({ type: "string", required: false });
+      setNewParameter({ type: "string", required: false, name: "" });
     }
   };
 
@@ -182,8 +209,9 @@ export function ReportBuilder({
                 <div className="space-y-2">
                   <Label htmlFor="data_source">{t("reporting.fields.dataSource")}</Label>
                   <Select
-                    value={formData.data_source}
+                    value={report ? report.data_source : (formData as ReportCreate).data_source}
                     onValueChange={handleDataSourceChange}
+                    disabled={!!report}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder={t("reporting.builder.dataSource.placeholder")} />
@@ -248,8 +276,7 @@ export function ReportBuilder({
                   <Input
                     placeholder={t("reporting.builder.query.groupBy.placeholder")}
                     value={formData.query?.group_by?.join(", ") || ""}
-                    onChange={(e) => handleFieldChange("query", {
-                      ...formData.query,
+                    onChange={(e) => handleQueryChange({
                       group_by: e.target.value.split(",").map(s => s.trim()).filter(Boolean),
                     })}
                   />
@@ -263,14 +290,14 @@ export function ReportBuilder({
                       .join(", ") || ""}
                     onChange={(e) => {
                       const pairs = e.target.value.split(",").map(s => s.trim()).filter(Boolean);
-                      const aggregations: Record<string, string> = {};
+                      const aggregations: Record<string, AggregationType> = {};
                       pairs.forEach(pair => {
                         const [field, agg] = pair.split(":").map(s => s.trim());
-                        if (field && agg) aggregations[field] = agg;
+                        if (field && agg) aggregations[field] = agg as AggregationType;
                       });
-                      handleFieldChange("query", {
+                      handleQueryChange({
                         ...formData.query,
-                        aggregations,
+                        aggregations: aggregations,
                       });
                     }}
                   />
@@ -303,7 +330,7 @@ export function ReportBuilder({
 
                   {newVisualization.type === "chart" && (
                     <Select
-                      value={newVisualization.config?.chart_type}
+                      value={(newVisualization.config as ChartConfig)?.chart_type || "bar"}
                       onValueChange={(value: ChartType) => 
                         setNewVisualization(prev => ({
                           ...prev,
@@ -339,7 +366,7 @@ export function ReportBuilder({
                       <span className="font-medium capitalize">{viz.type}</span>
                       {viz.type === "chart" && (
                         <Badge variant="outline">
-                          {viz.config?.chart_type}
+                          {(viz.config as ChartConfig)?.chart_type || "bar"}
                         </Badge>
                       )}
                     </div>

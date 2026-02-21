@@ -4,6 +4,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { StandardResponse } from "~/lib/api/types/common.types";
 import type {
   Product,
   ProductCreate,
@@ -11,16 +12,14 @@ import type {
   ProductCategory,
   ProductCategoryCreate,
   ProductCategoryUpdate,
-  ProductVariant,
+  ProductListParams,
   ProductVariantCreate,
   ProductVariantUpdate,
-  ProductBarcode,
   ProductBarcodeCreate,
   ProductBarcodeUpdate,
-  ProductListParams,
+  ProductBulkOperation,
   BarcodeLookupResult,
   ProductStats,
-  ProductBulkOperation,
 } from "../types/product.types";
 import {
   listProducts,
@@ -87,7 +86,7 @@ export function useProducts(params?: ProductListParams) {
  * @param id - Product ID
  * @returns Query result with product details
  */
-export function useProduct(id: string) {
+export function useProduct(id: string): ReturnType<typeof useQuery<StandardResponse<Product>>> {
   return useQuery({
     queryKey: productKeys.detail(id),
     queryFn: () => getProduct(id),
@@ -174,7 +173,7 @@ export function useProductCategories() {
  * @param id - Category ID
  * @returns Query result with category details
  */
-export function useProductCategory(id: string) {
+export function useProductCategory(id: string): ReturnType<typeof useQuery<StandardResponse<ProductCategory>>> {
   return useQuery({
     queryKey: productKeys.category(id),
     queryFn: () => getCategory(id),
@@ -319,7 +318,7 @@ export function useDeleteVariant(productId: string) {
  * @param barcode - Barcode string
  * @returns Query result with barcode lookup
  */
-export function useFindByBarcode(barcode: string) {
+export function useFindByBarcode(barcode: string): ReturnType<typeof useQuery<StandardResponse<BarcodeLookupResult>>> {
   return useQuery({
     queryKey: productKeys.barcode(barcode),
     queryFn: () => findByBarcode(barcode),
@@ -408,7 +407,7 @@ export function useDeleteBarcode(productId: string) {
  * Hook for getting product statistics
  * @returns Query result with product stats
  */
-export function useProductStats() {
+export function useProductStats(): ReturnType<typeof useQuery<StandardResponse<ProductStats>>> {
   return useQuery({
     queryKey: productKeys.stats(),
     queryFn: () => getProductStats(),

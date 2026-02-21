@@ -19,7 +19,7 @@ export interface JsonPreviewProps {
 /**
  * JsonPreview component
  */
-export function JsonPreview({ fileId, fileName }: JsonPreviewProps) {
+export function JsonPreview({ fileId }: JsonPreviewProps) {
   const { t } = useTranslation();
   const { data: content, isLoading, error } = useFileContent(fileId);
 
@@ -85,7 +85,7 @@ export function JsonPreview({ fileId, fileName }: JsonPreviewProps) {
           {isValidJson ? (
             <SyntaxHighlighter
               language="json"
-              style={vscDarkPlus}
+              style={vscDarkPlus as any}
               customStyle={{
                 margin: 0,
                 borderRadius: "0.375rem",
@@ -98,7 +98,7 @@ export function JsonPreview({ fileId, fileName }: JsonPreviewProps) {
               <p className="text-sm text-muted-foreground mb-2">
                 {t("files.invalidJson") || "Invalid JSON format"}
               </p>
-              <pre className="text-sm font-mono whitespace-pre-wrap break-words">
+              <pre className="text-sm font-mono whitespace-pre-wrap wrap-break-words">
                 {content}
               </pre>
             </div>

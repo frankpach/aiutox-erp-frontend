@@ -3,7 +3,6 @@
  * Advanced filtering for products
  */
 
-import { useState } from "react";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";

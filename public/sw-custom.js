@@ -33,3 +33,6 @@ self.addEventListener('message', (event) => {
 // Workbox se inyecta aquí automáticamente por vite-plugin-pwa
 // importScripts() se agrega al final del archivo durante el build
 
+// Placeholder para el manifest de Workbox - REQUERIDO por vite-plugin-pwa
+self.__WB_MANIFEST = [];
+

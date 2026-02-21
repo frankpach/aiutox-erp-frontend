@@ -13,7 +13,7 @@ export default function TaskStatusCustomizerPage() {
   const { t } = useTranslation();
 
   return (
-    <ProtectedRoute requiredPermission="tasks.manage">
+    <ProtectedRoute>
       <PageLayout
         title={t("tasks.statusCustomizer.title") || "Personalizar Estados de Tareas"}
         description={

@@ -25,7 +25,7 @@ interface UserPermissionsManagerProps {
  */
 export function UserPermissionsManager({
   user,
-  onUpdate,
+  // onUpdate, // Unused for now
 }: UserPermissionsManagerProps) {
   const { t } = useTranslation();
   const { permissions, loading } = useUserPermissions(user.id);
@@ -51,7 +51,7 @@ export function UserPermissionsManager({
   );
 
   // Group delegated permissions by module
-  const delegatedByModule = new Map<string, Array<typeof permissions.delegated_permissions[0]>>();
+  const delegatedByModule = new Map<string, Array<any>>();
   if (permissions?.delegated_permissions) {
     for (const delegated of permissions.delegated_permissions) {
       const module = delegated.permission?.split(".")[0] || "unknown";

@@ -3,7 +3,7 @@
  * Type definitions for PubSub module
  */
 
-import type { StandardResponse, StandardListResponse } from "~/lib/api/types/common.types";
+import type { StandardListResponse } from "~/lib/api/types/common.types";
 
 // PubSub statistics
 export interface PubSubStats {

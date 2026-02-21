@@ -5,11 +5,7 @@
 
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-
-interface QuickAction {
-  id: string;
-  [key: string]: unknown;
-}
+import type { QuickAction } from '~/lib/quickActions/registry';
 
 interface QuickActionsStore {
   // Estado

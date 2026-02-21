@@ -11,27 +11,27 @@ import {
   useIntegrations,
   useIntegration,
   useCreateIntegration,
-  useUpdateIntegration,
-  useDeleteIntegration,
   useActivateIntegration,
-  useDeactivateIntegration,
   useTestIntegration,
   useIntegrationStats,
   useIntegrationLogs,
   useIntegrationWebhooks,
-  useCreateIntegrationWebhook,
-  useUpdateIntegrationWebhook,
-  useDeleteIntegrationWebhook,
+  useAvailableIntegrationTypes,
   useIntegrationEvents,
   useIntegrationHealth,
   useIntegrationCredentials,
-  useUpdateIntegrationCredentials,
   useIntegrationConfig,
-  useUpdateIntegrationConfig,
-  useAvailableIntegrationTypes,
-  useSyncIntegration
-} from "~/features/integrations/hooks/useIntegrations";
-import type { Integration, IntegrationStats, IntegrationWebhook, IntegrationLog, IntegrationEvent, IntegrationHealth, IntegrationCredentials, IntegrationConfig } from "~/features/integrations/types/integrations.types";
+} from "../hooks/useIntegrations";
+import type { 
+  Integration, 
+  IntegrationStats, 
+  IntegrationWebhook, 
+  IntegrationLog, 
+  IntegrationEvent, 
+  IntegrationHealth, 
+  IntegrationConfig,
+  IntegrationCredentials 
+} from "../types/integrations.types";
 
 // Mock api client
 const mockApiClient = {
@@ -113,7 +113,7 @@ const mockIntegrationEvent: IntegrationEvent = {
   data: { payment_id: "pay_123", amount: 1000 },
   processed: true,
   processed_at: "2025-01-01T00:00:00Z",
-  error_message: null,
+  error_message: undefined,
   created_at: "2025-01-01T00:00:00Z",
 };
 
@@ -133,7 +133,7 @@ const mockIntegrationCredentials: IntegrationCredentials = {
   name: "API Key",
   type: "api_key",
   encrypted_data: { key: "sk_test_123" },
-  expires_at: null,
+  expires_at: undefined,
   last_used: "2025-01-01T00:00:00Z",
   created_at: "2025-01-01T00:00:00Z",
   updated_at: "2025-01-01T00:00:00Z",
@@ -225,35 +225,38 @@ describe("Integrations Module", () => {
     queryClient = createQueryClient();
     vi.clearAllMocks();
 
-    // Default mock for apiClient.get
+    // Default mock for apiClient.get - return proper StandardResponse wrapper
     const apiClient = mockApiClient;
-    (apiClient.get as any).mockResolvedValue({
-      data: {
-        data: [mockIntegration],
-        meta: {
-          total: 1,
-          page: 1,
-          page_size: 20,
-          total_pages: 1,
+    (apiClient.get as any).mockImplementation((url: string) => {
+      if (url.includes('/integrations/stats')) {
+        return Promise.resolve({
+          data: {
+            data: mockIntegrationStats,
+            error: null,
+          },
+        });
+      }
+      if (url.includes('/integrations/types')) {
+        return Promise.resolve({
+          data: {
+            data: mockAvailableTypes,
+            error: null,
+          },
+        });
+      }
+      // Default for list endpoints
+      return Promise.resolve({
+        data: {
+          data: [mockIntegration],
+          meta: {
+            total: 1,
+            page: 1,
+            page_size: 20,
+            total_pages: 1,
+          },
+          error: null,
         },
-        error: null,
-      },
-    });
-
-    // Mock stats
-    (apiClient.get as any).mockResolvedValue({
-      data: {
-        data: mockIntegrationStats,
-        error: null,
-      },
-    });
-
-    // Mock available types
-    (apiClient.get as any).mockResolvedValue({
-      data: {
-        data: mockAvailableTypes,
-        error: null,
-      },
+      });
     });
   });
 
@@ -263,7 +266,7 @@ describe("Integrations Module", () => {
         const { data, isLoading } = useIntegrations();
         
         if (isLoading) return <div>Loading...</div>;
-        return <div>{data?.length} integrations</div>;
+        return <div>{data?.data?.length} integrations</div>;
       };
 
       render(
@@ -279,18 +282,29 @@ describe("Integrations Module", () => {
 
     it("useIntegration should fetch single integration", async () => {
       const apiClient = mockApiClient;
-      (apiClient.get as any).mockResolvedValue({
-        data: {
-          data: mockIntegration,
-          error: null,
-        },
+      (apiClient.get as any).mockImplementation((url: string) => {
+        if (url.includes('/integrations/')) {
+          return Promise.resolve({
+            data: {
+              data: mockIntegration,
+              error: null,
+            },
+          });
+        }
+        return Promise.resolve({
+          data: {
+            data: [],
+            meta: { total: 0, page: 1, page_size: 20, total_pages: 0 },
+            error: null,
+          },
+        });
       });
 
       const TestComponent = () => {
         const { data, isLoading } = useIntegration("integration-123");
         
         if (isLoading) return <div>Loading...</div>;
-        return <div>{data?.name}</div>;
+        return <div>{data?.data?.name}</div>;
       };
 
       render(
@@ -309,7 +323,7 @@ describe("Integrations Module", () => {
         const { data, isLoading } = useIntegrationStats();
         
         if (isLoading) return <div>Loading...</div>;
-        return <div>{data?.total_integrations} total integrations</div>;
+        return <div>{data?.data?.total_integrations} total integrations</div>;
       };
 
       render(
@@ -328,7 +342,7 @@ describe("Integrations Module", () => {
         const { data, isLoading } = useAvailableIntegrationTypes();
         
         if (isLoading) return <div>Loading...</div>;
-        return <div>{data?.length} types available</div>;
+        return <div>{data?.data?.length} types available</div>;
       };
 
       render(
@@ -477,24 +491,35 @@ describe("Integrations Module", () => {
 
     it("useIntegrationWebhooks should fetch webhooks", async () => {
       const apiClient = mockApiClient;
-      (apiClient.get as any).mockResolvedValue({
-        data: {
-          data: [mockIntegrationWebhook],
-          meta: {
-            total: 1,
-            page: 1,
-            page_size: 20,
-            total_pages: 1,
+      (apiClient.get as any).mockImplementation((url: string) => {
+        if (url.includes('/webhooks')) {
+          return Promise.resolve({
+            data: {
+              data: [mockIntegrationWebhook],
+              meta: {
+                total: 1,
+                page: 1,
+                page_size: 20,
+                total_pages: 1,
+              },
+              error: null,
+            },
+          });
+        }
+        return Promise.resolve({
+          data: {
+            data: [],
+            meta: { total: 0, page: 1, page_size: 20, total_pages: 0 },
+            error: null,
           },
-          error: null,
-        },
+        });
       });
 
       const TestComponent = () => {
         const { data, isLoading } = useIntegrationWebhooks("integration-123");
         
         if (isLoading) return <div>Loading...</div>;
-        return <div>{data?.length} webhooks</div>;
+        return <div>{data?.data?.length} webhooks</div>;
       };
 
       render(
@@ -510,24 +535,35 @@ describe("Integrations Module", () => {
 
     it("useIntegrationLogs should fetch logs", async () => {
       const apiClient = mockApiClient;
-      (apiClient.get as any).mockResolvedValue({
-        data: {
-          data: [mockIntegrationLog],
-          meta: {
-            total: 1,
-            page: 1,
-            page_size: 20,
-            total_pages: 1,
+      (apiClient.get as any).mockImplementation((url: string) => {
+        if (url.includes('/logs')) {
+          return Promise.resolve({
+            data: {
+              data: [mockIntegrationLog],
+              meta: {
+                total: 1,
+                page: 1,
+                page_size: 20,
+                total_pages: 1,
+              },
+              error: null,
+            },
+          });
+        }
+        return Promise.resolve({
+          data: {
+            data: [],
+            meta: { total: 0, page: 1, page_size: 20, total_pages: 0 },
+            error: null,
           },
-          error: null,
-        },
+        });
       });
 
       const TestComponent = () => {
         const { data, isLoading } = useIntegrationLogs("integration-123");
         
         if (isLoading) return <div>Loading...</div>;
-        return <div>{data?.length} logs</div>;
+        return <div>{data?.data?.length} logs</div>;
       };
 
       render(
@@ -543,24 +579,35 @@ describe("Integrations Module", () => {
 
     it("useIntegrationEvents should fetch events", async () => {
       const apiClient = mockApiClient;
-      (apiClient.get as any).mockResolvedValue({
-        data: {
-          data: [mockIntegrationEvent],
-          meta: {
-            total: 1,
-            page: 1,
-            page_size: 20,
-            total_pages: 1,
+      (apiClient.get as any).mockImplementation((url: string) => {
+        if (url.includes('/events')) {
+          return Promise.resolve({
+            data: {
+              data: [mockIntegrationEvent],
+              meta: {
+                total: 1,
+                page: 1,
+                page_size: 20,
+                total_pages: 1,
+              },
+              error: null,
+            },
+          });
+        }
+        return Promise.resolve({
+          data: {
+            data: [],
+            meta: { total: 0, page: 1, page_size: 20, total_pages: 0 },
+            error: null,
           },
-          error: null,
-        },
+        });
       });
 
       const TestComponent = () => {
         const { data, isLoading } = useIntegrationEvents("integration-123");
         
         if (isLoading) return <div>Loading...</div>;
-        return <div>{data?.length} events</div>;
+        return <div>{(data as any)?.data?.length} events</div>;
       };
 
       render(
@@ -576,18 +623,29 @@ describe("Integrations Module", () => {
 
     it("useIntegrationHealth should fetch health status", async () => {
       const apiClient = mockApiClient;
-      (apiClient.get as any).mockResolvedValue({
-        data: {
-          data: mockIntegrationHealth,
-          error: null,
-        },
+      (apiClient.get as any).mockImplementation((url: string) => {
+        if (url.includes('/health')) {
+          return Promise.resolve({
+            data: {
+              data: mockIntegrationHealth,
+              error: null,
+            },
+          });
+        }
+        return Promise.resolve({
+          data: {
+            data: [],
+            meta: { total: 0, page: 1, page_size: 20, total_pages: 0 },
+            error: null,
+          },
+        });
       });
 
       const TestComponent = () => {
         const { data, isLoading } = useIntegrationHealth("integration-123");
         
         if (isLoading) return <div>Loading...</div>;
-        return <div>{data?.status}</div>;
+        return <div>{data?.data?.status}</div>;
       };
 
       render(
@@ -603,24 +661,35 @@ describe("Integrations Module", () => {
 
     it("useIntegrationCredentials should fetch credentials", async () => {
       const apiClient = mockApiClient;
-      (apiClient.get as any).mockResolvedValue({
-        data: {
-          data: [mockIntegrationCredentials],
-          meta: {
-            total: 1,
-            page: 1,
-            page_size: 20,
-            total_pages: 1,
+      (apiClient.get as any).mockImplementation((url: string) => {
+        if (url.includes('/credentials')) {
+          return Promise.resolve({
+            data: {
+              data: [mockIntegrationCredentials],
+              meta: {
+                total: 1,
+                page: 1,
+                page_size: 20,
+                total_pages: 1,
+              },
+              error: null,
+            },
+          });
+        }
+        return Promise.resolve({
+          data: {
+            data: [],
+            meta: { total: 0, page: 1, page_size: 20, total_pages: 0 },
+            error: null,
           },
-          error: null,
-        },
+        });
       });
 
       const TestComponent = () => {
         const { data, isLoading } = useIntegrationCredentials("integration-123");
         
         if (isLoading) return <div>Loading...</div>;
-        return <div>{data?.length} credentials</div>;
+        return <div>{(data as any)?.data?.length} credentials</div>;
       };
 
       render(
@@ -636,24 +705,35 @@ describe("Integrations Module", () => {
 
     it("useIntegrationConfig should fetch configuration", async () => {
       const apiClient = mockApiClient;
-      (apiClient.get as any).mockResolvedValue({
-        data: {
-          data: [mockIntegrationConfig],
-          meta: {
-            total: 1,
-            page: 1,
-            page_size: 20,
-            total_pages: 1,
+      (apiClient.get as any).mockImplementation((url: string) => {
+        if (url.includes('/config')) {
+          return Promise.resolve({
+            data: {
+              data: [mockIntegrationConfig],
+              meta: {
+                total: 1,
+                page: 1,
+                page_size: 20,
+                total_pages: 1,
+              },
+              error: null,
+            },
+          });
+        }
+        return Promise.resolve({
+          data: {
+            data: [],
+            meta: { total: 0, page: 1, page_size: 20, total_pages: 0 },
+            error: null,
           },
-          error: null,
-        },
+        });
       });
 
       const TestComponent = () => {
         const { data, isLoading } = useIntegrationConfig("integration-123");
         
         if (isLoading) return <div>Loading...</div>;
-        return <div>{data?.length} config items</div>;
+        return <div>{data?.data?.length} config items</div>;
       };
 
       render(
@@ -706,8 +786,8 @@ describe("Integrations Module", () => {
       expect(Array.isArray(types)).toBe(true);
       expect(types[0]).toHaveProperty("type");
       expect(types[0]).toHaveProperty("count");
-      expect(typeof types[0].type).toBe("string");
-      expect(typeof types[0].count).toBe("number");
+      expect(typeof types[0]?.type).toBe("string");
+      expect(typeof types[0]?.count).toBe("number");
     });
 
     it("has correct recent activity structure", () => {

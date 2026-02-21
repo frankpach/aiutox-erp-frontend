@@ -55,17 +55,17 @@ export function ModulePermissionsView({
             ? "Eliminar"
             : action === "manage_users"
             ? "Gestionar Usuarios"
-            : action;
+            : action || "";
 
-        if (!groups.has(action)) {
-          groups.set(action, {
-            action,
+        if (!groups.has(action || "")) {
+          groups.set(action || "", {
+            action: action || "",
             label: actionLabel,
             permissions: [],
           });
         }
 
-        groups.get(action)!.permissions.push(perm);
+        groups.get(action || "")!.permissions.push(perm);
       }
     }
 
@@ -111,9 +111,9 @@ export function ModulePermissionsView({
         const allSelected = modulePermissions.every((p) =>
           selectedPermissions.has(p)
         );
-        const someSelected = modulePermissions.some((p) =>
-          selectedPermissions.has(p)
-        );
+        // const someSelected = modulePermissions.some((p) =>
+        //   selectedPermissions.has(p)
+        // );
 
         return (
           <div key={group.module_id} className="rounded-md border p-4">
@@ -150,9 +150,9 @@ export function ModulePermissionsView({
                 const allActionSelected = moduleActionPermissions.every((p) =>
                   selectedPermissions.has(p.permission)
                 );
-                const someActionSelected = moduleActionPermissions.some((p) =>
-                  selectedPermissions.has(p.permission)
-                );
+                // const someActionSelected = moduleActionPermissions.some((p) =>
+                //   selectedPermissions.has(p.permission)
+                // );
 
                 return (
                   <div key={actionGroup.action} className="space-y-2">

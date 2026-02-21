@@ -51,9 +51,11 @@ describe("TaskNotificationsSSE", () => {
     }
 
     const trigger = screen.getAllByRole("button")[0];
-    act(() => {
-      fireEvent.click(trigger);
-    });
+    if (trigger) {
+      act(() => {
+        fireEvent.click(trigger);
+      });
+    }
 
     await waitFor(() => {
       expect(screen.getByText("1")).toBeInTheDocument();
@@ -75,9 +77,11 @@ describe("TaskNotificationsSSE", () => {
     }
 
     const trigger = screen.getAllByRole("button")[0];
-    act(() => {
-      fireEvent.click(trigger);
-    });
+    if (trigger) {
+      act(() => {
+        fireEvent.click(trigger);
+      });
+    }
 
     const markAll = await screen.findByText("Marcar todas");
     act(() => {
@@ -102,9 +106,11 @@ describe("TaskNotificationsSSE", () => {
     }
 
     const trigger = screen.getAllByRole("button")[0];
-    act(() => {
-      fireEvent.click(trigger);
-    });
+    if (trigger) {
+      act(() => {
+        fireEvent.click(trigger);
+      });
+    }
 
     const clearButton = await screen.findByText("Limpiar");
     act(() => {

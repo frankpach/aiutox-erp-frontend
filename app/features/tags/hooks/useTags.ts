@@ -9,7 +9,6 @@ import {
   createTag,
   updateTag,
   deleteTag,
-  type Tag,
   type TagCreate,
   type TagUpdate,
 } from "../api/tags.api";
@@ -63,7 +62,7 @@ export function useCreateTag() {
 
   return useMutation({
     mutationFn: (tagData: TagCreate) => createTag(tagData),
-    onSuccess: (data) => {
+    onSuccess: (_data) => {
       // Invalidate tags list
       queryClient.invalidateQueries({ queryKey: tagKeys.lists() });
       showToast(
@@ -90,7 +89,7 @@ export function useUpdateTag() {
   return useMutation({
     mutationFn: ({ tagId, tagData }: { tagId: string; tagData: TagUpdate }) =>
       updateTag(tagId, tagData),
-    onSuccess: (data, variables) => {
+    onSuccess: (_data, variables) => {
       // Invalidate tags list and detail
       queryClient.invalidateQueries({ queryKey: tagKeys.lists() });
       queryClient.invalidateQueries({

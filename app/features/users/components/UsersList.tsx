@@ -4,15 +4,15 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router";
+// import { useQueryClient } from "@tanstack/react-query"; // Unused for now
+// import { Link } from "react-router"; // Unused for now
 import { Button } from "~/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
+// import {
+//   DropdownMenu,
+//   DropdownMenuContent,
+//   DropdownMenuItem,
+//   DropdownMenuTrigger,
+// } from "~/components/ui/dropdown-menu"; // Unused for now
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Save, CheckSquare, Square, Trash2, Power, PowerOff } from "lucide-react";
 import { ConfirmDialog } from "~/components/common/ConfirmDialog";
@@ -20,12 +20,12 @@ import { showToast } from "~/components/common/Toast";
 import { UserListSkeleton } from "~/components/common/UserListSkeleton";
 import { EmptyState } from "~/components/common/EmptyState";
 import { ErrorState } from "~/components/common/ErrorState";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "~/components/ui/tooltip";
+// import {
+//   Tooltip,
+//   TooltipContent,
+//   TooltipTrigger,
+// } from "~/components/ui/tooltip"; // Unused for now
+import { TooltipProvider } from "~/components/ui/tooltip";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 import { useDebouncedValue } from "~/hooks/useDebouncedValue";
 import { SavedFilters } from "../../views/components/SavedFilters";
@@ -34,9 +34,9 @@ import { FilterManagementModal } from "../../views/components/FilterManagementMo
 import { userFieldsConfig } from "../../views/config/userFields";
 import { useSavedFilters } from "../../views/hooks/useSavedFilters";
 import { useFilterUrlSync } from "../../views/hooks/useFilterUrlSync";
-import { useUsers, useDeleteUser, useBulkUsersAction, userKeys } from "../hooks/useUsers";
+import { useUsers, useDeleteUser, useBulkUsersAction } from "../hooks/useUsers"; // userKeys unused for now
 import type { SavedFilter, SavedFilterCreate } from "../../views/types/savedFilter.types";
-import { getUser } from "../api/users.api";
+// import { getUser } from "../api/users.api"; // Unused for now
 import { UserRow } from "./UserRow";
 
 export interface UsersListProps {
@@ -48,7 +48,7 @@ export interface UsersListProps {
  */
 export function UsersList({ onManageFiltersClick }: UsersListProps) {
   const [page, setPage] = useState(1);
-  const [pageSize] = useState(20);
+  const [pageSize] = useState(20); // Default page size
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 300);
   const [isActiveFilter, setIsActiveFilter] = useState<boolean | undefined>(
@@ -96,7 +96,7 @@ export function UsersList({ onManageFiltersClick }: UsersListProps) {
 
   const { remove: deleteUser, loading: deleting } = useDeleteUser();
   const { execute: bulkAction, loading: bulkActionLoading } = useBulkUsersAction();
-  const queryClient = useQueryClient();
+  // const queryClient = useQueryClient(); // Unused for now
 
   // Define handleDeleteUser first
   const handleDeleteUser = useCallback(async (userId: string) => {
@@ -247,11 +247,11 @@ export function UsersList({ onManageFiltersClick }: UsersListProps) {
     }
   }, [bulkActionConfirm.action, handleBulkAction]);
 
-  const _currentFilter = filterId
-    ? users.length > 0 || loading
-      ? t("savedFilters.applying")
-      : null
-    : null;
+  // const _currentFilter = filterId
+  //   ? users.length > 0 || loading
+  //     ? t("savedFilters.applying")
+  //     : null
+  //   : null; // Unused for now
 
   return (
     <TooltipProvider>

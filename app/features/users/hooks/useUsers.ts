@@ -248,6 +248,7 @@ export function useUpdateOwnProfile() {
 
         return { previousUser };
       }
+      return undefined; // Explicit return for the else case
     },
     onError: (err, _data, context) => {
       console.error("[useUpdateOwnProfile] Error updating own profile:", err);

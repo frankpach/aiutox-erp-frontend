@@ -55,8 +55,13 @@ export function ApprovalStepsForm({
       description: null,
       approver_type: newStep.approver_type,
       approver_id: newStep.approver_id || null,
-      conditions: JSON.parse(newStep.conditions || "{}"),
+      approver_role: null,
+      approver_rule: null,
+      require_all: false,
       min_approvals: parseInt(newStep.min_approvals, 10) || 1,
+      form_schema: null,
+      print_config: null,
+      rejection_required: false,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -136,14 +141,14 @@ export function ApprovalStepsForm({
                             </div>
                           )}
 
-                          {step.conditions &&
-                            Object.keys(step.conditions).length > 0 && (
+                          {step.form_schema &&
+                            Object.keys(step.form_schema).length > 0 && (
                               <div>
                                 <span className="font-medium">
-                                  Condiciones:{" "}
+                                  Schema:{" "}
                                 </span>
                                 <span className="ml-2">
-                                  {JSON.stringify(step.conditions)}
+                                  {JSON.stringify(step.form_schema)}
                                 </span>
                               </div>
                             )}

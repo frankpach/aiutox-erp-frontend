@@ -14,13 +14,9 @@ import {
   updateFileLimits,
   getThumbnailConfig,
   updateThumbnailConfig,
-  type StorageConfig,
   type StorageConfigUpdate,
   type S3ConnectionTestRequest,
-  type StorageStats,
-  type FileLimits,
   type FileLimitsUpdate,
-  type ThumbnailConfig,
   type ThumbnailConfigUpdate,
 } from "~/lib/api/files-config.api";
 

@@ -5,22 +5,15 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type {
-  NotificationTemplate,
   NotificationTemplateCreate,
   NotificationTemplateUpdate,
-  NotificationQueue,
   NotificationSendRequest,
-  NotificationChannels,
   SMTPConfigRequest,
   SMSConfigRequest,
   WebhookConfigRequest,
-  NotificationStats,
-  NotificationPreferences,
   NotificationPreferencesCreate,
   NotificationPreferencesUpdate,
-  NotificationDeliveryReport,
   NotificationSubscription,
-  NotificationEventType,
 } from "../types/notifications.types";
 import {
   listNotificationTemplates,
@@ -173,9 +166,9 @@ export function useDeleteNotificationTemplate() {
  */
 export function useNotificationQueue(params?: {
   page?: number;
-  page_size?: number;
-  status?: string;
-}) {
+    page_size?: number;
+    status?: string;
+  }): ReturnType<typeof useQuery> {
   return useQuery({
     queryKey: [...notificationsKeys.queue(), params],
     queryFn: () => listNotificationQueue(params),

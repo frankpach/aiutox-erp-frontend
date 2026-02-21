@@ -4,13 +4,12 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+// import userEvent from "@testing-library/user-event"; // Unused for now
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import RolesConfigPage from "../config.roles";
 import apiClient from "~/lib/api/client";
 import * as useTranslationHook from "~/lib/i18n/useTranslation";
-import { toast } from "sonner";
 
 // Mock apiClient
 vi.mock("~/lib/api/client", () => ({
@@ -184,7 +183,7 @@ describe("RolesConfigPage", () => {
       }
       if (url.startsWith("/auth/roles/") && url.split("/").length === 4) {
         // User roles endpoint: /auth/roles/{user_id}
-        const userId = url.split("/").pop();
+        // const _userId = url.split("/").pop(); // Unused for now
         return Promise.resolve({
           data: {
             roles: [],

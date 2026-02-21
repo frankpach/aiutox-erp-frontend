@@ -3,13 +3,10 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { FileList } from "../FileList";
 import * as useFilesHook from "../../hooks/useFiles";
-import { showToast } from "~/components/common/Toast";
 
 // Mock useFiles hooks
 vi.mock("../../hooks/useFiles", () => ({
@@ -79,6 +76,14 @@ describe("FileList", () => {
       metadata: null,
       version_number: 1,
       is_current: true,
+      folder_id: null,
+      uploaded_by_user: {
+        id: "user-1",
+        email: "user@example.com",
+        full_name: "Test User",
+      },
+      tags: null,
+      deleted_at: null,
       updated_at: "2025-12-30T10:00:00Z",
     },
   ];

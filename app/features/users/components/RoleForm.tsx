@@ -15,10 +15,10 @@ import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import { Checkbox } from "~/components/ui/checkbox";
 import { usePermissionsByModule } from "../hooks/useUserPermissions";
-import { useCustomRoles, useCreateCustomRole, useUpdateCustomRole } from "../hooks/useCustomRoles";
+import { useCreateCustomRole, useUpdateCustomRole } from "../hooks/useCustomRoles";
 import { useAuthStore } from "~/stores/authStore";
 import { showToast } from "~/components/common/Toast";
-import type { CustomRole, PermissionGroup } from "../types/user.types";
+import type { PermissionGroup, CustomRole } from "../types/user.types";
 
 const roleSchema = z.object({
   name: z.string().min(1, "El nombre es requerido"),
@@ -56,7 +56,6 @@ export function RoleForm({ role, onSubmit, onCancel }: RoleFormProps) {
     handleSubmit,
     formState: { errors, isSubmitting },
     setValue,
-    watch,
   } = useForm<RoleFormData>({
     resolver: zodResolver(roleSchema),
     defaultValues: {
@@ -271,9 +270,9 @@ function ModulePermissionsGroup({
   const allSelected = modulePermissions.every((p) =>
     selectedPermissions.has(p)
   );
-  const someSelected = modulePermissions.some((p) =>
-    selectedPermissions.has(p)
-  );
+  // const someSelected = modulePermissions.some((p) =>
+  //   selectedPermissions.has(p)
+  // );
 
   // Permission actions (View, Add, Edit, Delete, Manage Users)
   const permissionActions = useMemo(() => {
@@ -282,10 +281,10 @@ function ModulePermissionsGroup({
       const parts = perm.permission.split(".");
       if (parts.length >= 2) {
         const action = parts[parts.length - 1];
-        if (!actions.has(action)) {
-          actions.set(action, []);
+        if (!actions.has(action || "")) {
+          actions.set(action || "", []);
         }
-        actions.get(action)!.push(perm.permission);
+        actions.get(action || "")!.push(perm.permission);
       }
     }
     return actions;

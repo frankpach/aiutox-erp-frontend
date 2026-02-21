@@ -5,13 +5,12 @@
 
 import { useState } from "react";
 import { format } from "date-fns";
-import { es, enUS } from "date-fns/locale";
+import { es } from "date-fns/locale";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { TemplateVersion } from "~/features/templates/types/template.types";
+import type { TemplateVersion } from "~/features/templates/types/template.types";
 
 interface TemplateVersionHistoryProps {
   versions: TemplateVersion[];
@@ -46,7 +45,10 @@ export function TemplateVersionHistory({
 
   const handleCompare = () => {
     if (selectedVersions.length === 2 && onCompare) {
-      onCompare(selectedVersions[0], selectedVersions[1]);
+      const [version1, version2] = selectedVersions;
+      if (version1 && version2) {
+        onCompare(version1, version2);
+      }
     }
   };
 
@@ -183,7 +185,7 @@ export function TemplateVersionHistory({
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-6">
-              {selectedVersions.map((version, index) => (
+              {selectedVersions.map((version) => (
                 <div key={version.id} className="space-y-2">
                   <h4 className="font-medium">
                     {t("templates.versions.version")} {version.version}

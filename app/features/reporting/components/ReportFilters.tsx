@@ -10,7 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Label } from "~/components/ui/label";
 import { Badge } from "~/components/ui/badge";
-import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { Filter, X } from "lucide-react";
 import type { ReportListParams } from "~/features/reporting/types/reporting.types";
 

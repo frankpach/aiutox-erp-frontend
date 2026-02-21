@@ -34,11 +34,11 @@ export function BoardViewWrapper({
   // Combinar estados del sistema con estados del usuario
   const allStatuses = useMemo(() => {
     const systemStatuses = [
-      { id: "todo", name: "Por Hacer", type: "open" as const, color: "#6b7280", order: 0 },
-      { id: "in_progress", name: "En Progreso", type: "in_progress" as const, color: "#3b82f6", order: 1 },
-      { id: "on_hold", name: "En Espera", type: "on_hold" as const, color: "#f59e0b", order: 2 },
-      { id: "done", name: "Completado", type: "completed" as const, color: "#22c55e", order: 3 },
-      { id: "cancelled", name: "Cancelado", type: "canceled" as const, color: "#ef4444", order: 4 },
+      { id: "todo", name: "Por Hacer", type: "open" as const, color: "#6b7280", order: 0, tenant_id: "", is_system: true, created_at: "", updated_at: "" },
+      { id: "in_progress", name: "En Progreso", type: "in_progress" as const, color: "#3b82f6", order: 1, tenant_id: "", is_system: true, created_at: "", updated_at: "" },
+      { id: "on_hold", name: "En Espera", type: "on_hold" as const, color: "#f59e0b", order: 2, tenant_id: "", is_system: true, created_at: "", updated_at: "" },
+      { id: "done", name: "Completado", type: "completed" as const, color: "#22c55e", order: 3, tenant_id: "", is_system: true, created_at: "", updated_at: "" },
+      { id: "cancelled", name: "Cancelado", type: "canceled" as const, color: "#ef4444", order: 4, tenant_id: "", is_system: true, created_at: "", updated_at: "" },
     ];
     
     return [...systemStatuses, ...(userStatuses || [])]

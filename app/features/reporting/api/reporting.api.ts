@@ -15,8 +15,7 @@ import type {
   ReportUpdate,
   ReportExecution,
   DataSource,
-  ReportExportParams,
-  ReportListParams,
+    ReportListParams,
   ParameterValues,
   ReportResult,
 } from "~/features/reporting/types/reporting.types";

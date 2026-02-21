@@ -157,7 +157,7 @@ export function UserContactMethods({
         onUpdate?.();
       } else {
         // Check for error after creation attempt
-        const errorMessage = createError?.message || t("users.contactMethodCreateError") || "Error al crear el método de contacto";
+        const errorMessage = (createError as any)?.message || t("users.contactMethodCreateError") || "Error al crear el método de contacto";
         console.error("[UserContactMethods] Failed to create contact method:", createError);
         showToast(errorMessage, "error");
       }
@@ -203,7 +203,7 @@ export function UserContactMethods({
         onUpdate?.();
       } else {
         // Check for error after update attempt
-        const errorMessage = updateError?.message || t("users.contactMethodUpdateError") || "Error al actualizar el método de contacto";
+        const errorMessage = (updateError as any)?.message || t("users.contactMethodUpdateError") || "Error al actualizar el método de contacto";
         console.error("[UserContactMethods] Failed to update contact method:", updateError);
         showToast(errorMessage, "error");
       }
@@ -248,7 +248,7 @@ export function UserContactMethods({
         onUpdate?.();
       } else {
         // Check for error after delete attempt
-        const errorMessage = deleteError?.message || t("users.contactMethodDeleteError") || "Error al eliminar el método de contacto";
+        const errorMessage = (deleteError as any)?.message || t("users.contactMethodDeleteError") || "Error al eliminar el método de contacto";
         console.error("[UserContactMethods] Failed to delete contact method:", deleteError);
         showToast(errorMessage, "error");
       }

@@ -4,6 +4,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { StandardResponse, StandardListResponse } from "~/lib/api/types/common.types";
 import type {
   ImportJob,
   ImportJobCreate,
@@ -14,9 +15,7 @@ import type {
   ImportTemplate,
   ImportTemplateCreate,
   ImportTemplateUpdate,
-  ImportExportStats,
   ImportExportConfig,
-  ImportExportValidation,
 } from "../types/import-export.types";
 import {
   createImportJob,
@@ -76,7 +75,7 @@ export function useImportJobs(params?: {
   status?: string;
   page?: number;
   page_size?: number;
-}) {
+}): ReturnType<typeof useQuery<StandardListResponse<ImportJob>>> {
   return useQuery({
     queryKey: [...importExportKeys.importJobs(), params],
     queryFn: () => listImportJobs(params),
@@ -89,7 +88,7 @@ export function useImportJobs(params?: {
  * @param jobId - Import job ID
  * @returns Query result with import job details
  */
-export function useImportJob(jobId: string) {
+export function useImportJob(jobId: string): ReturnType<typeof useQuery<StandardResponse<ImportJob>>> {
   return useQuery({
     queryKey: importExportKeys.importJob(jobId),
     queryFn: () => getImportJob(jobId),
@@ -207,7 +206,7 @@ export function useExportJobs(params?: {
   status?: string;
   page?: number;
   page_size?: number;
-}) {
+}): ReturnType<typeof useQuery<StandardListResponse<ExportJob>>> {
   return useQuery({
     queryKey: [...importExportKeys.exportJobs(), params],
     queryFn: () => listExportJobs(params),
@@ -220,7 +219,7 @@ export function useExportJobs(params?: {
  * @param jobId - Export job ID
  * @returns Query result with export job details
  */
-export function useExportJob(jobId: string) {
+export function useExportJob(jobId: string): ReturnType<typeof useQuery<StandardResponse<ExportJob>>> {
   return useQuery({
     queryKey: importExportKeys.exportJob(jobId),
     queryFn: () => getExportJob(jobId),
@@ -329,7 +328,7 @@ export function useImportTemplates(params?: {
   module?: string;
   page?: number;
   page_size?: number;
-}) {
+}): ReturnType<typeof useQuery<StandardListResponse<ImportTemplate>>> {
   return useQuery({
     queryKey: [...importExportKeys.importTemplates(), params],
     queryFn: () => listImportTemplates(params),
@@ -342,7 +341,7 @@ export function useImportTemplates(params?: {
  * @param templateId - Import template ID
  * @returns Query result with import template details
  */
-export function useImportTemplate(templateId: string) {
+export function useImportTemplate(templateId: string): ReturnType<typeof useQuery<StandardResponse<ImportTemplate>>> {
   return useQuery({
     queryKey: importExportKeys.importTemplate(templateId),
     queryFn: () => getImportTemplate(templateId),

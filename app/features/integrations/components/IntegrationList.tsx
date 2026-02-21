@@ -4,12 +4,10 @@
  */
 
 import { useState } from "react";
-import { useTranslation } from "~/lib/i18n/useTranslation";
 import { PageLayout } from "~/components/layout/PageLayout";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Separator } from "~/components/ui/separator";
 import { 
   PlugIcon,
   UploadIcon,
@@ -20,18 +18,15 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { 
   useIntegrations, 
   useCreateIntegration, 
-  useUpdateIntegration, 
   useDeleteIntegration, 
   useActivateIntegration, 
   useTestIntegration 
 } from "~/features/integrations/hooks/useIntegrations";
-import type { Integration, IntegrationCreate, IntegrationType } from "~/features/integrations/types/integrations.types";
+import type { IntegrationCreate } from "~/features/integrations/types/integrations.types";
 
 export function IntegrationList() {
-  const { t } = useTranslation();
   const { data: integrationsResponse, isLoading, error, refetch } = useIntegrations();
   const createIntegration = useCreateIntegration();
-  const updateIntegration = useUpdateIntegration();
   const deleteIntegration = useDeleteIntegration();
   const activateIntegration = useActivateIntegration();
   const testIntegration = useTestIntegration();
@@ -41,7 +36,7 @@ export function IntegrationList() {
   const [typeFilter, setTypeFilter] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
 
-  const filteredIntegrations = integrations.filter(integration => {
+  const filteredIntegrations = integrations.filter((integration: any) => {
     const matchesSearch = integration.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          integration.type.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = !typeFilter || integration.type === typeFilter;
@@ -67,12 +62,9 @@ export function IntegrationList() {
     }
   };
 
-  const handleActivate = async (integrationId: string, isActive: boolean) => {
+  const handleActivate = async (integrationId: string) => {
     try {
-      await activateIntegration.mutateAsync({ 
-        integrationId, 
-        config: {} // Empty config for activation
-      });
+      await activateIntegration.mutateAsync({ integrationId, data: { config: {} } });
       refetch();
     } catch (error) {
       console.error("Error activating integration:", error);
@@ -99,21 +91,7 @@ export function IntegrationList() {
     }
   };
 
-  const getStatusColor = (status: string): string => {
-    switch (status) {
-      case "active":
-        return "bg-green-100 text-green-800";
-      case "inactive":
-        return "bg-gray-100 text-gray-800";
-      case "error":
-        return "bg-red-100 text-red-800";
-      case "pending":
-        return "bg-yellow-100 text-yellow-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
+  
   const getStatusBadge = (status: string): string => {
     switch (status) {
       case "active":
@@ -374,7 +352,7 @@ export function IntegrationList() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleActivate(integration.id, true)}
+                          onClick={() => handleActivate(integration.id)}
                           className="text-green-600 hover:text-green-700"
                         >
                           <HugeiconsIcon icon={PlugIcon} size={16} className="mr-2" />
@@ -386,7 +364,7 @@ export function IntegrationList() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleActivate(integration.id, false)}
+                          onClick={() => handleTest(integration.id)}
                           className="text-yellow-600 hover:text-yellow-700"
                         >
                           <HugeiconsIcon icon={UploadIcon} size={16} className="mr-2" />

@@ -3,7 +3,7 @@
  * Type definitions for Integrations module
  */
 
-import type { StandardResponse, StandardListResponse } from "~/lib/api/types/common.types";
+import type { StandardListResponse } from "~/lib/api/types/common.types";
 
 // Integration types
 export interface Integration {

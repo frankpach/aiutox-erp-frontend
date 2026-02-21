@@ -9,7 +9,6 @@ import {
   createTagCategory,
   updateTagCategory,
   deleteTagCategory,
-  type TagCategory,
   type TagCategoryCreate,
   type TagCategoryUpdate,
 } from "../api/tags.api";
@@ -59,7 +58,7 @@ export function useCreateTagCategory() {
 
   return useMutation({
     mutationFn: (categoryData: TagCategoryCreate) => createTagCategory(categoryData),
-    onSuccess: (data) => {
+    onSuccess: (_data) => {
       // Invalidate tag categories list
       queryClient.invalidateQueries({ queryKey: tagCategoryKeys.lists() });
       showToast(
@@ -92,7 +91,7 @@ export function useUpdateTagCategory() {
       categoryId: string;
       categoryData: TagCategoryUpdate;
     }) => updateTagCategory(categoryId, categoryData),
-    onSuccess: (data, variables) => {
+    onSuccess: (_data, variables) => {
       // Invalidate tag categories list and detail
       queryClient.invalidateQueries({ queryKey: tagCategoryKeys.lists() });
       queryClient.invalidateQueries({

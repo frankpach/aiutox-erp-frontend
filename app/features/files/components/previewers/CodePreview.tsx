@@ -139,7 +139,7 @@ export function CodePreview({ fileId, fileName }: CodePreviewProps) {
         <div className="border rounded-md overflow-auto max-h-[600px]">
           <SyntaxHighlighter
             language={language}
-            style={vscDarkPlus}
+            style={vscDarkPlus as any}
             customStyle={{
               margin: 0,
               borderRadius: "0.375rem",

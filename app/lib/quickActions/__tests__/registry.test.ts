@@ -60,8 +60,8 @@ describe('QuickActionsRegistry', () => {
 
       const allActions = quickActionsRegistry.getAll();
       expect(allActions).toHaveLength(1);
-      expect(allActions[0].label).toBe('Test Action 2');
-      expect(allActions[0].route).toBe('/test2');
+      expect(allActions[0]?.label).toBe('Test Action 2');
+      expect(allActions[0]?.route).toBe('/test2');
     });
   });
 

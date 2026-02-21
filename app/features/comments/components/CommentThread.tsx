@@ -4,15 +4,12 @@
  */
 
 import { useState } from "react";
-import { format } from "date-fns";
-import { es, enUS } from "date-fns/locale";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
-import { Badge } from "~/components/ui/badge";
 import { CommentItem } from "./CommentItem";
 import { CommentForm } from "./CommentForm";
-import { CommentThread as CommentThreadType } from "~/features/comments/types/comment.types";
+import { type CommentThread as CommentThreadType } from "~/features/comments/types/comment.types";
 
 interface CommentThreadProps {
   thread: CommentThreadType;
@@ -32,12 +29,7 @@ export function CommentThread({
   onRefresh 
 }: CommentThreadProps) {
   const { t } = useTranslation();
-  const dateLocale = t("common.locale") === "es" ? es : en;
   const [showReplyForm, setShowReplyForm] = useState(false);
-
-  const formatDate = (dateString: string) => {
-    return format(new Date(dateString), "PPP", { locale: dateLocale });
-  };
 
   const handleReply = (content: string) => {
     if (onReply) {

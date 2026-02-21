@@ -21,7 +21,7 @@ import {
   useClaimPubSubMessages,
   useDeletePubSubConsumer
 } from "../hooks/usePubSub";
-import type { PubSubGroup, PubSubConsumer, PubSubGroupEntry } from "../types/pubsub.types";
+import type { PubSubConsumer, PubSubGroupEntry } from "../types/pubsub.types";
 
 interface PubSubGroupViewProps {
   streamName: string;
@@ -107,25 +107,25 @@ export function PubSubGroupView({ streamName, groupName, onBack, onConsumerView 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <h4 className="font-medium">{t("pubsub.group.name")}</h4>
-                <p className="text-sm text-gray-600">{group?.name}</p>
+                <p className="text-sm text-gray-600">{group?.data?.name}</p>
               </div>
               <div>
                 <h4 className="font-medium">{t("pubsub.group.stream")}</h4>
-                <p className="text-sm text-gray-600">{group?.stream_name}</p>
+                <p className="text-sm text-gray-600">{group?.data?.stream_name}</p>
               </div>
               <div>
                 <h4 className="font-medium">{t("pubsub.group.consumers")}</h4>
-                <p className="text-sm text-gray-600">{group?.consumers}</p>
+                <p className="text-sm text-gray-600">{group?.data?.consumers}</p>
               </div>
               <div>
                 <h4 className="font-medium">{t("pubsub.group.pending")}</h4>
-                <p className="text-sm text-gray-600">{group?.pending}</p>
+                <p className="text-sm text-gray-600">{group?.data?.pending}</p>
               </div>
               <div>
                 <h4 className="font-medium">{t("pubsub.group.lastDelivered")}</h4>
                 <p className="text-sm text-gray-600">
-                  {group?.last_delivered_id 
-                    ? group.last_delivered_id.substring(0, 8) + "..."
+                  {group?.data?.last_delivered_id 
+                    ? group.data.last_delivered_id.substring(0, 8) + "..."
                     : "-"
                   }
                 </p>
@@ -133,8 +133,8 @@ export function PubSubGroupView({ streamName, groupName, onBack, onConsumerView 
               <div>
                 <h4 className="font-medium">{t("pubsub.group.createdAt")}</h4>
                 <p className="text-sm text-gray-600">
-                  {group?.created_at 
-                    ? new Date(group.created_at).toLocaleString()
+                  {group?.data?.created_at 
+                    ? new Date(group.data.created_at).toLocaleString()
                     : "-"
                   }
                 </p>
@@ -170,8 +170,8 @@ export function PubSubGroupView({ streamName, groupName, onBack, onConsumerView 
     const columns = [
       {
         key: "name",
-        title: t("pubsub.consumers.table.name"),
-        render: (consumer: PubSubConsumer) => (
+        header: t("pubsub.consumers.table.name"),
+        cell: (consumer: PubSubConsumer) => (
           <div>
             <div className="font-medium">{consumer.name}</div>
             <div className="text-sm text-gray-500">
@@ -182,8 +182,8 @@ export function PubSubGroupView({ streamName, groupName, onBack, onConsumerView 
       },
       {
         key: "pending",
-        title: t("pubsub.consumers.table.pending"),
-        render: (consumer: PubSubConsumer) => (
+        header: t("pubsub.consumers.table.pending"),
+        cell: (consumer: PubSubConsumer) => (
           <Badge variant={consumer.pending > 0 ? "destructive" : "secondary"}>
             {consumer.pending}
           </Badge>
@@ -191,8 +191,8 @@ export function PubSubGroupView({ streamName, groupName, onBack, onConsumerView 
       },
       {
         key: "idle_time",
-        title: t("pubsub.consumers.table.idleTime"),
-        render: (consumer: PubSubConsumer) => (
+        header: t("pubsub.consumers.table.idleTime"),
+        cell: (consumer: PubSubConsumer) => (
           <div className="text-sm">
             {Math.floor(consumer.idle_time / 1000)}s
           </div>
@@ -200,8 +200,8 @@ export function PubSubGroupView({ streamName, groupName, onBack, onConsumerView 
       },
       {
         key: "last_seen",
-        title: t("pubsub.consumers.table.lastSeen"),
-        render: (consumer: PubSubConsumer) => (
+        header: t("pubsub.consumers.table.lastSeen"),
+        cell: (consumer: PubSubConsumer) => (
           <div className="text-sm">
             {consumer.last_seen 
               ? new Date(consumer.last_seen).toLocaleString()
@@ -212,8 +212,8 @@ export function PubSubGroupView({ streamName, groupName, onBack, onConsumerView 
       },
       {
         key: "actions",
-        title: t("pubsub.consumers.table.actions"),
-        render: (consumer: PubSubConsumer) => (
+        header: t("pubsub.consumers.table.actions"),
+        cell: (consumer: PubSubConsumer) => (
           <div className="flex items-center space-x-2">
             <Button
               variant="ghost"
@@ -237,7 +237,7 @@ export function PubSubGroupView({ streamName, groupName, onBack, onConsumerView 
           </div>
         ),
       },
-    ];
+    ] as any[];
 
     return (
       <Card>
@@ -278,15 +278,15 @@ export function PubSubGroupView({ streamName, groupName, onBack, onConsumerView 
     const columns = [
       {
         key: "id",
-        title: t("pubsub.pending.table.id"),
-        render: (entry: PubSubGroupEntry) => (
+        header: t("pubsub.pending.table.id"),
+        cell: (entry: PubSubGroupEntry) => (
           <div className="font-mono text-sm">{entry.id.substring(0, 8)}...</div>
         ),
       },
       {
         key: "consumer_name",
-        title: t("pubsub.pending.table.consumer"),
-        render: (entry: PubSubGroupEntry) => (
+        header: t("pubsub.pending.table.consumer"),
+        cell: (entry: PubSubGroupEntry) => (
           <div className="text-sm">
             {entry.consumer_name || "-"}
           </div>
@@ -294,8 +294,8 @@ export function PubSubGroupView({ streamName, groupName, onBack, onConsumerView 
       },
       {
         key: "delivery_count",
-        title: t("pubsub.pending.table.deliveryCount"),
-        render: (entry: PubSubGroupEntry) => (
+        header: t("pubsub.pending.table.deliveryCount"),
+        cell: (entry: PubSubGroupEntry) => (
           <Badge variant={entry.delivery_count > 3 ? "destructive" : "secondary"}>
             {entry.delivery_count}
           </Badge>
@@ -303,8 +303,8 @@ export function PubSubGroupView({ streamName, groupName, onBack, onConsumerView 
       },
       {
         key: "last_delivered",
-        title: t("pubsub.pending.table.lastDelivered"),
-        render: (entry: PubSubGroupEntry) => (
+        header: t("pubsub.pending.table.lastDelivered"),
+        cell: (entry: PubSubGroupEntry) => (
           <div className="text-sm">
             {entry.last_delivered 
               ? new Date(entry.last_delivered).toLocaleString()
@@ -315,8 +315,8 @@ export function PubSubGroupView({ streamName, groupName, onBack, onConsumerView 
       },
       {
         key: "data",
-        title: t("pubsub.pending.table.data"),
-        render: (entry: PubSubGroupEntry) => (
+        header: t("pubsub.pending.table.data"),
+        cell: (entry: PubSubGroupEntry) => (
           <div className="text-sm">
             <pre className="bg-gray-100 p-2 rounded text-xs overflow-auto max-w-xs">
               {JSON.stringify(entry.data, null, 2)}
@@ -326,8 +326,8 @@ export function PubSubGroupView({ streamName, groupName, onBack, onConsumerView 
       },
       {
         key: "timestamp",
-        title: t("pubsub.pending.table.timestamp"),
-        render: (entry: PubSubGroupEntry) => (
+        header: t("pubsub.pending.table.timestamp"),
+        cell: (entry: PubSubGroupEntry) => (
           <div className="text-sm">
             {new Date(entry.timestamp).toLocaleString()}
           </div>
@@ -335,8 +335,8 @@ export function PubSubGroupView({ streamName, groupName, onBack, onConsumerView 
       },
       {
         key: "actions",
-        title: t("pubsub.pending.table.actions"),
-        render: (entry: PubSubGroupEntry) => (
+        header: t("pubsub.pending.table.actions"),
+        cell: (entry: PubSubGroupEntry) => (
           <div className="flex items-center space-x-2">
             <Button
               variant="ghost"

@@ -11,17 +11,6 @@
  * - Data expires after 30 days (TTL)
  */
 
-/**
- * Configuration for encrypted storage
- */
-interface EncryptedStorageConfig {
-  /** Tenant ID for key derivation */
-  tenantId: string;
-  /** Secret for key derivation (should be stored securely) */
-  secret: string;
-  /** Algorithm for encryption (default: AES-GCM) */
-  algorithm?: string;
-}
 
 /**
  * Encrypted data structure
@@ -217,8 +206,8 @@ export function removeEncrypted(key: string): void {
  * Scans localStorage for encrypted data and removes expired entries
  */
 export async function clearExpiredEncrypted(
-  tenantId: string,
-  secret: string
+  _tenantId: string,
+  _secret: string
 ): Promise<number> {
   let clearedCount = 0;
   const keys: string[] = [];

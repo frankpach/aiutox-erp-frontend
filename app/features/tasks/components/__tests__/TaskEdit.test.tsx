@@ -53,6 +53,23 @@ const mockAssignments = vi.fn();
 const mockUsers = vi.fn();
 const mockTags = vi.fn();
 
+const mockTasks = [
+  {
+    id: "task-1",
+    title: "Test Task",
+    description: "Test Description",
+    status: "open" as TaskStatus,
+    priority: "medium" as TaskPriority,
+    assigned_to_id: "user-1",
+    created_by_id: "user-2",
+    due_date: "2025-01-15",
+    checklist: [],
+    created_at: "2025-01-01T00:00:00Z",
+    updated_at: "2025-01-01T00:00:00Z",
+    tenant_id: "tenant-1",
+  },
+];
+
 vi.mock("~/features/tasks/hooks/useTasks", () => ({
   useTask: () => mockTask(),
   useUpdateTask: () => mockUpdateTask(),
@@ -151,8 +168,9 @@ describe("TaskEdit component", () => {
 
   const renderTaskEdit = (props = {}) => {
     const defaultProps = {
-      isOpen: true,
-      onClose: vi.fn(),
+      task: mockTasks[0] || null,
+      open: true,
+      onOpenChange: vi.fn(),
       taskId: "task-123",
       ...props,
     };
@@ -172,12 +190,11 @@ describe("TaskEdit component", () => {
         description: "Descripción existente",
         status: "in_progress" as TaskStatus,
         priority: "high" as TaskPriority,
-        assigned_to: "user1",
-        tags: ["tag1"],
+        assigned_to_id: "user1",
         checklist: [],
         created_at: "2024-01-01T00:00:00Z",
         updated_at: "2024-01-01T00:00:00Z",
-        created_by: "user1",
+        created_by_id: "user1",
         tenant_id: "tenant1",
       };
 
@@ -236,12 +253,11 @@ describe("TaskEdit component", () => {
         description: "Descripción original",
         status: "todo" as TaskStatus,
         priority: "medium" as TaskPriority,
-        assigned_to: null,
-        tags: [],
+        assigned_to_id: null,
         checklist: [],
         created_at: "2024-01-01T00:00:00Z",
         updated_at: "2024-01-01T00:00:00Z",
-        created_by: "user1",
+        created_by_id: "user1",
         tenant_id: "tenant1",
       };
 
@@ -284,7 +300,7 @@ describe("TaskEdit component", () => {
           description: "Descripción actualizada",
           status: "todo",
           priority: "medium",
-          assigned_to: null,
+          assigned_to_id: null,
           tags: [],
           checklist: [],
         });
@@ -298,12 +314,11 @@ describe("TaskEdit component", () => {
         description: "Test Description",
         status: "todo" as TaskStatus,
         priority: "medium" as TaskPriority,
-        assigned_to: null,
-        tags: [],
+        assigned_to_id: null,
         checklist: [],
         created_at: "2024-01-01T00:00:00Z",
         updated_at: "2024-01-01T00:00:00Z",
-        created_by: "user1",
+        created_by_id: "user1",
         tenant_id: "tenant1",
       };
 
@@ -337,12 +352,11 @@ describe("TaskEdit component", () => {
         description: "Test Description",
         status: "todo" as TaskStatus,
         priority: "medium" as TaskPriority,
-        assigned_to: null,
-        tags: [],
+        assigned_to_id: null,
         checklist: [],
         created_at: "2024-01-01T00:00:00Z",
         updated_at: "2024-01-01T00:00:00Z",
-        created_by: "user1",
+        created_by_id: "user1",
         tenant_id: "tenant1",
       };
 
@@ -378,12 +392,11 @@ describe("TaskEdit component", () => {
         description: "Test Description",
         status: "todo" as TaskStatus,
         priority: "medium" as TaskPriority,
-        assigned_to: null,
-        tags: [],
+        assigned_to_id: null,
         checklist: [],
         created_at: "2024-01-01T00:00:00Z",
         updated_at: "2024-01-01T00:00:00Z",
-        created_by: "user1",
+        created_by_id: "user1",
         tenant_id: "tenant1",
       };
 
@@ -417,12 +430,11 @@ describe("TaskEdit component", () => {
         description: "Test Description",
         status: "todo" as TaskStatus,
         priority: "medium" as TaskPriority,
-        assigned_to: "user1",
-        tags: [],
+        assigned_to_id: "user1",
         checklist: [],
         created_at: "2024-01-01T00:00:00Z",
         updated_at: "2024-01-01T00:00:00Z",
-        created_by: "user1",
+        created_by_id: "user1",
         tenant_id: "tenant1",
       };
 
@@ -451,12 +463,11 @@ describe("TaskEdit component", () => {
         description: "Test Description",
         status: "todo" as TaskStatus,
         priority: "medium" as TaskPriority,
-        assigned_to: null,
-        tags: [],
+        assigned_to_id: null,
         checklist: [],
         created_at: "2024-01-01T00:00:00Z",
         updated_at: "2024-01-01T00:00:00Z",
-        created_by: "user1",
+        created_by_id: "user1",
         tenant_id: "tenant1",
       };
 
@@ -492,12 +503,11 @@ describe("TaskEdit component", () => {
         description: "Test Description",
         status: "todo" as TaskStatus,
         priority: "medium" as TaskPriority,
-        assigned_to: null,
-        tags: [],
+        assigned_to_id: null,
         checklist: [],
         created_at: "2024-01-01T00:00:00Z",
         updated_at: "2024-01-01T00:00:00Z",
-        created_by: "user1",
+        created_by_id: "user1",
         tenant_id: "tenant1",
       };
 
@@ -528,12 +538,11 @@ describe("TaskEdit component", () => {
         description: "Test Description",
         status: "todo" as TaskStatus,
         priority: "medium" as TaskPriority,
-        assigned_to: null,
-        tags: [],
+        assigned_to_id: null,
         checklist: [],
         created_at: "2024-01-01T00:00:00Z",
         updated_at: "2024-01-01T00:00:00Z",
-        created_by: "user1",
+        created_by_id: "user1",
         tenant_id: "tenant1",
       };
 
@@ -578,12 +587,11 @@ describe("TaskEdit component", () => {
         description: "Test Description",
         status: "todo" as TaskStatus,
         priority: "medium" as TaskPriority,
-        assigned_to: null,
-        tags: [],
+        assigned_to_id: null,
         checklist: [],
         created_at: "2024-01-01T00:00:00Z",
         updated_at: "2024-01-01T00:00:00Z",
-        created_by: "user1",
+        created_by_id: "user1",
         tenant_id: "tenant1",
       };
 

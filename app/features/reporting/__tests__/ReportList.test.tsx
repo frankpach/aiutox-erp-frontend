@@ -10,16 +10,10 @@ import { ReportList } from "~/features/reporting/components/ReportList";
 import { ReportBuilder } from "~/features/reporting/components/ReportBuilder";
 import { ReportViewer } from "~/features/reporting/components/ReportViewer";
 import { ReportExportButtons } from "~/features/reporting/components/ReportExportButtons";
-import { 
+import type { 
   Report, 
-  ReportCreate, 
-  ReportUpdate, 
   DataSource, 
   ReportExecution, 
-  ReportResult,
-  ReportVisualization,
-  ParameterValues,
-  ReportListParams,
 } from "~/features/reporting/types/reporting.types";
 
 // Mock useTranslation
@@ -192,8 +186,8 @@ const mockExecution: ReportExecution = {
       { month: "February", total: 15000, count: 150 },
     ],
     visualizations: [
-      { type: "table", data: [], config: {} },
-      { type: "chart", data: [], config: {} },
+      { type: "table" as const, data: [], config: { columns: [] } },
+      { type: "chart" as const, data: [], config: { chart_type: "bar" as const, x_axis: "month", y_axis: "total" } },
     ],
     metadata: {
       total_rows: 2,
@@ -404,8 +398,11 @@ describe("Reporting Module", () => {
         </QueryClientProvider>
       );
 
-      const addButton = screen.getAllByText("Agregar")[0]; // First add button for visualizations
-      fireEvent.click(addButton);
+      const addButton = screen.getAllByText("Agregar")[0];
+      expect(addButton).toBeInTheDocument();
+      if (addButton) {
+        fireEvent.click(addButton);
+      }
 
       await waitFor(() => {
         expect(screen.getByText("table")).toBeInTheDocument();
@@ -425,7 +422,10 @@ describe("Reporting Module", () => {
 
       // Click the add button for parameters
       const addButton = screen.getAllByText("Agregar")[1]; // Second add button for parameters
-      fireEvent.click(addButton);
+      expect(addButton).toBeInTheDocument();
+      if (addButton) {
+        fireEvent.click(addButton);
+      }
 
       // Just verify the button click works (the parameter functionality is complex)
       expect(screen.getAllByText("Agregar")).toHaveLength(2); // Both add buttons should be present
@@ -644,8 +644,8 @@ describe("Reporting Module", () => {
     it("has correct visualization types", () => {
       const visualizations = mockReport.visualizations;
       expect(visualizations).toHaveLength(2);
-      expect(visualizations[0].type).toBe("table");
-      expect(visualizations[1].type).toBe("chart");
+      expect(visualizations[0]?.type).toBe("table");
+      expect(visualizations[1]?.type).toBe("chart");
     });
 
     it("has correct parameter structure", () => {

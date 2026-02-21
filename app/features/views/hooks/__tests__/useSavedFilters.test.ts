@@ -228,9 +228,9 @@ describe("useSavedFilters", () => {
       expect(result.current.loading).toBe(false);
     });
 
-    const myFilters = result.current.getMyFilters("users");
+    const myFilters = result.current?.getMyFilters?.("users");
     expect(myFilters).toHaveLength(1);
-    expect(myFilters[0].is_shared).toBe(false);
+    expect(myFilters?.[0]?.is_shared).toBe(false);
   });
 });
 

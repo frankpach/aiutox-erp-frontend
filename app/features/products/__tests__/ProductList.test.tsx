@@ -3,18 +3,11 @@
  * Basic unit tests for Products module
  */
 
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import ProductsPage from "~/routes/products";
-import { 
-  useProducts, 
-  useCreateProduct, 
-  useUpdateProduct, 
-  useDeleteProduct,
-  useProductCategories 
-} from "~/features/products/hooks/useProducts";
-import type { Product, ProductCreate, ProductUpdate } from "~/features/products/types/product.types";
+import type { Product } from "~/features/products/types/product.types";
 
 // Mock api client
 const mockApiClient = {

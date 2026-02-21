@@ -40,7 +40,7 @@ export function usePermissions() {
       hasPermission,
       hasRole: (role: string) => {
         if (!user?.roles) return false;
-        return user.roles.includes(role);
+        return user.roles.includes(role as any); // Cast string to UserRole
       },
       hasAnyPermission: (permissions: string[]) => {
         if (!user?.permissions) return false;
@@ -61,7 +61,7 @@ export function usePermissions() {
       },
       hasAnyRole: (roles: string[]) => {
         if (!user?.roles) return false;
-        return roles.some((r) => user.roles?.includes(r));
+        return roles.some((r) => user.roles?.includes(r as any)); // Cast string to UserRole
       },
       hasAllPermissions: (permissions: string[]) => {
         if (!user?.permissions) return false;

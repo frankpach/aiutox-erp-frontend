@@ -48,7 +48,6 @@ export default function PubSubPage() {
         return (
           <PubSubDashboard
             onStreamView={handleStreamView}
-            onGroupView={handleGroupView}
           />
         );
 

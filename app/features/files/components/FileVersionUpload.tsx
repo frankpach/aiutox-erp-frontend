@@ -13,7 +13,6 @@ import { Progress } from "~/components/ui/progress";
 import { showToast } from "~/components/common/Toast";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 import { useFileVersionCreate } from "../hooks/useFiles";
-import { cn } from "~/lib/utils";
 
 export interface FileVersionUploadProps {
   fileId: string;

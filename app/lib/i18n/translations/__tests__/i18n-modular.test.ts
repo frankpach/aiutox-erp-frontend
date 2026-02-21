@@ -20,10 +20,10 @@ describe('i18n Modular Autodiscovery', () => {
     expect(typeof translations.en.tasks).toBe('object');
     
     // Verificar que tengan propiedades básicas
-    expect(translations.es.users.title).toBeDefined();
-    expect(translations.en.users.title).toBeDefined();
-    expect(translations.es.tasks.title).toBeDefined();
-    expect(translations.en.tasks.title).toBeDefined();
+    expect((translations.es.users as any).title).toBeDefined();
+    expect((translations.en.users as any).title).toBeDefined();
+    expect((translations.es.tasks as any).title).toBeDefined();
+    expect((translations.en.tasks as any).title).toBeDefined();
   });
   
   test('carga traducciones comunes', () => {
@@ -31,10 +31,10 @@ describe('i18n Modular Autodiscovery', () => {
     expect(translations.en.common).toBeDefined();
     
     // Verificar traducciones comunes básicas
-    expect(translations.es.common.save).toBeDefined();
-    expect(translations.en.common.save).toBeDefined();
-    expect(translations.es.common.cancel).toBeDefined();
-    expect(translations.en.common.cancel).toBeDefined();
+    expect((translations.es.common as any).save).toBeDefined();
+    expect((translations.en.common as any).save).toBeDefined();
+    expect((translations.es.common as any).cancel).toBeDefined();
+    expect((translations.en.common as any).cancel).toBeDefined();
   });
   
   test('tiene estructura consistente entre idiomas', () => {
@@ -59,16 +59,16 @@ describe('i18n Modular Autodiscovery', () => {
   
   test('tipos de traducciones son consistentes', () => {
     // Verificar que las traducciones sean strings para claves básicas
-    expect(typeof translations.es.users.title).toBe('string');
-    expect(typeof translations.en.users.title).toBe('string');
-    expect(typeof translations.es.tasks.title).toBe('string');
-    expect(typeof translations.en.tasks.title).toBe('string');
+    expect(typeof (translations.es.users as any).title).toBe('string');
+    expect(typeof (translations.en.users as any).title).toBe('string');
+    expect(typeof (translations.es.tasks as any).title).toBe('string');
+    expect(typeof (translations.en.tasks as any).title).toBe('string');
   });
   
   test('no hay colisiones entre módulos', () => {
     // Verificar que no haya sobrescritura accidental
-    const usersTitleEs = translations.es.users.title;
-    const tasksTitleEs = translations.es.tasks.title;
+    const usersTitleEs = (translations.es.users as any).title;
+    const tasksTitleEs = (translations.es.tasks as any).title;
     
     expect(usersTitleEs).not.toBe(tasksTitleEs);
     expect(usersTitleEs).toBe('Usuarios');
@@ -77,8 +77,8 @@ describe('i18n Modular Autodiscovery', () => {
   
   test('estructura de módulos es completa', () => {
     // Verificar que los módulos tengan estructura esperada
-    const userModuleEs = translations.es.users;
-    const userModuleEn = translations.en.users;
+    const userModuleEs = translations.es.users as any;
+    const userModuleEn = translations.en.users as any;
     
     // Campos básicos que deberían existir (ajustados a la realidad)
     const expectedFields = ['title', 'description', 'edit', 'delete'];

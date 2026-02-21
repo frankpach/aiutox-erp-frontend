@@ -178,31 +178,38 @@ export function UserForm({
       }
 
       // Sanitize inputs before submission
-      const sanitizedData = sanitizeUserFormData(data);
+      // Filter data to only include compatible fields before sanitizing
+      const compatibleData: Partial<UserCreate | UserUpdate> = {
+        email: data.email,
+        first_name: data.first_name,
+        last_name: data.last_name,
+        middle_name: data.middle_name,
+        date_of_birth: data.date_of_birth,
+        gender: data.gender,
+        nationality: data.nationality,
+        marital_status: data.marital_status,
+        job_title: data.job_title,
+        department: data.department,
+        employee_id: data.employee_id,
+        preferred_language: data.preferred_language,
+        timezone: data.timezone,
+        avatar_url: data.avatar_url,
+        bio: data.bio,
+        notes: data.notes,
+        // is_active and two_factor_enabled are not part of UserCreate | UserUpdate types
+        // full_name will be handled separately if needed
+      };
+      
+      const sanitizedData = sanitizeUserFormData(compatibleData);
       console.warn("[UserForm] Data sanitized:", sanitizedData);
 
-      // Remove empty strings and convert to null for optional fields
-      cleanedData = {};
-      for (const [key, value] of Object.entries(sanitizedData)) {
-        if (value !== undefined && value !== null && value !== "") {
-          // Solo enviar campos que tengan un valor válido
-          if (key === "is_active" || key === "two_factor_enabled") {
-            // Convertir boolean values explícitamente y solo enviar si es true
-            const boolValue = value === true || value === "true";
-            if (boolValue === true) {
-              (cleanedData as Record<string, unknown>)[key] = boolValue;
-            }
-            // Si es false, no lo enviamos (Pydantic lo manejará mejor)
-          } else {
-            (cleanedData as Record<string, unknown>)[key] = value;
-          }
-        }
-      }
+      // finalData is now the sanitized compatible data
+      const finalData = sanitizedData;
 
       // Actualizar avatar_url si se subió un archivo
       if (avatarUrl && avatarUrl !== data.avatar_url) {
-        (cleanedData as Record<string, unknown>).avatar_url = avatarUrl;
-        console.warn("[UserForm] Avatar URL added to cleanedData:", avatarUrl);
+        (finalData as Record<string, unknown>).avatar_url = avatarUrl;
+        console.warn("[UserForm] Avatar URL added to finalData:", avatarUrl);
       }
 
       // En modo self-edit, eliminar explícitamente campos prohibidos

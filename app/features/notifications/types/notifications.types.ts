@@ -3,7 +3,7 @@
  * Type definitions for Notifications module
  */
 
-import type { StandardResponse, StandardListResponse } from "~/lib/api/types/common.types";
+import type { StandardListResponse } from "~/lib/api/types/common.types";
 
 // Notification Template types
 export interface NotificationTemplate {

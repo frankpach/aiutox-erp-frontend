@@ -70,10 +70,22 @@ export function FilePermissionsSelector({
     onChange(permissions.filter((_, i) => i !== index));
   };
 
-  const updatePermission = (index: number, field: keyof FilePermissionRequest, value: boolean) => {
+  const updatePermission = (index: number, field: keyof FilePermissionRequest, value: boolean | string) => {
     const updated = [...permissions];
-    updated[index] = { ...updated[index], [field]: value };
-    onChange(updated);
+    // Ensure required fields are not undefined
+    const permission = updated[index];
+    if (permission) {
+      const safePermission = {
+        target_type: permission.target_type || "user",
+        target_id: permission.target_id || "",
+        can_view: permission.can_view || false,
+        can_download: permission.can_download || false,
+        can_edit: permission.can_edit || false,
+        can_delete: permission.can_delete || false,
+      } as FilePermissionRequest;
+      updated[index] = { ...safePermission, [field]: value };
+      onChange(updated);
+    }
   };
 
   const getTargetName = (permission: FilePermissionRequest): string => {
@@ -127,7 +139,7 @@ export function FilePermissionsSelector({
         {/* Informative message */}
         <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
           <div className="flex items-start gap-2">
-            <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+            <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
             <p className="text-xs text-blue-800 dark:text-blue-200">
               {t("files.ownerFullAccess")}
             </p>
@@ -180,7 +192,7 @@ export function FilePermissionsSelector({
             </SelectContent>
           </Select>
 
-          <Button type="button" onClick={addPermission} size="icon" variant="outline">
+          <Button type="button" onClick={addPermission} size="icon" variant="outline" className="shrink-0">
             <Plus className="h-4 w-4" />
           </Button>
         </div>
@@ -196,7 +208,7 @@ export function FilePermissionsSelector({
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   {getTargetIcon(permission.target_type)}
                   <span className="font-medium truncate">{getTargetName(permission)}</span>
-                  <Badge variant="outline" className="flex-shrink-0">{permission.target_type}</Badge>
+                  <Badge variant="outline" className="shrink-0">{permission.target_type}</Badge>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2 flex-1">
@@ -258,7 +270,7 @@ export function FilePermissionsSelector({
                   variant="ghost"
                   size="icon"
                   onClick={() => removePermission(index)}
-                  className="flex-shrink-0"
+                  className="shrink-0"
                 >
                   <X className="h-4 w-4" />
                 </Button>

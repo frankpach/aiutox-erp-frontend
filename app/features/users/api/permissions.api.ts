@@ -12,7 +12,6 @@ import type {
 import type {
   Permission,
   PermissionGroup,
-  DelegatedPermission,
   PermissionDelegation,
 } from "../types/user.types";
 

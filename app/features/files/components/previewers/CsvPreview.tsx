@@ -94,7 +94,7 @@ function parseCSV(content: string): string[][] {
 /**
  * CsvPreview component
  */
-export function CsvPreview({ fileId, fileName }: CsvPreviewProps) {
+export function CsvPreview({ fileId }: CsvPreviewProps) {
   const { t } = useTranslation();
   const { data: content, isLoading, error } = useFileContent(fileId);
 
@@ -157,7 +157,7 @@ export function CsvPreview({ fileId, fileName }: CsvPreviewProps) {
       <CardContent className="p-6">
         {hasMoreRows && (
           <p className="text-sm text-muted-foreground mb-4">
-            {t("files.showingFirstRows", { count: 100 }) || `Showing first 100 rows of ${parsedData.length}`}
+            {t("files.showingFirstRows") || `Showing first 100 rows`}
           </p>
         )}
         <div className="border rounded-md overflow-auto max-h-[600px]">

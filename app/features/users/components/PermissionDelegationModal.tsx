@@ -149,7 +149,10 @@ export function PermissionDelegationModal({
   // Update form when selectedPermissions changes
   useEffect(() => {
     if (selectedPermissions.size > 0) {
-      setValue("permission", Array.from(selectedPermissions)[0]);
+      const firstPermission = Array.from(selectedPermissions)[0];
+      if (firstPermission) {
+        setValue("permission", firstPermission);
+      }
     }
   }, [selectedPermissions, setValue]);
 

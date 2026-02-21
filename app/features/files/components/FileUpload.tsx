@@ -5,16 +5,15 @@
  */
 
 import { useCallback, useState, useRef } from "react";
-import { Upload, CheckCircle, X } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
 import { Progress } from "~/components/ui/progress";
-import { Badge } from "~/components/ui/badge";
 import { showToast } from "~/components/common/Toast";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 import { useFileUpload } from "../hooks/useFiles";
 import { addFileTags } from "../api/files.api";
 import { FileUploadConfig } from "./FileUploadConfig";
+import { Upload, X } from "lucide-react";
 import { cn } from "~/lib/utils";
 import type { FileUploadParams, FilePermissionRequest } from "../types/file.types";
 

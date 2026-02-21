@@ -28,9 +28,9 @@ export function SearchHeader({
           placeholder={t("search.placeholder")}
           className="w-full pl-10 pr-10 h-12 text-base"
           value={searchQuery}
-          onChange={(e) => {
+          onChange={(_e) => {
             // Update local state if needed
-            const target = e.target as HTMLInputElement;
+            // const target = e.target as HTMLInputElement; // Unused for now
             // This assumes the parent component handles the actual state
             // and updates the searchQuery prop accordingly
           }}
@@ -54,12 +54,9 @@ export function SearchHeader({
         <div className="mt-4">
           <p className="text-sm text-muted-foreground">
             {resultCount > 0 ? (
-              t("search.resultsCount", { 
-                count: resultCount,
-                query: searchQuery 
-              })
+              t("search.resultsCount").replace("{count}", resultCount.toString())
             ) : searchQuery ? (
-              t("search.noResultsFor", { query: searchQuery })
+              t("search.noResultsFor")
             ) : (
               t("search.noResults")
             )}

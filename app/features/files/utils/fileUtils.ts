@@ -20,7 +20,7 @@ export function formatFileSize(bytes: number): string {
  */
 export function getFileExtension(filename: string): string {
   const parts = filename.split(".");
-  return parts.length > 1 ? parts[parts.length - 1].toLowerCase() : "";
+  return parts.length > 1 ? (parts[parts.length - 1]?.toLowerCase() || "") : "";
 }
 
 /**

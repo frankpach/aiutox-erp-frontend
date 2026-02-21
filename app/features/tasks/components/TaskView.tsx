@@ -44,6 +44,8 @@ export function TaskView({ task, open, onOpenChange }: TaskViewProps) {
       done: "bg-green-100 text-green-800 border-green-200",
       cancelled: "bg-red-100 text-red-800 border-red-200",
       on_hold: "bg-yellow-100 text-yellow-800 border-yellow-200",
+      blocked: "bg-orange-100 text-orange-800 border-orange-200",
+      review: "bg-purple-100 text-purple-800 border-purple-200",
     };
 
     return (

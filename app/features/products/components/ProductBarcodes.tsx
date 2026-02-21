@@ -38,16 +38,16 @@ export function ProductBarcodes({ product, onBack }: ProductBarcodesProps) {
   const [editingBarcode, setEditingBarcode] = useState<ProductBarcode | null>(null);
 
   // Queries
-  const { data: barcodesData, isLoading, refetch } = useProductBarcodes(product.id);
+  const { data: barcodesData, refetch } = useProductBarcodes(product.id);
   const createBarcodeMutation = useCreateBarcode(product.id);
   const updateBarcodeMutation = useUpdateBarcode(product.id);
   const deleteBarcodeMutation = useDeleteBarcode(product.id);
 
   const barcodes = barcodesData?.data || [];
 
-  const handleCreateBarcode = async (data: ProductBarcodeCreate) => {
+  const handleCreateBarcode = async (data: ProductBarcodeCreate | ProductBarcodeUpdate) => {
     try {
-      await createBarcodeMutation.mutateAsync(data);
+      await createBarcodeMutation.mutateAsync(data as ProductBarcodeCreate);
       setShowCreateDialog(false);
       refetch();
     } catch (error) {
@@ -88,15 +88,7 @@ export function ProductBarcodes({ product, onBack }: ProductBarcodesProps) {
     }
   };
 
-  const barcodeTypes = [
-    { value: "CODE128", label: "Code 128" },
-    { value: "EAN13", label: "EAN-13" },
-    { value: "UPC", label: "UPC" },
-    { value: "QR", label: "QR Code" },
-    { value: "CODE39", label: "Code 39" },
-    { value: "ITF14", label: "ITF-14" },
-  ];
-
+  
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -231,15 +223,7 @@ function BarcodeForm({ barcode, onSubmit, onCancel }: BarcodeFormProps) {
     onSubmit(formData);
   };
 
-  const barcodeTypes = [
-    { value: "CODE128", label: "Code 128" },
-    { value: "EAN13", label: "EAN-13" },
-    { value: "UPC", label: "UPC" },
-    { value: "QR", label: "QR Code" },
-    { value: "CODE39", label: "Code 39" },
-    { value: "ITF14", label: "ITF-14" },
-  ];
-
+  
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
@@ -263,7 +247,14 @@ function BarcodeForm({ barcode, onSubmit, onCancel }: BarcodeFormProps) {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {barcodeTypes.map((type) => (
+            {[
+              { value: "CODE128", label: "Code 128" },
+              { value: "EAN13", label: "EAN-13" },
+              { value: "UPC", label: "UPC" },
+              { value: "QR", label: "QR Code" },
+              { value: "CODE39", label: "Code 39" },
+              { value: "ITF14", label: "ITF-14" },
+            ].map((type: { value: string; label: string }) => (
               <SelectItem key={type.value} value={type.value}>
                 {type.label}
               </SelectItem>

@@ -3,7 +3,6 @@
  * Displays a hierarchical tree of folders
  */
 
-import { useState } from "react";
 import { ChevronRight, ChevronDown, Folder, FolderOpen } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";

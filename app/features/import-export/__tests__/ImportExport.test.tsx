@@ -279,7 +279,7 @@ describe("Import/Export Module", () => {
         const { data, isLoading } = useImportJobs();
         
         if (isLoading) return <div>Loading...</div>;
-        return <div>{data?.length} jobs</div>;
+        return <div>{data?.data?.length || 0} jobs</div>;
       };
 
       render(
@@ -344,7 +344,7 @@ describe("Import/Export Module", () => {
         const { data, isLoading } = useImportTemplates();
         
         if (isLoading) return <div>Loading...</div>;
-        return <div>{data?.length} templates</div>;
+        return <div>{data?.data?.length || 0} templates</div>;
       };
 
       render(
@@ -363,7 +363,7 @@ describe("Import/Export Module", () => {
         const { data, isLoading } = useImportExportStats();
         
         if (isLoading) return <div>Loading...</div>;
-        return <div>{data?.total_import_jobs} imports</div>;
+        return <div>{data?.data?.total_import_jobs || 0} imports</div>;
       };
 
       render(
@@ -382,7 +382,7 @@ describe("Import/Export Module", () => {
         const { data, isLoading } = useAvailableModules();
         
         if (isLoading) return <div>Loading...</div>;
-        return <div>{data?.length} modules</div>;
+        return <div>{data?.data?.length || 0} modules</div>;
       };
 
       render(

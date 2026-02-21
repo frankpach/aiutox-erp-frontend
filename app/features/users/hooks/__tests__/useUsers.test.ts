@@ -40,10 +40,33 @@ describe("useUsers", () => {
         {
           id: "1",
           email: "test@example.com",
+          tenant_id: "tenant-1",
+          full_name: "Test User",
           first_name: "Test",
           last_name: "User",
+          middle_name: null,
+          date_of_birth: null,
+          gender: null,
+          nationality: null,
+          marital_status: null,
+          job_title: null,
+          department: null,
+          employee_id: null,
+          preferred_language: "es",
+          timezone: null,
+          avatar_url: null,
+          bio: null,
+          notes: null,
+          last_login_at: null,
+          email_verified_at: null,
+          phone_verified_at: null,
+          two_factor_enabled: false,
           is_active: true,
-        },
+          created_at: "2024-01-01T00:00:00Z",
+          updated_at: "2024-01-01T00:00:00Z",
+          roles: [],
+          permissions: [],
+        } as any, // Cast to any to avoid type issues in tests
       ];
 
       vi.mocked(usersApi.listUsers).mockResolvedValue({
@@ -54,11 +77,12 @@ describe("useUsers", () => {
           page_size: 20,
           total_pages: 1,
         },
+        error: null, // Add missing error property
       });
 
       const { result } = renderHookWithQueryClient(() =>
         useUsers({ page: 1, page_size: 20 })
-      );
+      ) as any; // Cast to any for test hook result
 
       await waitFor(() => {
         expect(result.current.loading).toBe(false);
@@ -75,7 +99,7 @@ describe("useUsers", () => {
 
       const { result } = renderHookWithQueryClient(() =>
         useUsers({ page: 1, page_size: 20 })
-      );
+      ) as any; // Cast to any for test hook result
 
       // Just verify the hook renders without crashing
       expect(result.current).toBeDefined();
@@ -88,16 +112,40 @@ describe("useUsers", () => {
       const mockUser = {
         id: "1",
         email: "test@example.com",
+        tenant_id: "tenant-1",
+        full_name: "Test User",
         first_name: "Test",
         last_name: "User",
+        middle_name: null,
+        date_of_birth: null,
+        gender: null,
+        nationality: null,
+        marital_status: null,
+        job_title: null,
+        department: null,
+        employee_id: null,
+        preferred_language: "es",
+        timezone: null,
+        avatar_url: null,
+        bio: null,
+        notes: null,
+        last_login_at: null,
+        email_verified_at: null,
+        phone_verified_at: null,
+        two_factor_enabled: false,
         is_active: true,
-      };
+        created_at: "2024-01-01T00:00:00Z",
+        updated_at: "2024-01-01T00:00:00Z",
+        roles: [],
+        permissions: [],
+      } as any; // Cast to any to avoid type issues in tests
 
       vi.mocked(usersApi.getUser).mockResolvedValue({
         data: mockUser,
+        error: null, // Add missing error property
       });
 
-      const { result } = renderHookWithQueryClient(() => useUser("1"));
+      const { result } = renderHookWithQueryClient(() => useUser("1")) as any; // Cast to any for test hook result
 
       await waitFor(() => {
         expect(result.current.loading).toBe(false);
@@ -111,7 +159,7 @@ describe("useUsers", () => {
         new Error("User not found")
       );
 
-      const { result } = renderHookWithQueryClient(() => useUser("999"));
+      const { result } = renderHookWithQueryClient(() => useUser("999")) as any; // Cast to any for test hook result
 
       await waitFor(() => {
         expect(result.current.loading).toBe(false);

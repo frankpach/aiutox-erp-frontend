@@ -338,7 +338,6 @@ export function ProductList({
               pageSize: filters.page_size || 20,
               total,
               onPageChange: (page) => handleFilterChange("page", page),
-              onPageSizeChange: (pageSize) => handleFilterChange("page_size", pageSize),
             }}
             emptyState={
               <div className="text-center py-8">

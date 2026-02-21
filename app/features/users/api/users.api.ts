@@ -9,15 +9,7 @@ import type {
   StandardResponse,
   StandardListResponse,
 } from "~/lib/api/types/common.types";
-import type { User, UserCreate, UserUpdate } from "../types/user.types";
-
-export interface UsersListParams {
-  page?: number;
-  page_size?: number;
-  search?: string;
-  is_active?: boolean;
-  saved_filter_id?: string;
-}
+import type { User, UserCreate, UserUpdate, UsersListParams } from "../types/user.types";
 
 /**
  * List users

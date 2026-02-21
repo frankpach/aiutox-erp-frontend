@@ -2,6 +2,7 @@
  * Tests para utilidades de subtareas
  */
 
+import { describe, it, expect } from "vitest";
 import {
   calculateSubtaskProgress,
   getTaskDepth,
@@ -131,9 +132,9 @@ describe("buildTaskTree", () => {
     ];
     const tree = buildTaskTree(tasks);
     expect(tree).toHaveLength(1);
-    expect(tree[0].id).toBe("r1");
-    expect(tree[0].subtasks).toHaveLength(2);
-    expect(tree[0].subtasks![0].subtasks).toHaveLength(1);
+    expect(tree[0]?.id).toBe("r1");
+    expect(tree[0]?.subtasks).toHaveLength(2);
+    expect(tree[0]?.subtasks?.[0]?.subtasks).toHaveLength(1);
   });
 
   it("maneja tareas sin padre como raíces", () => {

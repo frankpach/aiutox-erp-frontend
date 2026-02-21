@@ -89,7 +89,7 @@ export function useContactMethod(contactMethodId: string | null) {
     queryKey: contactMethodKeys.detail(contactMethodId || ""),
     queryFn: () => {
       if (!contactMethodId) {
-        return Promise.resolve({ data: null });
+        return Promise.resolve({ data: null, meta: null, error: null } as any);
       }
       return getContactMethod(contactMethodId);
     },

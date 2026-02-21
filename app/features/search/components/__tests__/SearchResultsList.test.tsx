@@ -1,8 +1,8 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { SearchResultsList } from "../SearchResultsList";
-import { type SearchResultItem } from "../../api/search.api";
-import { MemoryRouter } from "react-router-dom";
+import type { SearchResultItem } from "../../api/search.api";
+import { MemoryRouter } from "react-router";
 import { formatDistanceToNow } from "date-fns";
 
 // Mock the formatDistanceToNow function
@@ -37,6 +37,7 @@ describe("SearchResultsList", () => {
       title: "Test Document",
       description: "This is a test document",
       url: "/documents/1",
+      createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       metadata: {
         author: "Test User",
@@ -48,11 +49,12 @@ describe("SearchResultsList", () => {
       id: "2",
       type: "user",
       title: "Test User",
-      description: "Test User Description",
+      description: "This is a test user",
       url: "/users/2",
-      updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
       metadata: {
-        role: "Admin",
+        role: "admin",
         department: "IT"
       },
       score: 0.85
@@ -178,7 +180,7 @@ describe("SearchResultsList", () => {
   it("displays result metadata when available", () => {
     render(
       <MemoryRouter>
-        <SearchResultsList {...defaultProps} results={[mockResults[0]]} />
+        <SearchResultsList {...defaultProps} results={[mockResults[0]!]} />
       </MemoryRouter>
     );
     
@@ -189,7 +191,7 @@ describe("SearchResultsList", () => {
   it("displays score when available", () => {
     render(
       <MemoryRouter>
-        <SearchResultsList {...defaultProps} results={[mockResults[0]]} />
+        <SearchResultsList {...defaultProps} results={[mockResults[0]!]} />
       </MemoryRouter>
     );
     

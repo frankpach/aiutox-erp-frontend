@@ -18,20 +18,18 @@ import {
   usePubSubHealth,
   usePubSubMetrics,
   usePubSubStreams,
-  useCreatePubSubStream,
   useDeletePubSubStream,
   useClearPubSubStream,
   useTrimPubSubStream,
   useResetPubSubStats
 } from "../hooks/usePubSub";
-import type { PubSubStream, PubSubStats } from "../types/pubsub.types";
+import type { PubSubStream } from "../types/pubsub.types";
 
 interface PubSubDashboardProps {
   onStreamView?: (stream: PubSubStream) => void;
-  onGroupView?: (streamName: string, groupName: string) => void;
 }
 
-export function PubSubDashboard({ onStreamView, onGroupView }: PubSubDashboardProps) {
+export function PubSubDashboard({ onStreamView }: PubSubDashboardProps) {
   const { t } = useTranslation();
   const [selectedTab, setSelectedTab] = useState("overview");
 
@@ -41,7 +39,6 @@ export function PubSubDashboard({ onStreamView, onGroupView }: PubSubDashboardPr
   const { data: metrics, isLoading: metricsLoading } = usePubSubMetrics();
   const { data: streams, isLoading: streamsLoading, error: streamsError, refetch: refetchStreams } = usePubSubStreams();
 
-  const createStreamMutation = useCreatePubSubStream();
   const deleteStreamMutation = useDeletePubSubStream();
   const clearStreamMutation = useClearPubSubStream();
   const trimStreamMutation = useTrimPubSubStream();
@@ -103,7 +100,7 @@ export function PubSubDashboard({ onStreamView, onGroupView }: PubSubDashboardPr
             <CardTitle className="text-sm font-medium">{t("pubsub.stats.totalStreams")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.total_streams || 0}</div>
+            <div className="text-2xl font-bold">{stats?.data?.total_streams || 0}</div>
           </CardContent>
         </Card>
 
@@ -112,7 +109,7 @@ export function PubSubDashboard({ onStreamView, onGroupView }: PubSubDashboardPr
             <CardTitle className="text-sm font-medium">{t("pubsub.stats.totalGroups")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.total_groups || 0}</div>
+            <div className="text-2xl font-bold">{stats?.data?.total_groups || 0}</div>
           </CardContent>
         </Card>
 
@@ -121,7 +118,7 @@ export function PubSubDashboard({ onStreamView, onGroupView }: PubSubDashboardPr
             <CardTitle className="text-sm font-medium">{t("pubsub.stats.totalPending")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.total_pending || 0}</div>
+            <div className="text-2xl font-bold">{stats?.data?.total_pending || 0}</div>
           </CardContent>
         </Card>
 
@@ -130,8 +127,8 @@ export function PubSubDashboard({ onStreamView, onGroupView }: PubSubDashboardPr
             <CardTitle className="text-sm font-medium">{t("pubsub.health.status")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <Badge variant={health?.status === "healthy" ? "default" : health?.status === "degraded" ? "secondary" : "destructive"}>
-              {health?.status || "unknown"}
+            <Badge variant={health?.data?.status === "healthy" ? "default" : health?.data?.status === "degraded" ? "secondary" : "destructive"}>
+              {health?.data?.status || "unknown"}
             </Badge>
           </CardContent>
         </Card>
@@ -141,9 +138,9 @@ export function PubSubDashboard({ onStreamView, onGroupView }: PubSubDashboardPr
             <CardTitle className="text-sm font-medium">{t("pubsub.metrics.messagesPerSecond")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{metrics?.messages_per_second || 0}</div>
+            <div className="text-2xl font-bold">{metrics?.data?.messages_per_second || 0}</div>
             <div className="text-sm text-gray-500 mt-1">
-              {t("pubsub.metrics.totalProcessed")}: {metrics?.messages_processed_total || 0}
+              {t("pubsub.metrics.totalProcessed")}: {metrics?.data?.messages_processed_total || 0}
             </div>
           </CardContent>
         </Card>
@@ -175,8 +172,8 @@ export function PubSubDashboard({ onStreamView, onGroupView }: PubSubDashboardPr
     const columns = [
       {
         key: "name",
-        title: t("pubsub.streams.table.name"),
-        render: (stream: PubSubStream) => (
+        header: t("pubsub.streams.table.name"),
+        cell: (stream: PubSubStream) => (
           <div>
             <div className="font-medium">{stream.name}</div>
             <div className="text-sm text-gray-500">{stream.length} messages</div>
@@ -185,15 +182,15 @@ export function PubSubDashboard({ onStreamView, onGroupView }: PubSubDashboardPr
       },
       {
         key: "groups",
-        title: t("pubsub.streams.table.groups"),
-        render: (stream: PubSubStream) => (
+        header: t("pubsub.streams.table.groups"),
+        cell: (stream: PubSubStream) => (
           <Badge variant="secondary">{stream.groups}</Badge>
         ),
       },
       {
         key: "pending",
-        title: t("pubsub.streams.table.pending"),
-        render: (stream: PubSubStream) => (
+        header: t("pubsub.streams.table.pending"),
+        cell: (stream: PubSubStream) => (
           <Badge variant={stream.pending > 0 ? "destructive" : "secondary"}>
             {stream.pending}
           </Badge>
@@ -201,8 +198,8 @@ export function PubSubDashboard({ onStreamView, onGroupView }: PubSubDashboardPr
       },
       {
         key: "last_read",
-        title: t("pubsub.streams.table.lastRead"),
-        render: (stream: PubSubStream) => (
+        header: t("pubsub.streams.table.lastRead"),
+        cell: (stream: PubSubStream) => (
           <div className="text-sm">
             {stream.last_read 
               ? new Date(stream.last_read).toLocaleString()
@@ -213,8 +210,8 @@ export function PubSubDashboard({ onStreamView, onGroupView }: PubSubDashboardPr
       },
       {
         key: "actions",
-        title: t("pubsub.streams.table.actions"),
-        render: (stream: PubSubStream) => (
+        header: t("pubsub.streams.table.actions"),
+        cell: (stream: PubSubStream) => (
           <div className="flex items-center space-x-2">
             <Button
               variant="ghost"
@@ -252,7 +249,7 @@ export function PubSubDashboard({ onStreamView, onGroupView }: PubSubDashboardPr
           </div>
         ),
       },
-    ];
+    ] as any[];
 
     return (
       <Card>
@@ -279,7 +276,7 @@ export function PubSubDashboard({ onStreamView, onGroupView }: PubSubDashboardPr
       return <ErrorState message={t("pubsub.error.loading")} />;
     }
 
-    const redisInfo = stats?.redis_info;
+    const redisInfo = stats?.data?.redis_info;
 
     if (!redisInfo) {
       return (

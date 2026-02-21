@@ -24,7 +24,7 @@ import {
   useRemoveRole,
 } from "../hooks/useUserRoles";
 import { useCustomRoles } from "../hooks/useCustomRoles";
-import type { User, GlobalRole, CustomRole } from "../types/user.types";
+import type { User, GlobalRole } from "../types/user.types";
 
 interface UserRolesManagerProps {
   user: User;

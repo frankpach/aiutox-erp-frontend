@@ -4,66 +4,39 @@
  */
 
 import { useState } from "react";
-import { useTranslation } from "~/lib/i18n/useTranslation";
 import { PageLayout } from "~/components/layout/PageLayout";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Separator } from "~/components/ui/separator";
 import { 
   SearchIcon,
   DownloadIcon,
   UploadIcon,
-  PlugIcon,
+  RefreshIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { 
   useNotificationQueue, 
-  useSendNotification, 
-  useRetryNotification,
-  useDeleteNotification 
+  useSendNotification
 } from "~/features/notifications/hooks/useNotifications";
 import type { NotificationQueue, NotificationSendRequest } from "~/features/notifications/types/notifications.types";
 
 export function NotificationsQueue() {
-  const { t } = useTranslation();
-  const { data: queueResponse, isLoading, error, refetch } = useNotificationQueue();
   const sendNotification = useSendNotification();
-  const retryNotification = useRetryNotification();
-  const deleteNotification = useDeleteNotification();
+  const { data: queueResponse, isLoading, error, refetch } = useNotificationQueue() as any;
 
-  const queue = queueResponse?.data || [];
+  const queue = queueResponse?.data?.data || [];
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [channelFilter, setChannelFilter] = useState<string>("");
 
-  const filteredQueue = queue.filter(item => {
+  const filteredQueue = queue.filter((item: any) => {
     const matchesSearch = item.event_type.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          item.recipient_id.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = !statusFilter || item.status === statusFilter;
     const matchesChannel = !channelFilter || item.channel === channelFilter;
     return matchesSearch && matchesStatus && matchesChannel;
   });
-
-  const handleRetry = async (notificationId: string) => {
-    try {
-      await retryNotification.mutateAsync(notificationId);
-      refetch();
-    } catch (error) {
-      console.error("Error retrying notification:", error);
-    }
-  };
-
-  const handleDelete = async (notificationId: string) => {
-    if (confirm("Are you sure you want to delete this notification?")) {
-      try {
-        await deleteNotification.mutateAsync(notificationId);
-        refetch();
-      } catch (error) {
-        console.error("Error deleting notification:", error);
-      }
-    }
-  };
 
   const handleResend = async (item: NotificationQueue) => {
     try {
@@ -78,19 +51,6 @@ export function NotificationsQueue() {
       refetch();
     } catch (error) {
       console.error("Error resending notification:", error);
-    }
-  };
-
-  const getStatusColor = (status: string): string => {
-    switch (status) {
-      case "pending":
-        return "bg-yellow-100 text-yellow-800";
-      case "sent":
-        return "bg-green-100 text-green-800";
-      case "failed":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -134,7 +94,7 @@ export function NotificationsQueue() {
 
   if (error) {
     return (
-      <PageLayout title="Notifications Queue" error={error}>
+      <PageLayout title="Notifications Queue" error={error as Error}>
         <div className="text-center py-12">
           <p className="text-gray-500 mb-4">Error loading notifications queue</p>
           <Button onClick={() => refetch()}>
@@ -209,7 +169,7 @@ export function NotificationsQueue() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-yellow-600">
-                {queue.filter(q => q.status === "pending").length}
+                {queue.filter((q: any) => q.status === "pending").length}
               </div>
               <p className="text-sm text-gray-600">Pending notifications</p>
             </CardContent>
@@ -221,7 +181,7 @@ export function NotificationsQueue() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-green-600">
-                {queue.filter(q => q.status === "sent").length}
+                {queue.filter((q: any) => q.status === "sent").length}
               </div>
               <p className="text-sm text-gray-600">Sent notifications</p>
             </CardContent>
@@ -233,7 +193,7 @@ export function NotificationsQueue() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-red-600">
-                {queue.filter(q => q.status === "failed").length}
+                {queue.filter((q: any) => q.status === "failed").length}
               </div>
               <p className="text-sm text-gray-600">Failed notifications</p>
             </CardContent>
@@ -257,7 +217,7 @@ export function NotificationsQueue() {
               </div>
             ) : (
               <div className="space-y-4">
-                {filteredQueue.map((item) => (
+                {filteredQueue.map((item: any) => (
                   <div key={item.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex-1">
@@ -291,35 +251,13 @@ export function NotificationsQueue() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleRetry(item.id)}
-                            className="text-blue-600 hover:text-blue-700"
-                          >
-                            <HugeiconsIcon icon={DownloadIcon} size={16} className="mr-2" />
-                            Retry
-                          </Button>
-                        )}
-                        
-                        {item.status === "failed" && (
-                          <Button
-                            variant="outline"
-                            size="sm"
                             onClick={() => handleResend(item)}
                             className="text-green-600 hover:text-green-700"
                           >
-                            <HugeiconsIcon icon={PlugIcon} size={16} className="mr-2" />
+                            <HugeiconsIcon icon={RefreshIcon} size={16} className="mr-2" />
                             Resend
                           </Button>
                         )}
-                        
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDelete(item.id)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <HugeiconsIcon icon={UploadIcon} size={16} className="mr-2" />
-                          Delete
-                        </Button>
                       </div>
                     </div>
                     
@@ -335,7 +273,7 @@ export function NotificationsQueue() {
                       <div>
                         <label className="font-medium text-gray-700">Sent</label>
                         <div className="flex items-center gap-2">
-                          <HugeiconsIcon icon={PlugIcon} size={16} className="text-gray-400" />
+                          <HugeiconsIcon icon={RefreshIcon} size={16} className="text-gray-400" />
                           <span>
                             {item.sent_at ? new Date(item.sent_at).toLocaleString() : "Not sent yet"}
                           </span>

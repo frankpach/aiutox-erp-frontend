@@ -7,11 +7,7 @@ import { useState } from "react";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 import { PageLayout } from "~/components/layout/PageLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
-import { Progress } from "~/components/ui/progress";
-import { Badge } from "~/components/ui/badge";
-import { DataTable, type DataTableColumn } from "~/components/common/DataTable";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { ImportExportStats } from "./ImportExportStats";
 import { ImportExportJobs } from "./ImportExportJobs";
 import { ImportExportTemplates } from "./ImportExportTemplates";
@@ -19,7 +15,6 @@ import {
   useImportExportStats,
   useImportJobs,
   useExportJobs,
-  useAvailableModules
 } from "../hooks/useImportExport";
 import { DownloadIcon, UploadIcon, PlugIcon, ShieldIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -43,21 +38,24 @@ export function ImportExportDashboard({
   const { data: stats, isLoading: statsLoading } = useImportExportStats();
   const { data: importJobs, isLoading: importJobsLoading } = useImportJobs({ page_size: 10 });
   const { data: exportJobs, isLoading: exportJobsLoading } = useExportJobs({ page_size: 10 });
-  const { data: availableModules, isLoading: modulesLoading } = useAvailableModules();
 
-  const handleImportJobClick = (job: ImportJob) => {
-    onImportJobClick?.(job);
+  const handleImportJobClick = (job: ImportJob | ExportJob) => {
+    if (job && 'progress' in job) {
+      onImportJobClick?.(job as ImportJob);
+    }
   };
 
-  const handleExportJobClick = (job: ExportJob) => {
-    onExportJobClick?.(job);
+  const handleExportJobClick = (job: ImportJob | ExportJob) => {
+    if (job && 'export_format' in job) {
+      onExportJobClick?.(job as ExportJob);
+    }
   };
 
   const handleTemplateClick = (templateId: string) => {
     onTemplateClick?.(templateId);
   };
 
-  if (statsLoading || importJobsLoading || exportJobsLoading || modulesLoading) {
+  if (statsLoading || importJobsLoading || exportJobsLoading) {
     return (
       <PageLayout
         title={t("importExport.title")}
@@ -165,7 +163,7 @@ export function ImportExportDashboard({
           <TabsContent value="imports" className="space-y-6">
             <ImportExportJobs
               type="import"
-              jobs={importJobs?.data?.data || []}
+              jobs={importJobs?.data || []}
               loading={importJobsLoading}
               onJobClick={handleImportJobClick}
             />
@@ -174,7 +172,7 @@ export function ImportExportDashboard({
           <TabsContent value="exports" className="space-y-6">
             <ImportExportJobs
               type="export"
-              jobs={exportJobs?.data?.data || []}
+              jobs={exportJobs?.data || []}
               loading={exportJobsLoading}
               onJobClick={handleExportJobClick}
             />

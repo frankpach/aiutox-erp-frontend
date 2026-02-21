@@ -15,7 +15,7 @@ export interface TextPreviewProps {
 /**
  * TextPreview component
  */
-export function TextPreview({ fileId, fileName }: TextPreviewProps) {
+export function TextPreview({ fileId }: TextPreviewProps) {
   const { t } = useTranslation();
   const { data: content, isLoading, error } = useFileContent(fileId);
 
@@ -57,7 +57,7 @@ export function TextPreview({ fileId, fileName }: TextPreviewProps) {
     <Card>
       <CardContent className="p-6">
         <div className="border rounded-md overflow-auto max-h-[600px]">
-          <pre className="p-4 text-sm font-mono whitespace-pre-wrap break-words bg-muted/50">
+          <pre className="p-4 text-sm font-mono whitespace-pre-wrap wrap-break-words bg-muted/50">
             {content}
           </pre>
         </div>

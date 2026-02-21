@@ -4,7 +4,7 @@
  */
 
 import { useState, useCallback } from "react";
-import { Folder, Plus, X } from "lucide-react";
+import { Folder, Plus } from "lucide-react";
 import {
   Dialog,
   DialogContent,

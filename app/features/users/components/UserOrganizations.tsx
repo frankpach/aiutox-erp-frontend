@@ -10,7 +10,7 @@ import { Plus, X } from "lucide-react";
 import { LoadingSpinner } from "~/components/common/LoadingSpinner";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 import { useOrganizations } from "../hooks/useOrganizations";
-import type { Organization, User } from "../types/user.types";
+import type { User } from "../types/user.types";
 
 interface UserOrganizationsProps {
   user: User;
@@ -35,13 +35,13 @@ export function UserOrganizations({ user, onUpdate }: UserOrganizationsProps) {
     (org) => org.tenant_id === user.tenant_id
   );
 
-  const handleAddOrganization = (organizationId: string) => {
-    if (!selectedOrganizations.includes(organizationId)) {
-      setSelectedOrganizations([...selectedOrganizations, organizationId]);
-      // TODO: Call API to associate organization with user
-      onUpdate?.();
-    }
-  };
+  // const handleAddOrganization = (organizationId: string) => {
+  //   if (!selectedOrganizations.includes(organizationId)) {
+  //     setSelectedOrganizations([...selectedOrganizations, organizationId]);
+  //     // TODO: Call API to associate organization with user
+  //     onUpdate?.();
+  //   }
+  // };
 
   const handleRemoveOrganization = (organizationId: string) => {
     setSelectedOrganizations(

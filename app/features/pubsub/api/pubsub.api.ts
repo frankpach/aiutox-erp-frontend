@@ -19,10 +19,6 @@ import type {
   PubSubHealthStatus,
   PubSubMetrics,
   PubSubMonitoring,
-  PubSubPendingListResponse,
-  PubSubStreamListResponse,
-  PubSubGroupListResponse,
-  PubSubConsumerListResponse,
 } from "../types/pubsub.types";
 
 /**

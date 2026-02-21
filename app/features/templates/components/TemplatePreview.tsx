@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Textarea } from "~/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 import { Label } from "~/components/ui/label";
-import { Template, TemplateRenderContext, RenderFormat } from "~/features/templates/types/template.types";
+import type { Template, TemplateRenderContext, RenderFormat } from "~/features/templates/types/template.types";
 
 interface TemplatePreviewProps {
   template: Template;
@@ -43,9 +43,10 @@ export function TemplatePreview({ template, onRender, loading = false }: Templat
     }
   };
 
-  const simpleRender = (content: string, ctx: TemplateRenderContext) => {
-    return content.replace(/\{\{([^}]+)\}\}/g, (match, key) => {
-      return ctx[key.trim()] || match;
+  const simpleRender = (content: string, ctx: TemplateRenderContext): string => {
+    return content.replace(/\{\{([^}]+)\}\}/g, (match: string, key: string): string => {
+      const value = ctx[key.trim()];
+      return value !== undefined ? String(value) : match;
     });
   };
 
@@ -85,7 +86,7 @@ export function TemplatePreview({ template, onRender, loading = false }: Templat
                   </Label>
                   <Textarea
                     id={key}
-                    value={value}
+                    value={value as string}
                     onChange={(e) => handleContextChange(key, e.target.value)}
                     rows={1}
                     className="resize-none"

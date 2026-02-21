@@ -4,19 +4,14 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { StandardResponse } from "~/lib/api/types/common.types";
 import type {
-  PubSubStats,
-  PubSubStream,
-  PubSubGroup,
-  PubSubConsumer,
-  PubSubGroupEntry,
-  PubSubCreateStream,
-  PubSubCreateGroup,
   PubSubAddMessage,
   PubSubAckMessage,
   PubSubClaimMessages,
+  PubSubCreateStream,
+  PubSubCreateGroup,
   PubSubHealthStatus,
-  PubSubMetrics,
   PubSubMonitoring,
 } from "../types/pubsub.types";
 import {
@@ -84,7 +79,7 @@ export function usePubSubStats() {
  * Hook for getting PubSub health status
  * @returns Query result with health status
  */
-export function usePubSubHealth() {
+export function usePubSubHealth(): ReturnType<typeof useQuery<StandardResponse<PubSubHealthStatus>>> {
   return useQuery({
     queryKey: pubsubKeys.health(),
     queryFn: () => getPubSubHealth(),
@@ -110,7 +105,7 @@ export function usePubSubMetrics() {
  * Hook for getting PubSub monitoring data
  * @returns Query result with monitoring data
  */
-export function usePubSubMonitoring() {
+export function usePubSubMonitoring(): ReturnType<typeof useQuery<StandardResponse<PubSubMonitoring>>> {
   return useQuery({
     queryKey: pubsubKeys.monitoring(),
     queryFn: () => getPubSubMonitoring(),

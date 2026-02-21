@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Download, FileText, Table, Database, Loader2 } from "lucide-react";
-import { ReportExecution } from "~/features/reporting/types/reporting.types";
+import type { ReportExecution } from "~/features/reporting/types/reporting.types";
 
 interface ReportExportButtonsProps {
   reportId?: string;
@@ -59,21 +59,7 @@ export function ReportExportButtons({
     }
   };
 
-  const getFormatDescription = (format: string) => {
-    switch (format) {
-      case "pdf":
-        return t("reporting.export.formats.pdf.description");
-      case "excel":
-        return t("reporting.export.formats.excel.description");
-      case "csv":
-        return t("reporting.export.formats.csv.description");
-      case "json":
-        return t("reporting.export.formats.json.description");
-      default:
-        return "";
-    }
-  };
-
+  
   const canExport = !loading && (reportId || executionId) && execution?.status === "completed";
 
   return (
@@ -213,7 +199,7 @@ export function ReportExportButtons({
             )}
             {exportLoading 
               ? t("reporting.export.exporting") 
-              : t("reporting.export.export", { format: selectedFormat.toUpperCase() })
+              : t("reporting.export.export").replace("{format}", selectedFormat.toUpperCase())
             }
           </Button>
 

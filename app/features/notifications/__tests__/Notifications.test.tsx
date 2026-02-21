@@ -11,41 +11,24 @@ import {
   useNotificationTemplates,
   useNotificationTemplate,
   useCreateNotificationTemplate,
-  useUpdateNotificationTemplate,
-  useDeleteNotificationTemplate,
   useNotificationQueue,
-  useNotificationQueueEntry,
   useSendNotification,
   useNotificationChannels,
-  useUpdateSMTPConfig,
-  useUpdateSMSConfig,
-  useUpdateWebhookConfig,
   useTestSMTPConnection,
   useTestWebhookConnection,
   useNotificationStats,
-  useNotificationPreferences,
-  useNotificationPreference,
-  useCreateNotificationPreferences,
-  useUpdateNotificationPreferences,
-  useDeleteNotificationPreferences,
-  useNotificationDeliveryReports,
-  useNotificationSubscriptions,
-  useCreateNotificationSubscription,
-  useUpdateNotificationSubscription,
-  useDeleteNotificationSubscription,
   useNotificationEventTypes,
-  useNotificationEventType
-} from "~/features/notifications/hooks/useNotifications";
-import type {
+} from "../hooks/useNotifications";
+import type { 
   NotificationTemplate,
   NotificationQueue,
   NotificationChannels,
   NotificationStats,
-  NotificationPreferences,
+  NotificationEventType,
   NotificationDeliveryReport,
   NotificationSubscription,
-  NotificationEventType,
-} from "~/features/notifications/types/notifications.types";
+  NotificationPreferences,
+} from "../types/notifications.types";
 
 // Mock api client
 const mockApiClient = {
@@ -285,49 +268,52 @@ describe("Notifications Module", () => {
     queryClient = createQueryClient();
     vi.clearAllMocks();
 
-    // Default mock for apiClient.get
+    // Default mock for apiClient.get - return proper StandardResponse wrapper
     const apiClient = mockApiClient;
-    (apiClient.get as any).mockResolvedValue({
-      data: {
-        data: [mockNotificationTemplate],
-        meta: {
-          total: 1,
-          page: 1,
-          page_size: 20,
-          total_pages: 1,
+    (apiClient.get as any).mockImplementation((url: string) => {
+      if (url.includes('/notifications/channels')) {
+        return Promise.resolve({
+          data: {
+            data: mockNotificationChannels,
+            error: null,
+          },
+        });
+      }
+      if (url.includes('/notifications/stats')) {
+        return Promise.resolve({
+          data: {
+            data: mockNotificationStats,
+            error: null,
+          },
+        });
+      }
+      if (url.includes('/notifications/event-types')) {
+        return Promise.resolve({
+          data: {
+            data: [mockNotificationEventType],
+            meta: {
+              total: 1,
+              page: 1,
+              page_size: 20,
+              total_pages: 1,
+            },
+            error: null,
+          },
+        });
+      }
+      // Default for list endpoints
+      return Promise.resolve({
+        data: {
+          data: [mockNotificationTemplate],
+          meta: {
+            total: 1,
+            page: 1,
+            page_size: 20,
+            total_pages: 1,
+          },
+          error: null,
         },
-        error: null,
-      },
-    });
-
-    // Mock channels
-    (apiClient.get as any).mockResolvedValue({
-      data: {
-        data: mockNotificationChannels,
-        error: null,
-      },
-    });
-
-    // Mock stats
-    (apiClient.get as any).mockResolvedValue({
-      data: {
-        data: mockNotificationStats,
-        error: null,
-      },
-    });
-
-    // Mock event types
-    (apiClient.get as any).mockResolvedValue({
-      data: {
-        data: [mockNotificationEventType],
-        meta: {
-          total: 1,
-          page: 1,
-          page_size: 20,
-          total_pages: 1,
-        },
-        error: null,
-      },
+      });
     });
   });
 
@@ -337,7 +323,7 @@ describe("Notifications Module", () => {
         const { data, isLoading } = useNotificationTemplates();
         
         if (isLoading) return <div>Loading...</div>;
-        return <div>{data?.length} templates</div>;
+        return <div>{data?.data?.length} templates</div>;
       };
 
       render(
@@ -353,18 +339,29 @@ describe("Notifications Module", () => {
 
     it("useNotificationTemplate should fetch single template", async () => {
       const apiClient = mockApiClient;
-      (apiClient.get as any).mockResolvedValue({
-        data: {
-          data: mockNotificationTemplate,
-          error: null,
-        },
+      (apiClient.get as any).mockImplementation((url: string) => {
+        if (url.includes('/notifications/') && url.includes('/templates')) {
+          return Promise.resolve({
+            data: {
+              data: mockNotificationTemplate,
+              error: null,
+            },
+          });
+        }
+        return Promise.resolve({
+          data: {
+            data: [],
+            meta: { total: 0, page: 1, page_size: 20, total_pages: 0 },
+            error: null,
+          },
+        });
       });
 
       const TestComponent = () => {
         const { data, isLoading } = useNotificationTemplate("template-123");
         
         if (isLoading) return <div>Loading...</div>;
-        return <div>{data?.name}</div>;
+        return <div>{data?.data?.name}</div>;
       };
 
       render(
@@ -380,24 +377,35 @@ describe("Notifications Module", () => {
 
     it("useNotificationQueue should fetch queue entries", async () => {
       const apiClient = mockApiClient;
-      (apiClient.get as any).mockResolvedValue({
-        data: {
-          data: [mockNotificationQueue],
-          meta: {
-            total: 1,
-            page: 1,
-            page_size: 20,
-            total_pages: 1,
+      (apiClient.get as any).mockImplementation((url: string) => {
+        if (url.includes('/queue')) {
+          return Promise.resolve({
+            data: {
+              data: [mockNotificationQueue],
+              meta: {
+                total: 1,
+                page: 1,
+                page_size: 20,
+                total_pages: 1,
+              },
+              error: null,
+            },
+          });
+        }
+        return Promise.resolve({
+          data: {
+            data: [],
+            meta: { total: 0, page: 1, page_size: 20, total_pages: 0 },
+            error: null,
           },
-          error: null,
-        },
+        });
       });
 
       const TestComponent = () => {
         const { data, isLoading } = useNotificationQueue();
         
         if (isLoading) return <div>Loading...</div>;
-        return <div>{data?.length} queue entries</div>;
+        return <div>{(data as any)?.data?.length} queue entries</div>;
       };
 
       render(
@@ -416,7 +424,7 @@ describe("Notifications Module", () => {
         const { data, isLoading } = useNotificationChannels();
         
         if (isLoading) return <div>Loading...</div>;
-        return <div>SMTP enabled: {data?.smtp.enabled ? "Yes" : "No"}</div>;
+        return <div>SMTP enabled: {data?.data?.smtp?.enabled ? "Yes" : "No"}</div>;
       };
 
       render(
@@ -436,7 +444,7 @@ describe("Notifications Module", () => {
         const { data, isLoading } = useNotificationStats();
         
         if (isLoading) return <div>Loading...</div>;
-        return <div>{data?.total_templates} total templates</div>;
+        return <div>{data?.data?.total_templates} total templates</div>;
       };
 
       render(
@@ -455,7 +463,7 @@ describe("Notifications Module", () => {
         const { data, isLoading } = useNotificationEventTypes();
         
         if (isLoading) return <div>Loading...</div>;
-        return <div>{data?.length} event types</div>;
+        return <div>{data?.data?.length} event types</div>;
       };
 
       render(
@@ -741,8 +749,8 @@ describe("Notifications Module", () => {
       expect(Array.isArray(channels)).toBe(true);
       expect(channels[0]).toHaveProperty("channel");
       expect(channels[0]).toHaveProperty("count");
-      expect(typeof channels[0].channel).toBe("string");
-      expect(typeof channels[0].count).toBe("number");
+      expect(typeof channels[0]?.channel).toBe("string");
+      expect(typeof channels[0]?.count).toBe("number");
     });
 
     it("has correct most used events structure", () => {
@@ -751,8 +759,8 @@ describe("Notifications Module", () => {
       expect(Array.isArray(events)).toBe(true);
       expect(events[0]).toHaveProperty("event_type");
       expect(events[0]).toHaveProperty("count");
-      expect(typeof events[0].event_type).toBe("string");
-      expect(typeof events[0].count).toBe("number");
+      expect(typeof events[0]?.event_type).toBe("string");
+      expect(typeof events[0]?.count).toBe("number");
     });
 
     it("has correct recent activity structure", () => {

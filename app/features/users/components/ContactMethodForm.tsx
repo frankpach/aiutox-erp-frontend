@@ -61,7 +61,18 @@ export function ContactMethodForm({
     formState: { errors, isSubmitting },
     setValue,
     watch,
-  } = useForm({
+  } = useForm<{
+    method_type: ContactMethodType;
+    value: string;
+    label: string;
+    is_primary: boolean;
+    address_line1: string;
+    address_line2: string;
+    city: string;
+    state_province: string;
+    postal_code: string;
+    country: string;
+  }>({
     defaultValues: method
       ? {
           method_type: method.method_type,

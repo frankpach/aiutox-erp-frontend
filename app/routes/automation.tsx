@@ -6,14 +6,12 @@
 import { useState } from "react";
 import { useTranslation } from "~/lib/i18n/useTranslation";
 import { PageLayout } from "~/components/layout/PageLayout";
-import { Button } from "~/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { AutomationRuleList } from "~/features/automation/components/AutomationRuleList";
 import { AutomationRuleForm } from "~/features/automation/components/AutomationRuleForm";
 import { AutomationExecutionList } from "~/features/automation/components/AutomationExecutionList";
 import { 
-  useAutomationRule,
   useCreateAutomationRule,
   useUpdateAutomationRule
 } from "~/features/automation/hooks/useAutomation";
@@ -24,7 +22,7 @@ export default function AutomationPage() {
   const [currentTab, setCurrentTab] = useState("rules");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
-  const [selectedRule, setSelectedRule] = useState<AutomationRule | null>(null);
+  const [_editingRule, setEditingRule] = useState<AutomationRule | null>(null);
   const [executionsRuleId, setExecutionsRuleId] = useState<string | null>(null);
 
   // Queries
@@ -32,17 +30,17 @@ export default function AutomationPage() {
   const updateRuleMutation = useUpdateAutomationRule();
 
   const handleCreateRule = () => {
-    setSelectedRule(null);
+    setEditingRule(null);
     setShowCreateDialog(true);
   };
 
   const handleEditRule = (rule: AutomationRule) => {
-    setSelectedRule(rule);
+    setEditingRule(rule);
     setShowEditDialog(true);
   };
 
   const handleViewRule = (rule: AutomationRule) => {
-    setSelectedRule(rule);
+    setEditingRule(rule);
     // Could open a detail view in the future
   };
 
@@ -51,12 +49,12 @@ export default function AutomationPage() {
     setCurrentTab("executions");
   };
 
-  const handleRuleSubmit = (rule: AutomationRule) => {
+  const handleRuleSubmit = (_rule: AutomationRule) => {
     if (showCreateDialog) {
       setShowCreateDialog(false);
     } else if (showEditDialog) {
       setShowEditDialog(false);
-      setSelectedRule(null);
+      setEditingRule(null);
     }
     setCurrentTab("rules");
   };
@@ -64,7 +62,7 @@ export default function AutomationPage() {
   const handleRuleCancel = () => {
     setShowCreateDialog(false);
     setShowEditDialog(false);
-    setSelectedRule(null);
+    setEditingRule(null);
   };
 
   const handleBackToRules = () => {
@@ -147,7 +145,7 @@ export default function AutomationPage() {
               <DialogTitle>{t("automation.rules.edit")}</DialogTitle>
             </DialogHeader>
             <AutomationRuleForm
-              rule={selectedRule || undefined}
+              rule={_editingRule || undefined}
               onSubmit={handleRuleSubmit}
               onCancel={handleRuleCancel}
               loading={updateRuleMutation.isPending}

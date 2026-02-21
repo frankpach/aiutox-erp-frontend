@@ -47,7 +47,7 @@ export function SavedFilters({
   onApply,
   currentFilterId,
   onManageClick,
-  onSaveCurrentFilter,
+  // onSaveCurrentFilter, // Unused for now
   filters: propsFilters,
   defaultFilter: propsDefaultFilter,
   loading: propsLoading,
@@ -113,11 +113,6 @@ export function SavedFilters({
     setEditorOpen(true);
   };
 
-  const _handleEditFilter = (filter: SavedFilterType) => {
-    setEditingFilter(filter);
-    setEditorOpen(true);
-  };
-
   const handleSaveFilter = async (filterData: SavedFilterCreate) => {
     const saved = await createFilter(filterData);
     if (saved) {
@@ -132,13 +127,13 @@ export function SavedFilters({
     return saved;
   };
 
-  const _handleQuickSave = () => {
-    if (onSaveCurrentFilter) {
-      onSaveCurrentFilter();
-    } else {
-      handleNewFilter();
-    }
-  };
+  // const _handleQuickSave = () => { // Unused for now
+  //   if (onSaveCurrentFilter) {
+  //     onSaveCurrentFilter();
+  //   } else {
+  //     handleNewFilter();
+  //   }
+  // };
 
   if (loading && filters.length === 0) {
     return (

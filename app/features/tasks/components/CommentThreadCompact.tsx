@@ -5,7 +5,6 @@
  */
 
 import { useState } from 'react';
-import { useTranslation } from '~/lib/i18n/useTranslation';
 import { Button } from '~/components/ui/button';
 import { Textarea } from '~/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
@@ -26,6 +25,7 @@ import { useUsers } from '~/features/users/hooks/useUsers';
 import { useAuthStore } from '~/stores/authStore';
 import { showToast } from '~/components/common/Toast';
 import { format } from 'date-fns';
+import type { User } from '~/features/users/types/user.types';
 
 interface CommentThreadCompactProps {
   taskId: string;
@@ -33,7 +33,7 @@ interface CommentThreadCompactProps {
 }
 
 export function CommentThreadCompact({ taskId, compact = true }: CommentThreadCompactProps) {
-  const { t } = useTranslation();
+  // const { t } = useTranslation(); // Unused for now
   const [newComment, setNewComment] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
@@ -43,7 +43,7 @@ export function CommentThreadCompact({ taskId, compact = true }: CommentThreadCo
   const addMutation = useAddComment();
   const updateMutation = useUpdateComment();
   const deleteMutation = useDeleteComment();
-  const { data: users } = useUsers();
+  const { users: usersResponse } = useUsers();
 
   const handleSubmit = async () => {
     if (!newComment.trim() || !user) return;
@@ -70,6 +70,7 @@ export function CommentThreadCompact({ taskId, compact = true }: CommentThreadCo
 
     try {
       await updateMutation.mutateAsync({
+        taskId,
         commentId: editingId,
         content: editContent.trim(),
       });
@@ -83,7 +84,10 @@ export function CommentThreadCompact({ taskId, compact = true }: CommentThreadCo
 
   const handleDelete = async (commentId: string) => {
     try {
-      await deleteMutation.mutateAsync(commentId);
+      await deleteMutation.mutateAsync({
+        taskId,
+        commentId,
+      });
       showToast('Comentario eliminado', 'success');
     } catch (error) {
       showToast('Error al eliminar comentario', 'error');
@@ -91,7 +95,7 @@ export function CommentThreadCompact({ taskId, compact = true }: CommentThreadCo
   };
 
   const getUserInfo = (userId: string) => {
-    return users?.find(u => u.id === userId);
+    return usersResponse?.find((u: User) => u.id === userId);
   };
 
   if (isLoading) {
@@ -111,7 +115,7 @@ export function CommentThreadCompact({ taskId, compact = true }: CommentThreadCo
       <CardHeader className={compact ? 'pb-3' : undefined}>
         <CardTitle className="flex items-center gap-2 text-lg">
           <HugeiconsIcon icon={Comment01Icon} size={20} />
-          Comentarios ({comments?.length || 0})
+          Comentarios ({comments?.data?.length || 0})
         </CardTitle>
       </CardHeader>
       <CardContent className={compact ? 'pt-0' : undefined}>
@@ -137,26 +141,26 @@ export function CommentThreadCompact({ taskId, compact = true }: CommentThreadCo
 
           {/* Comments List */}
           <div className="space-y-3">
-            {comments?.map((comment) => {
-              const userInfo = getUserInfo(comment.userId);
+            {comments?.data?.map((comment) => {
+              const userInfo = getUserInfo(comment.user_id);
               const isEditing = editingId === comment.id;
-              const isAuthor = comment.userId === user?.id;
+              const isAuthor = comment.user_id === user?.id;
 
               return (
                 <div key={comment.id} className="flex gap-3 p-3 rounded-lg bg-muted/30">
                   <Avatar className="h-8 w-8 shrink-0">
                     <AvatarFallback className="text-xs">
-                      {userInfo?.name?.charAt(0) || 'U'}
+                      {(userInfo?.full_name || userInfo?.first_name || 'Usuario')?.charAt(0) || 'U'}
                     </AvatarFallback>
                   </Avatar>
                   
                   <div className="flex-1 min-w-0 space-y-1">
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-sm">
-                        {userInfo?.name || 'Usuario'}
+                        {userInfo?.full_name || userInfo?.first_name || 'Usuario'}
                       </span>
                       <span className="text-xs text-muted-foreground">
-                        {format(new Date(comment.createdAt), 'dd/MM/yyyy HH:mm')}
+                        {format(new Date(comment.created_at), 'dd/MM/yyyy HH:mm')}
                       </span>
                     </div>
 
@@ -217,7 +221,7 @@ export function CommentThreadCompact({ taskId, compact = true }: CommentThreadCo
               );
             })}
 
-            {(!comments || comments.length === 0) && (
+            {(!comments?.data || comments.data.length === 0) && (
               <div className="text-center text-muted-foreground py-8">
                 <HugeiconsIcon icon={Comment01Icon} size={48} className="mx-auto mb-2 opacity-50" />
                 <p>No hay comentarios aún</p>

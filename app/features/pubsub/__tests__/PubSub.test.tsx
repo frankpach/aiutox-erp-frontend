@@ -7,17 +7,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import PubSubPage from "~/routes/pubsub";
-import { 
-  usePubSubStats, 
-  usePubSubHealth,
-  usePubSubMetrics,
-  usePubSubStreams,
-  useCreatePubSubStream,
-  useDeletePubSubStream,
-  useClearPubSubStream,
-  useTrimPubSubStream
-} from "~/features/pubsub/hooks/usePubSub";
-import type { PubSubStream, PubSubStats } from "~/features/pubsub/types/pubsub.types";
+import type { PubSubStats, PubSubStream } from "~/features/pubsub/types/pubsub.types";
 
 // Mock api client
 const mockApiClient = {
@@ -376,7 +366,7 @@ describe("PubSub Module", () => {
       // Navigate to streams tab
       await waitFor(() => {
         const streamsTab = screen.getAllByText("Streams")[0]; // First "Streams" element (tab)
-        fireEvent.click(streamsTab);
+        if (streamsTab) fireEvent.click(streamsTab);
       });
 
       // Just verify the tab click works (the data loading is complex)

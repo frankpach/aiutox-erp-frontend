@@ -24,7 +24,7 @@ import { useTranslation } from '../useTranslation';
 
 describe('useTranslation', () => {
   let queryClient: QueryClient;
-  let wrapper: ({ children }: { children: ReactNode }) => JSX.Element;
+  let wrapper: ({ children }: { children: ReactNode }) => React.ReactElement;
 
   beforeEach(() => {
     queryClient = new QueryClient({

@@ -14,8 +14,8 @@ describe('i18n Autodiscovery System', () => {
       expect(translations.en.common).toBeDefined();
       
       // Verify common keys exist
-      expect(translations.es.common.save).toBe('Guardar');
-      expect(translations.en.common.save).toBe('Save');
+      expect((translations.es.common as any).save).toBe('Guardar');
+      expect((translations.en.common as any).save).toBe('Save');
     });
 
     test('should discover existing module translations', () => {

@@ -2,7 +2,7 @@ import { useTranslation } from "~/lib/i18n/useTranslation";
 
 import { useWarehouses } from "../hooks/useInventory";
 
-export function InventoryList(): JSX.Element {
+export function InventoryList() {
   const { t } = useTranslation();
   const { data, isLoading, isError } = useWarehouses({ page: 1, page_size: 20 });
 

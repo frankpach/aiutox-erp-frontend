@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~
 import { Switch } from "~/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Label } from "~/components/ui/label";
-import { Template, TemplateCreate, TemplateType, TemplateCategory } from "~/features/templates/types/template.types";
+import type { Template, TemplateCreate, TemplateType, TemplateCategory } from "~/features/templates/types/template.types";
 
 interface TemplateFormProps {
   template?: Template;
@@ -55,10 +55,10 @@ export function TemplateForm({
   };
 
   const addVariable = () => {
-    if (newVariable.trim() && !formData.variables.includes(newVariable.trim())) {
+    if (newVariable.trim() && !formData.variables?.includes(newVariable.trim())) {
       setFormData(prev => ({
         ...prev,
-        variables: [...prev.variables, newVariable.trim()],
+        variables: [...(prev.variables || []), newVariable.trim()],
       }));
       setNewVariable("");
     }
@@ -67,7 +67,7 @@ export function TemplateForm({
   const removeVariable = (variable: string) => {
     setFormData(prev => ({
       ...prev,
-      variables: prev.variables.filter(v => v !== variable),
+      variables: (prev.variables || []).filter(v => v !== variable),
     }));
   };
 
@@ -78,7 +78,7 @@ export function TemplateForm({
       const variables = matches.map(match => match.slice(2, -2).trim());
       setFormData(prev => ({
         ...prev,
-        variables: [...new Set([...prev.variables, ...variables])],
+        variables: [...new Set([...(prev.variables || []), ...variables])],
       }));
     }
   };
@@ -197,7 +197,7 @@ export function TemplateForm({
                 </Button>
               </div>
               <div className="flex flex-wrap gap-2">
-                {formData.variables.map((variable) => (
+                {(formData.variables || []).map((variable) => (
                   <span
                     key={variable}
                     className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800"

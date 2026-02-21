@@ -4,40 +4,32 @@
  * Sprint 2.3 - Fase 2
  */
 
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useTranslation } from '~/lib/i18n/useTranslation';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Button } from '~/components/ui/button';
 import { Badge } from '~/components/ui/badge';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { Calendar01Icon, CheckIcon, ClockIcon } from '@hugeicons/core-free-icons';
+import { Calendar01Icon, ClockIcon } from '@hugeicons/core-free-icons';
 import { useTasks } from '../hooks/useTasks';
 import { format, isToday, isTomorrow, isPast, addDays } from 'date-fns';
+import type { Task } from '../types/task.types';
 import { es } from 'date-fns/locale';
 
 interface TaskAgendaViewIntegratedProps {
-  userId?: string;
   daysAhead?: number;
 }
 
 export function TaskAgendaViewIntegrated({ 
-  userId, 
   daysAhead = 7 
 }: TaskAgendaViewIntegratedProps) {
   const { t } = useTranslation();
-  const [selectedDate, setSelectedDate] = useState(new Date());
   
-  const { data: tasks, isLoading } = useTasks({
-    userId,
-    dueDateRange: {
-      from: format(new Date(), 'yyyy-MM-dd'),
-      to: format(addDays(new Date(), daysAhead), 'yyyy-MM-dd'),
-    },
-  });
+  const { data: tasks, isLoading } = useTasks({});
 
   const getTasksForDate = useCallback((date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
-    return tasks?.filter(task => task.dueDate === dateStr) || [];
+    return tasks?.data?.filter((task: Task) => task.due_date === dateStr) || [];
   }, [tasks]);
 
   const getStatusColor = (status: string) => {
@@ -126,12 +118,12 @@ export function TaskAgendaViewIntegrated({
 
                   {dayTasks.length === 0 ? (
                     <div className="text-center text-muted-foreground py-4">
-                      <HugeiconsIcon icon={CheckIcon} size={32} className="mx-auto mb-2 opacity-50" />
+                      <HugeiconsIcon icon={ClockIcon} size={32} className="mx-auto mb-2 opacity-50" />
                       <p className="text-sm">No hay tareas para este día</p>
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {dayTasks.map((task) => (
+                      {dayTasks.map((task: Task) => (
                         <div
                           key={task.id}
                           className="flex items-center gap-3 p-3 rounded-lg border bg-card"
@@ -155,7 +147,7 @@ export function TaskAgendaViewIntegrated({
                             <div className="flex items-center gap-2 mt-2">
                               <HugeiconsIcon icon={ClockIcon} size={14} className="text-muted-foreground" />
                               <span className="text-xs text-muted-foreground">
-                                {task.dueDate && format(new Date(task.dueDate), 'HH:mm')}
+                                {task.due_date && format(new Date(task.due_date), 'HH:mm')}
                               </span>
                             </div>
                           </div>

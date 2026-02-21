@@ -3,7 +3,7 @@
  * Type definitions for Import/Export module
  */
 
-import type { StandardResponse, StandardListResponse } from "~/lib/api/types/common.types";
+import type { StandardListResponse } from "~/lib/api/types/common.types";
 
 // Import Job types
 export interface ImportJob {
