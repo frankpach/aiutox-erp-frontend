@@ -10,23 +10,25 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { useWebhooks, useCreateWebhook, useUpdateWebhook, useDeleteWebhook } from "~/features/tasks/hooks/useWebhooks";
 import type { WebhookCreate, WebhookUpdate } from "~/features/tasks/types/webhook.types";
 
-// Mock apiClient
-const mockGet = vi.fn();
-const mockPost = vi.fn();
-const mockPut = vi.fn();
-const mockDelete = vi.fn();
-
-vi.mock("~/lib/api/client", () => ({
-  apiClient: {
-    get: mockGet,
-    post: mockPost,
-    put: mockPut,
-    delete: mockDelete,
-  },
+// Use vi.hoisted() so mocks are available when vi.mock factories run
+const { mockGetWebhooks, mockGetWebhook, mockCreateWebhook, mockUpdateWebhook, mockDeleteWebhook, mockInvalidateQueries } = vi.hoisted(() => ({
+  mockGetWebhooks: vi.fn(),
+  mockGetWebhook: vi.fn(),
+  mockCreateWebhook: vi.fn(),
+  mockUpdateWebhook: vi.fn(),
+  mockDeleteWebhook: vi.fn(),
+  mockInvalidateQueries: vi.fn(),
 }));
 
-// Mock useQueryClient
-const mockInvalidateQueries = vi.fn();
+vi.mock("../../api/webhooks", () => ({
+  webhooksApi: {
+    getWebhooks: mockGetWebhooks,
+    getWebhook: mockGetWebhook,
+    createWebhook: mockCreateWebhook,
+    updateWebhook: mockUpdateWebhook,
+    deleteWebhook: mockDeleteWebhook,
+  },
+}));
 
 vi.mock("@tanstack/react-query", async () => {
   const actual = await vi.importActual("@tanstack/react-query");
@@ -92,7 +94,7 @@ describe("useWebhooks hook", () => {
         },
       };
 
-      mockGet.mockResolvedValue(mockWebhooks);
+      mockGetWebhooks.mockResolvedValue(mockWebhooks);
 
       const { result } = renderHook(() => useWebhooks(), { wrapper });
 
@@ -103,7 +105,7 @@ describe("useWebhooks hook", () => {
         expect(result.current.data).toEqual(mockWebhooks);
       });
 
-      expect(mockGet).toHaveBeenCalledWith("/integrations/webhooks");
+      expect(mockGetWebhooks).toHaveBeenCalled();
     });
 
     it("handles empty webhooks list", async () => {
@@ -117,7 +119,7 @@ describe("useWebhooks hook", () => {
         },
       };
 
-      mockGet.mockResolvedValue(mockEmptyWebhooks);
+      mockGetWebhooks.mockResolvedValue(mockEmptyWebhooks);
 
       const { result } = renderHook(() => useWebhooks(), { wrapper });
 
@@ -125,22 +127,22 @@ describe("useWebhooks hook", () => {
         expect(result.current.data).toEqual(mockEmptyWebhooks);
       });
 
-      expect(mockGet).toHaveBeenCalledWith("/integrations/webhooks");
+      expect(mockGetWebhooks).toHaveBeenCalled();
     });
 
     it("handles API error", async () => {
       const errorMessage = "Failed to load webhooks";
 
-      mockGet.mockRejectedValue(new Error(errorMessage));
+      mockGetWebhooks.mockRejectedValue(new Error(errorMessage));
 
       const { result } = renderHook(() => useWebhooks(), { wrapper });
 
       await waitFor(() => {
         expect(result.current.error).toBeDefined();
+        expect(result.current.isLoading).toBe(false);
       });
 
-      expect(result.current.isLoading).toBe(false);
-      expect(mockGet).toHaveBeenCalledWith("/integrations/webhooks");
+      expect(mockGetWebhooks).toHaveBeenCalled();
     });
   });
 
@@ -161,7 +163,7 @@ describe("useWebhooks hook", () => {
         },
       };
 
-      mockPost.mockResolvedValue(mockResponse);
+      mockCreateWebhook.mockResolvedValue(mockResponse);
 
       const { result } = renderHook(() => useCreateWebhook(), { wrapper });
 
@@ -169,7 +171,7 @@ describe("useWebhooks hook", () => {
 
       await result.current.mutateAsync(webhookData);
 
-      expect(mockPost).toHaveBeenCalledWith("/integrations/webhooks", webhookData);
+      expect(mockCreateWebhook).toHaveBeenCalledWith(webhookData);
 
       expect(mockInvalidateQueries).toHaveBeenCalledWith({
         queryKey: ["webhooks"],
@@ -184,13 +186,13 @@ describe("useWebhooks hook", () => {
       };
       const errorMessage = "Failed to create webhook";
 
-      mockPost.mockRejectedValue(new Error(errorMessage));
+      mockCreateWebhook.mockRejectedValue(new Error(errorMessage));
 
       const { result } = renderHook(() => useCreateWebhook(), { wrapper });
 
       await expect(result.current.mutateAsync(webhookData)).rejects.toThrow(errorMessage);
 
-      expect(mockPost).toHaveBeenCalledWith("/integrations/webhooks", webhookData);
+      expect(mockCreateWebhook).toHaveBeenCalledWith(webhookData);
       expect(mockInvalidateQueries).not.toHaveBeenCalled();
     });
 
@@ -215,7 +217,7 @@ describe("useWebhooks hook", () => {
           },
         },
       };
-      mockPost.mockRejectedValue(validationError);
+      mockCreateWebhook.mockRejectedValue(validationError);
 
       const { result } = renderHook(() => useCreateWebhook(), { wrapper });
 
@@ -243,13 +245,13 @@ describe("useWebhooks hook", () => {
         },
       };
 
-      mockPut.mockResolvedValue(mockResponse);
+      mockUpdateWebhook.mockResolvedValue(mockResponse);
 
       const { result } = renderHook(() => useUpdateWebhook(), { wrapper });
 
       await result.current.mutateAsync({ id: webhookId, data: updateData });
 
-      expect(mockPut).toHaveBeenCalledWith(`/integrations/webhooks/${webhookId}`, updateData);
+      expect(mockUpdateWebhook).toHaveBeenCalledWith(webhookId, updateData);
 
       expect(mockInvalidateQueries).toHaveBeenCalledWith({
         queryKey: ["webhooks"],
@@ -266,7 +268,7 @@ describe("useWebhooks hook", () => {
       };
       const errorMessage = "Failed to update webhook";
 
-      mockPut.mockRejectedValue(new Error(errorMessage));
+      mockUpdateWebhook.mockRejectedValue(new Error(errorMessage));
 
       const { result } = renderHook(() => useUpdateWebhook(), { wrapper });
 
@@ -274,7 +276,7 @@ describe("useWebhooks hook", () => {
         result.current.mutateAsync({ id: webhookId, data: updateData })
       ).rejects.toThrow(errorMessage);
 
-      expect(mockPut).toHaveBeenCalledWith(`/integrations/webhooks/${webhookId}`, updateData);
+      expect(mockUpdateWebhook).toHaveBeenCalledWith(webhookId, updateData);
       expect(mockInvalidateQueries).not.toHaveBeenCalled();
     });
 
@@ -291,7 +293,7 @@ describe("useWebhooks hook", () => {
         response?: { status: number };
       };
       notFoundError.response = { status: 404 };
-      mockPut.mockRejectedValue(notFoundError);
+      mockUpdateWebhook.mockRejectedValue(notFoundError);
 
       const { result } = renderHook(() => useUpdateWebhook(), { wrapper });
 
@@ -305,13 +307,13 @@ describe("useWebhooks hook", () => {
     it("deletes webhook successfully", async () => {
       const webhookId = "webhook1";
 
-      mockDelete.mockResolvedValue({ status: 204 });
+      mockDeleteWebhook.mockResolvedValue({ status: 204 });
 
       const { result } = renderHook(() => useDeleteWebhook(), { wrapper });
 
       await result.current.mutateAsync(webhookId);
 
-      expect(mockDelete).toHaveBeenCalledWith(`/integrations/webhooks/${webhookId}`);
+      expect(mockDeleteWebhook).toHaveBeenCalledWith(webhookId);
 
       expect(mockInvalidateQueries).toHaveBeenCalledWith({
         queryKey: ["webhooks"],
@@ -322,13 +324,13 @@ describe("useWebhooks hook", () => {
       const webhookId = "webhook1";
       const errorMessage = "Failed to delete webhook";
 
-      mockDelete.mockRejectedValue(new Error(errorMessage));
+      mockDeleteWebhook.mockRejectedValue(new Error(errorMessage));
 
       const { result } = renderHook(() => useDeleteWebhook(), { wrapper });
 
       await expect(result.current.mutateAsync(webhookId)).rejects.toThrow(errorMessage);
 
-      expect(mockDelete).toHaveBeenCalledWith(`/integrations/webhooks/${webhookId}`);
+      expect(mockDeleteWebhook).toHaveBeenCalledWith(webhookId);
       expect(mockInvalidateQueries).not.toHaveBeenCalled();
     });
 
@@ -339,7 +341,7 @@ describe("useWebhooks hook", () => {
         response?: { status: number };
       };
       notFoundError.response = { status: 404 };
-      mockDelete.mockRejectedValue(notFoundError);
+      mockDeleteWebhook.mockRejectedValue(notFoundError);
 
       const { result } = renderHook(() => useDeleteWebhook(), { wrapper });
 
@@ -353,7 +355,7 @@ describe("useWebhooks hook", () => {
         response?: { status: number };
       };
       permissionError.response = { status: 403 };
-      mockDelete.mockRejectedValue(permissionError);
+      mockDeleteWebhook.mockRejectedValue(permissionError);
 
       const { result } = renderHook(() => useDeleteWebhook(), { wrapper });
 
@@ -364,7 +366,7 @@ describe("useWebhooks hook", () => {
   describe("Integration", () => {
     it("invalidates queries after operations", async () => {
       // Setup mocks
-      mockPost.mockResolvedValue({
+      mockCreateWebhook.mockResolvedValue({
         data: {
           id: "webhook3",
           name: "New Webhook",
@@ -377,7 +379,7 @@ describe("useWebhooks hook", () => {
         },
       });
 
-      mockPut.mockResolvedValue({
+      mockUpdateWebhook.mockResolvedValue({
         data: {
           id: "webhook1",
           name: "Updated Webhook",
@@ -390,7 +392,7 @@ describe("useWebhooks hook", () => {
         },
       });
 
-      mockDelete.mockResolvedValue({ status: 204 });
+      mockDeleteWebhook.mockResolvedValue({ status: 204 });
 
       // Test create webhook
       const { result: createResult } = renderHook(() => useCreateWebhook(), { wrapper });
@@ -447,7 +449,7 @@ describe("useWebhooks hook", () => {
         event_type: "task.created",
       };
 
-      mockPost.mockResolvedValue({
+      mockCreateWebhook.mockResolvedValue({
         data: {
           id: "webhook4",
           ...webhookData,
@@ -460,7 +462,7 @@ describe("useWebhooks hook", () => {
 
       await result.current.mutateAsync(webhookData);
 
-      expect(mockPost).toHaveBeenCalledWith("/integrations/webhooks", webhookData);
+      expect(mockCreateWebhook).toHaveBeenCalledWith(webhookData);
       expect(webhookData.event_type).toBe("task.created");
     });
 
@@ -471,7 +473,7 @@ describe("useWebhooks hook", () => {
         event_type: "task.created",
       };
 
-      mockPost.mockResolvedValue({
+      mockCreateWebhook.mockResolvedValue({
         data: {
           id: "webhook5",
           ...webhookData,
@@ -484,7 +486,7 @@ describe("useWebhooks hook", () => {
 
       await result.current.mutateAsync(webhookData);
 
-      expect(mockPost).toHaveBeenCalledWith("/integrations/webhooks", webhookData);
+      expect(mockCreateWebhook).toHaveBeenCalledWith(webhookData);
     });
 
     it("handles webhook deactivation", async () => {
@@ -493,7 +495,7 @@ describe("useWebhooks hook", () => {
         enabled: false, // Only deactivating
       };
 
-      mockPut.mockResolvedValue({
+      mockUpdateWebhook.mockResolvedValue({
         data: {
           id: webhookId,
           name: "Existing Webhook",
@@ -510,12 +512,12 @@ describe("useWebhooks hook", () => {
 
       await result.current.mutateAsync({ id: webhookId, data: updateData });
 
-      expect(mockPut).toHaveBeenCalledWith(`/integrations/webhooks/${webhookId}`, updateData);
+      expect(mockUpdateWebhook).toHaveBeenCalledWith(webhookId, updateData);
     });
 
     it("handles rapid webhook operations", async () => {
       // Setup mocks
-      mockPost.mockResolvedValue({
+      mockCreateWebhook.mockResolvedValue({
         data: {
           id: "webhook6",
           name: "Rapid Webhook",
@@ -528,7 +530,7 @@ describe("useWebhooks hook", () => {
         },
       });
 
-      mockDelete.mockResolvedValue({ status: 204 });
+      mockDeleteWebhook.mockResolvedValue({ status: 204 });
 
       const { result: createResult } = renderHook(() => useCreateWebhook(), { wrapper });
       const { result: deleteResult } = renderHook(() => useDeleteWebhook(), { wrapper });
@@ -543,8 +545,8 @@ describe("useWebhooks hook", () => {
       // Delete webhook immediately after
       await deleteResult.current.mutateAsync("webhook6");
 
-      expect(mockPost).toHaveBeenCalled();
-      expect(mockDelete).toHaveBeenCalled();
+      expect(mockCreateWebhook).toHaveBeenCalled();
+      expect(mockDeleteWebhook).toHaveBeenCalled();
       expect(mockInvalidateQueries).toHaveBeenCalledTimes(2);
     });
   });

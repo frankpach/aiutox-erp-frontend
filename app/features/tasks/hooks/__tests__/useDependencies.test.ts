@@ -9,21 +9,21 @@ import type { ReactElement, ReactNode } from "react";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { useTaskDependencies, useAddDependency, useRemoveDependency } from "~/features/tasks/hooks/useDependencies";
 
-// Mock apiClient
-const mockGet = vi.fn();
-const mockPost = vi.fn();
-const mockDelete = vi.fn();
+// Use vi.hoisted() so mocks are available when vi.mock factories run
+const { mockGet, mockPost, mockDelete, mockInvalidateQueries } = vi.hoisted(() => ({
+  mockGet: vi.fn(),
+  mockPost: vi.fn(),
+  mockDelete: vi.fn(),
+  mockInvalidateQueries: vi.fn(),
+}));
 
 vi.mock("~/lib/api/client", () => ({
-  apiClient: {
+  default: {
     get: mockGet,
     post: mockPost,
     delete: mockDelete,
   },
 }));
-
-// Mock useQueryClient
-const mockInvalidateQueries = vi.fn();
 
 vi.mock("@tanstack/react-query", async () => {
   const actual = await vi.importActual("@tanstack/react-query");
@@ -129,9 +129,9 @@ describe("useTaskDependencies hook", () => {
 
       await waitFor(() => {
         expect(result.current.error).toBeDefined();
+        expect(result.current.isLoading).toBe(false);
       });
 
-      expect(result.current.isLoading).toBe(false);
       expect(mockGet).toHaveBeenCalledWith(`/tasks/${taskId}/dependencies`);
     });
 

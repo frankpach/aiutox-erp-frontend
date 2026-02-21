@@ -42,7 +42,7 @@ describe("usePermissions", () => {
       full_name: "Test User",
       is_active: true,
       permissions: ["inventory.view", "inventory.edit"],
-      roles: ["admin", "inventory.leader"],
+      roles: [{ role: "admin" }, { role: "inventory.leader" }],
     };
 
     mockUseAuthStore.mockImplementation((selector) => selector({ user: mockUser }));
@@ -50,7 +50,7 @@ describe("usePermissions", () => {
     const { result } = renderHook(() => usePermissions());
 
     expect(result.current.permissions).toEqual(["inventory.view", "inventory.edit"]);
-    expect(result.current.roles).toEqual(["admin", "inventory.leader"]);
+    expect(result.current.roles).toEqual([{ role: "admin" }, { role: "inventory.leader" }]);
   });
 
   it("should check exact permission", () => {
@@ -117,7 +117,7 @@ describe("usePermissions", () => {
       full_name: "Test User",
       is_active: true,
       permissions: [],
-      roles: ["admin"],
+      roles: [{ role: "admin" }],
     };
 
     mockUseAuthStore.mockImplementation((selector) => selector({ user: mockUser }));
@@ -209,7 +209,7 @@ describe("useHasRole", () => {
       full_name: "Test User",
       is_active: true,
       permissions: [],
-      roles: ["admin"],
+      roles: [{ role: "admin" }],
     };
 
     mockUseAuthStore.mockImplementation((selector) => selector({ user: mockUser }));
@@ -226,7 +226,7 @@ describe("useHasRole", () => {
       full_name: "Test User",
       is_active: true,
       permissions: [],
-      roles: ["user"],
+      roles: [{ role: "user" }],
     };
 
     mockUseAuthStore.mockImplementation((selector) => selector({ user: mockUser }));

@@ -30,7 +30,7 @@ describe("RequireRole", () => {
         user: {
           id: "1",
           email: "test@example.com",
-          roles: ["admin"],
+          roles: [{ role: "admin" }],
           permissions: [],
         },
         isAuthenticated: true,
@@ -58,7 +58,7 @@ describe("RequireRole", () => {
         user: {
           id: "1",
           email: "test@example.com",
-          roles: ["user"], // No admin role - user does NOT have "admin"
+          roles: [{ role: "user" }], // No admin role - user does NOT have "admin"
           permissions: [],
         },
         isAuthenticated: true,
@@ -98,7 +98,7 @@ describe("RequireRole", () => {
         user: {
           id: "1",
           email: "test@example.com",
-          roles: ["user"], // No admin role - user does NOT have "admin"
+          roles: [{ role: "user" }], // No admin role - user does NOT have "admin"
           permissions: [],
         },
         isAuthenticated: true,

@@ -286,8 +286,8 @@ describe("Tasks Module", () => {
       expect(task).toHaveProperty("tenant_id");
       expect(task).toHaveProperty("title");
       expect(task).toHaveProperty("description");
-      expect(task).toHaveProperty("assigned_to");
-      expect(task).toHaveProperty("created_by");
+      expect(task).toHaveProperty("assigned_to_id");
+      expect(task).toHaveProperty("created_by_id");
       expect(task).toHaveProperty("status");
       expect(task).toHaveProperty("priority");
       expect(task).toHaveProperty("checklist");
@@ -299,7 +299,7 @@ describe("Tasks Module", () => {
       const checklist = mockTasks[0]?.checklist?.[0];
 
       expect(checklist).toHaveProperty("id");
-      expect(checklist).toHaveProperty("text");
+      expect(checklist).toHaveProperty("title");
       expect(checklist).toHaveProperty("completed");
       expect(checklist?.completed).toBe(false);
     });

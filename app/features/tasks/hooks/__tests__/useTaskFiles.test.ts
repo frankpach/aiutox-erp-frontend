@@ -9,21 +9,19 @@ import type { ReactElement, ReactNode } from "react";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { useTaskFiles, useAttachFile, useDetachFile } from "~/features/tasks/hooks/useTaskFiles";
 
-// Mock apiClient
-const mockGet = vi.fn();
-const mockPost = vi.fn();
-const mockDelete = vi.fn();
-
-vi.mock("~/lib/api/client", () => ({
-  apiClient: {
-    get: mockGet,
-    post: mockPost,
-    delete: mockDelete,
-  },
+// Use vi.hoisted() so mocks are available when vi.mock factories run
+const { mockListTaskFiles, mockAttachFileToTask, mockDetachFileFromTask, mockInvalidateQueries } = vi.hoisted(() => ({
+  mockListTaskFiles: vi.fn(),
+  mockAttachFileToTask: vi.fn(),
+  mockDetachFileFromTask: vi.fn(),
+  mockInvalidateQueries: vi.fn(),
 }));
 
-// Mock useQueryClient
-const mockInvalidateQueries = vi.fn();
+vi.mock("../../api/task-files.api", () => ({
+  listTaskFiles: mockListTaskFiles,
+  attachFileToTask: mockAttachFileToTask,
+  detachFileFromTask: mockDetachFileFromTask,
+}));
 
 vi.mock("@tanstack/react-query", async () => {
   const actual = await vi.importActual("@tanstack/react-query");
@@ -88,7 +86,7 @@ describe("useTaskFiles hook", () => {
         },
       };
 
-      mockGet.mockResolvedValue(mockFiles);
+      mockListTaskFiles.mockResolvedValue(mockFiles);
 
       const { result } = renderHook(() => useTaskFiles(taskId), { wrapper });
 
@@ -99,7 +97,7 @@ describe("useTaskFiles hook", () => {
         expect(result.current.data).toEqual(mockFiles);
       });
 
-      expect(mockGet).toHaveBeenCalledWith(`/tasks/${taskId}/files`);
+      expect(mockListTaskFiles).toHaveBeenCalledWith(taskId);
     });
 
     it("handles empty files list", async () => {
@@ -114,7 +112,7 @@ describe("useTaskFiles hook", () => {
         },
       };
 
-      mockGet.mockResolvedValue(mockEmptyFiles);
+      mockListTaskFiles.mockResolvedValue(mockEmptyFiles);
 
       const { result } = renderHook(() => useTaskFiles(taskId), { wrapper });
 
@@ -122,48 +120,48 @@ describe("useTaskFiles hook", () => {
         expect(result.current.data).toEqual(mockEmptyFiles);
       });
 
-      expect(mockGet).toHaveBeenCalledWith(`/tasks/${taskId}/files`);
+      expect(mockListTaskFiles).toHaveBeenCalledWith(taskId);
     });
 
     it("handles API error", async () => {
       const taskId = "task-123";
       const errorMessage = "Failed to load files";
 
-      mockGet.mockRejectedValue(new Error(errorMessage));
+      mockListTaskFiles.mockRejectedValue(new Error(errorMessage));
 
       const { result } = renderHook(() => useTaskFiles(taskId), { wrapper });
 
       await waitFor(() => {
         expect(result.current.error).toBeDefined();
-      });
+        expect(result.current.isLoading).toBe(false);
+      }, { timeout: 5000 });
 
-      expect(result.current.isLoading).toBe(false);
-      expect(mockGet).toHaveBeenCalledWith(`/tasks/${taskId}/files`);
+      expect(mockListTaskFiles).toHaveBeenCalledWith(taskId);
     });
 
     it("does not fetch when taskId is empty", () => {
       const { result } = renderHook(() => useTaskFiles(""), { wrapper });
 
       expect(result.current.isLoading).toBe(false);
-      expect(mockGet).not.toHaveBeenCalled();
+      expect(mockListTaskFiles).not.toHaveBeenCalled();
     });
 
     it("caches query by taskId", async () => {
       const taskId1 = "task-123";
       const taskId2 = "task-456";
 
-      mockGet.mockResolvedValue({ data: [], meta: { total: 0, page: 1, page_size: 10, total_pages: 1 } });
+      mockListTaskFiles.mockResolvedValue({ data: [], meta: { total: 0, page: 1, page_size: 10, total_pages: 1 } });
 
       // First call
       renderHook(() => useTaskFiles(taskId1), { wrapper });
-      await waitFor(() => expect(mockGet).toHaveBeenCalledTimes(1));
+      await waitFor(() => expect(mockListTaskFiles).toHaveBeenCalledTimes(1));
 
       // Second call with different taskId
       renderHook(() => useTaskFiles(taskId2), { wrapper });
-      await waitFor(() => expect(mockGet).toHaveBeenCalledTimes(2));
+      await waitFor(() => expect(mockListTaskFiles).toHaveBeenCalledTimes(2));
 
-      expect(mockGet).toHaveBeenNthCalledWith(1, `/tasks/${taskId1}/files`);
-      expect(mockGet).toHaveBeenNthCalledWith(2, `/tasks/${taskId2}/files`);
+      expect(mockListTaskFiles).toHaveBeenNthCalledWith(1, taskId1);
+      expect(mockListTaskFiles).toHaveBeenNthCalledWith(2, taskId2);
     });
   });
 
@@ -190,7 +188,7 @@ describe("useTaskFiles hook", () => {
         },
       };
 
-      mockPost.mockResolvedValue(mockResponse);
+      mockAttachFileToTask.mockResolvedValue(mockResponse);
 
       const { result } = renderHook(() => useAttachFile(), { wrapper });
 
@@ -201,19 +199,13 @@ describe("useTaskFiles hook", () => {
         ...fileData,
       });
 
-      expect(mockPost).toHaveBeenCalledWith(
-        `/tasks/${taskId}/files`,
-        {},
-        {
-          params: {
-            file_id: fileData.fileId,
-            file_name: fileData.fileName,
-            file_size: fileData.fileSize.toString(),
-            file_type: fileData.fileType,
-            file_url: fileData.fileUrl,
-          },
-          timeout: 60000,
-        }
+      expect(mockAttachFileToTask).toHaveBeenCalledWith(
+        taskId,
+        fileData.fileId,
+        fileData.fileName,
+        fileData.fileSize,
+        fileData.fileType,
+        fileData.fileUrl
       );
 
       expect(mockInvalidateQueries).toHaveBeenCalledWith({
@@ -235,7 +227,7 @@ describe("useTaskFiles hook", () => {
       };
       const errorMessage = "Failed to attach file";
 
-      mockPost.mockRejectedValue(new Error(errorMessage));
+      mockAttachFileToTask.mockRejectedValue(new Error(errorMessage));
 
       const { result } = renderHook(() => useAttachFile(), { wrapper });
 
@@ -246,7 +238,7 @@ describe("useTaskFiles hook", () => {
         })
       ).rejects.toThrow(errorMessage);
 
-      expect(mockPost).toHaveBeenCalled();
+      expect(mockAttachFileToTask).toHaveBeenCalled();
       expect(mockInvalidateQueries).not.toHaveBeenCalled();
     });
 
@@ -262,7 +254,7 @@ describe("useTaskFiles hook", () => {
 
       const timeoutError = new Error("Request timeout");
       timeoutError.name = "TimeoutError";
-      mockPost.mockRejectedValue(timeoutError);
+      mockAttachFileToTask.mockRejectedValue(timeoutError);
 
       const { result } = renderHook(() => useAttachFile(), { wrapper });
 
@@ -284,7 +276,7 @@ describe("useTaskFiles hook", () => {
         fileUrl: "https://example.com/files/image.png",
       };
 
-      mockPost.mockResolvedValue({
+      mockAttachFileToTask.mockResolvedValue({
         data: {
           file_id: imageFileData.fileId,
           file_name: imageFileData.fileName,
@@ -303,19 +295,13 @@ describe("useTaskFiles hook", () => {
         ...imageFileData,
       });
 
-      expect(mockPost).toHaveBeenCalledWith(
-        `/tasks/${taskId}/files`,
-        {},
-        {
-          params: {
-            file_id: imageFileData.fileId,
-            file_name: imageFileData.fileName,
-            file_size: imageFileData.fileSize.toString(),
-            file_type: imageFileData.fileType,
-            file_url: imageFileData.fileUrl,
-          },
-          timeout: 60000,
-        }
+      expect(mockAttachFileToTask).toHaveBeenCalledWith(
+        taskId,
+        imageFileData.fileId,
+        imageFileData.fileName,
+        imageFileData.fileSize,
+        imageFileData.fileType,
+        imageFileData.fileUrl
       );
     });
   });
@@ -325,7 +311,7 @@ describe("useTaskFiles hook", () => {
       const taskId = "task-123";
       const fileId = "file1";
 
-      mockDelete.mockResolvedValue({ status: 204 });
+      mockDetachFileFromTask.mockResolvedValue({ status: 204 });
 
       const { result } = renderHook(() => useDetachFile(), { wrapper });
 
@@ -334,7 +320,7 @@ describe("useTaskFiles hook", () => {
         fileId,
       });
 
-      expect(mockDelete).toHaveBeenCalledWith(`/tasks/${taskId}/files/${fileId}`);
+      expect(mockDetachFileFromTask).toHaveBeenCalledWith(taskId, fileId);
 
       expect(mockInvalidateQueries).toHaveBeenCalledWith({
         queryKey: ["tasks", taskId, "files"],
@@ -349,7 +335,7 @@ describe("useTaskFiles hook", () => {
       const fileId = "file1";
       const errorMessage = "Failed to detach file";
 
-      mockDelete.mockRejectedValue(new Error(errorMessage));
+      mockDetachFileFromTask.mockRejectedValue(new Error(errorMessage));
 
       const { result } = renderHook(() => useDetachFile(), { wrapper });
 
@@ -360,7 +346,7 @@ describe("useTaskFiles hook", () => {
         })
       ).rejects.toThrow(errorMessage);
 
-      expect(mockDelete).toHaveBeenCalled();
+      expect(mockDetachFileFromTask).toHaveBeenCalled();
       expect(mockInvalidateQueries).not.toHaveBeenCalled();
     });
 
@@ -372,7 +358,7 @@ describe("useTaskFiles hook", () => {
         response?: { status: number };
       };
       error.response = { status: 404 };
-      mockDelete.mockRejectedValue(error);
+      mockDetachFileFromTask.mockRejectedValue(error);
 
       const { result } = renderHook(() => useDetachFile(), { wrapper });
 
@@ -392,7 +378,7 @@ describe("useTaskFiles hook", () => {
         response?: { status: number };
       };
       error.response = { status: 403 };
-      mockDelete.mockRejectedValue(error);
+      mockDetachFileFromTask.mockRejectedValue(error);
 
       const { result } = renderHook(() => useDetachFile(), { wrapper });
 
@@ -410,7 +396,7 @@ describe("useTaskFiles hook", () => {
       const taskId = "task-123";
 
       // Test attach file
-      mockPost.mockResolvedValue({
+      mockAttachFileToTask.mockResolvedValue({
         data: {
           file_id: "file1",
           file_name: "test.pdf",
@@ -444,7 +430,7 @@ describe("useTaskFiles hook", () => {
       vi.clearAllMocks();
 
       // Test detach file
-      mockDelete.mockResolvedValue({ status: 204 });
+      mockDetachFileFromTask.mockResolvedValue({ status: 204 });
 
       const { result: detachResult } = renderHook(() => useDetachFile(), { wrapper });
 
@@ -473,7 +459,7 @@ describe("useTaskFiles hook", () => {
         fileUrl: "https://example.com/files/very-large-video.mp4",
       };
 
-      mockPost.mockResolvedValue({
+      mockAttachFileToTask.mockResolvedValue({
         data: {
           file_id: largeFileData.fileId,
           file_name: largeFileData.fileName,
@@ -492,19 +478,13 @@ describe("useTaskFiles hook", () => {
         ...largeFileData,
       });
 
-      expect(mockPost).toHaveBeenCalledWith(
-        `/tasks/${taskId}/files`,
-        {},
-        {
-          params: {
-            file_id: largeFileData.fileId,
-            file_name: largeFileData.fileName,
-            file_size: largeFileData.fileSize.toString(),
-            file_type: largeFileData.fileType,
-            file_url: largeFileData.fileUrl,
-          },
-          timeout: 60000,
-        }
+      expect(mockAttachFileToTask).toHaveBeenCalledWith(
+        taskId,
+        largeFileData.fileId,
+        largeFileData.fileName,
+        largeFileData.fileSize,
+        largeFileData.fileType,
+        largeFileData.fileUrl
       );
     });
 
@@ -518,7 +498,7 @@ describe("useTaskFiles hook", () => {
         fileUrl: "https://example.com/files/archivo%20con%20espacios%20y%20%C3%B1%C3%ADes.pdf",
       };
 
-      mockPost.mockResolvedValue({
+      mockAttachFileToTask.mockResolvedValue({
         data: {
           file_id: specialFileData.fileId,
           file_name: specialFileData.fileName,
@@ -537,19 +517,13 @@ describe("useTaskFiles hook", () => {
         ...specialFileData,
       });
 
-      expect(mockPost).toHaveBeenCalledWith(
-        `/tasks/${taskId}/files`,
-        {},
-        {
-          params: {
-            file_id: specialFileData.fileId,
-            file_name: specialFileData.fileName,
-            file_size: specialFileData.fileSize.toString(),
-            file_type: specialFileData.fileType,
-            file_url: specialFileData.fileUrl,
-          },
-          timeout: 60000,
-        }
+      expect(mockAttachFileToTask).toHaveBeenCalledWith(
+        taskId,
+        specialFileData.fileId,
+        specialFileData.fileName,
+        specialFileData.fileSize,
+        specialFileData.fileType,
+        specialFileData.fileUrl
       );
     });
 
@@ -557,7 +531,7 @@ describe("useTaskFiles hook", () => {
       const taskId = "task-123";
 
       // Setup mocks
-      mockPost.mockResolvedValue({
+      mockAttachFileToTask.mockResolvedValue({
         data: {
           file_id: "file1",
           file_name: "test.pdf",
@@ -569,7 +543,7 @@ describe("useTaskFiles hook", () => {
         },
       });
 
-      mockDelete.mockResolvedValue({ status: 204 });
+      mockDetachFileFromTask.mockResolvedValue({ status: 204 });
 
       const { result: attachResult } = renderHook(() => useAttachFile(), { wrapper });
       const { result: detachResult } = renderHook(() => useDetachFile(), { wrapper });
@@ -590,8 +564,8 @@ describe("useTaskFiles hook", () => {
         fileId: "file1",
       });
 
-      expect(mockPost).toHaveBeenCalled();
-      expect(mockDelete).toHaveBeenCalled();
+      expect(mockAttachFileToTask).toHaveBeenCalled();
+      expect(mockDetachFileFromTask).toHaveBeenCalled();
       expect(mockInvalidateQueries).toHaveBeenCalledTimes(4); // 2 for attach, 2 for detach
     });
   });

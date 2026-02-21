@@ -89,6 +89,68 @@ vi.mock("~/hooks/useQuickActions", () => ({
   useQuickActions: () => [],
 }));
 
+// Mock quickActions registry
+vi.mock("~/lib/quickActions/registry", () => ({
+  initializeQuickActions: vi.fn(),
+  quickActionsRegistry: { getAll: () => [] },
+}));
+
+// Mock useCalendars used by TaskQuickAdd
+vi.mock("~/features/calendar/hooks/useCalendar", () => ({
+  useCalendars: () => ({ data: { data: [] }, isLoading: false }),
+  useEventReminders: () => ({ data: null, isLoading: false }),
+  useCreateReminder: () => ({ mutate: vi.fn() }),
+  useDeleteReminder: () => ({ mutate: vi.fn() }),
+}));
+
+// Mock useCalendarModalStore
+vi.mock("~/stores/calendarModalStore", () => ({
+  useCalendarModalStore: () => ({ isOpen: false, open: vi.fn(), close: vi.fn() }),
+}));
+
+// Mock useTaskModuleSettings
+vi.mock("~/features/tasks/hooks/useTasks", () => ({
+  useTaskModuleSettings: () => ({ data: null, isLoading: false }),
+  useCreateTask: () => ({ mutate: vi.fn(), isPending: false }),
+}));
+
+// Mock useAuthStore
+const mockAuthState = { user: null, isAuthenticated: false };
+vi.mock("~/stores/authStore", () => ({
+  useAuthStore: (selector?: any) =>
+    typeof selector === "function" ? selector(mockAuthState) : mockAuthState,
+}));
+
+// Mock createEvent and createAssignment
+vi.mock("~/features/calendar/api/calendar.api", () => ({
+  createEvent: vi.fn(),
+}));
+
+vi.mock("~/features/tasks/api/tasks.api", () => ({
+  createAssignment: vi.fn(),
+  createChecklistItem: vi.fn(),
+}));
+
+// Mock useQuickActionsStore (Zustand store needs getState with initializeActions)
+vi.mock("~/stores/quickActionsStore", () => ({
+  useQuickActionsStore: Object.assign(
+    () => ({ actions: [], setActions: vi.fn(), initializeActions: vi.fn() }),
+    {
+      getState: () => ({
+        actions: [],
+        setActions: vi.fn(),
+        initializeActions: vi.fn(),
+        registerAction: vi.fn(),
+        unregisterAction: vi.fn(),
+        clearActions: vi.fn(),
+        getAllActions: () => [],
+        getAction: vi.fn(),
+        getActionsCount: () => 0,
+      }),
+    }
+  ),
+}));
+
 // Mock useLocation
 vi.mock("react-router", async () => {
   const actual = await vi.importActual("react-router");

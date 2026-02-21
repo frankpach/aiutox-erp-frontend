@@ -11,6 +11,29 @@ import { CommentItem } from "~/features/comments/components/CommentItem";
 import { CommentForm } from "~/features/comments/components/CommentForm";
 import type { Comment, CommentThread as CommentThreadType } from "~/features/comments/types/comment.types";
 
+vi.mock("~/lib/i18n/useTranslation", () => ({
+  useTranslation: () => ({
+    t: (key: string) => {
+      const translations: Record<string, string> = {
+        "common.cancel": "Cancel",
+        "common.save": "Save",
+        "common.saving": "Saving...",
+        "comments.loading": "comments.loading",
+        "comments.edited": "comments.edited",
+        "comments.reply": "comments.reply",
+        "comments.edit": "comments.edit",
+        "comments.delete": "comments.delete",
+        "comments.reply.placeholder": "comments.reply.placeholder",
+        "comments.reply.submit": "comments.reply.submit",
+        "comments.replies.count": "comments.replies.count",
+        "comments.replies.loadMore": "comments.replies.loadMore",
+      };
+      return translations[key] || key;
+    },
+    language: "en",
+  }),
+}));
+
 // Mock data
 const mockComment: Comment = {
   id: "1",
@@ -218,7 +241,7 @@ describe("Comments Module", () => {
         </QueryClientProvider>
       );
 
-      const cancelButton = screen.getByText("Cancelar");
+      const cancelButton = screen.getByText("Cancel");
       fireEvent.click(cancelButton);
 
       await waitFor(() => {
@@ -244,7 +267,7 @@ describe("Comments Module", () => {
         </QueryClientProvider>
       );
 
-      expect(screen.getByText("Guardando...")).toBeInTheDocument();
+      expect(screen.getByText("Saving...")).toBeInTheDocument();
     });
   });
 

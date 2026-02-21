@@ -18,16 +18,52 @@ import {
 } from "~/features/import-export/hooks/useImportExport";
 import type { ImportJob, ExportJob, ImportTemplate, ImportExportStats } from "~/features/import-export/types/import-export.types";
 
-// Mock api client
-const mockApiClient = {
-  get: vi.fn(),
-  post: vi.fn(),
-  put: vi.fn(),
-  delete: vi.fn(),
-};
+// Hoisted mocks for import-export API functions
+const {
+  mockListImportJobs,
+  mockListExportJobs,
+  mockListImportTemplates,
+  mockGetImportExportStats,
+  mockGetAvailableModules,
+  mockCreateImportJob,
+  mockCreateExportJob,
+} = vi.hoisted(() => ({
+  mockListImportJobs: vi.fn(),
+  mockListExportJobs: vi.fn(),
+  mockListImportTemplates: vi.fn(),
+  mockGetImportExportStats: vi.fn(),
+  mockGetAvailableModules: vi.fn(),
+  mockCreateImportJob: vi.fn(),
+  mockCreateExportJob: vi.fn(),
+}));
 
-vi.mock("~/lib/api/client", () => ({
-  default: mockApiClient,
+vi.mock("~/features/import-export/api/import-export.api", () => ({
+  listImportJobs: mockListImportJobs,
+  listExportJobs: mockListExportJobs,
+  listImportTemplates: mockListImportTemplates,
+  getImportExportStats: mockGetImportExportStats,
+  getAvailableModules: mockGetAvailableModules,
+  createImportJob: mockCreateImportJob,
+  createExportJob: mockCreateExportJob,
+  getImportJob: vi.fn(),
+  updateImportJob: vi.fn(),
+  deleteImportJob: vi.fn(),
+  cancelImportJob: vi.fn(),
+  retryImportJob: vi.fn(),
+  getExportJob: vi.fn(),
+  updateExportJob: vi.fn(),
+  deleteExportJob: vi.fn(),
+  cancelExportJob: vi.fn(),
+  downloadExportFile: vi.fn(),
+  getImportTemplate: vi.fn(),
+  createImportTemplate: vi.fn(),
+  updateImportTemplate: vi.fn(),
+  deleteImportTemplate: vi.fn(),
+  getImportExportConfig: vi.fn(),
+  updateImportExportConfig: vi.fn(),
+  validateImportFile: vi.fn(),
+  getExportFormats: vi.fn(),
+  getExportSample: vi.fn(),
 }));
 
 // Mock data
@@ -127,16 +163,7 @@ const mockImportExportStats: ImportExportStats = {
 
 const mockAvailableModules = ["products", "users", "orders", "customers"];
 
-// Mock API client
-vi.mock("~/lib/api/client", () => ({
-  default: {
-    get: vi.fn(),
-    post: vi.fn(),
-    put: vi.fn(),
-    patch: vi.fn(),
-    delete: vi.fn(),
-  },
-}));
+// (API module already mocked above via vi.hoisted)
 
 // Mock toast
 vi.mock("~/components/common/Toast", () => ({
@@ -241,36 +268,14 @@ describe("Import/Export Module", () => {
     queryClient = createQueryClient();
     vi.clearAllMocks();
 
-    // Default mock for apiClient.get
-    const apiClient = mockApiClient;
-    (apiClient.get as any).mockResolvedValue({
-      data: {
-        data: [mockImportJob],
-        meta: {
-          total: 1,
-          page: 1,
-          page_size: 20,
-          total_pages: 1,
-        },
-        error: null,
-      },
-    });
-
-    // Mock stats
-    (apiClient.get as any).mockResolvedValue({
-      data: {
-        data: mockImportExportStats,
-        error: null,
-      },
-    });
-
-    // Mock available modules
-    (apiClient.get as any).mockResolvedValue({
-      data: {
-        data: mockAvailableModules,
-        error: null,
-      },
-    });
+    // Default mocks for API functions
+    mockListImportJobs.mockResolvedValue({ data: [mockImportJob], meta: { total: 1, page: 1, page_size: 20, total_pages: 1 }, error: null });
+    mockListExportJobs.mockResolvedValue({ data: [mockExportJob], meta: { total: 1, page: 1, page_size: 20, total_pages: 1 }, error: null });
+    mockListImportTemplates.mockResolvedValue({ data: [mockImportTemplate], meta: { total: 1, page: 1, page_size: 20, total_pages: 1 }, error: null });
+    mockGetImportExportStats.mockResolvedValue({ data: mockImportExportStats, error: null });
+    mockGetAvailableModules.mockResolvedValue({ data: mockAvailableModules, error: null });
+    mockCreateImportJob.mockResolvedValue({ data: mockImportJob, error: null });
+    mockCreateExportJob.mockResolvedValue({ data: mockExportJob, error: null });
   });
 
   describe("Import/Export Hooks", () => {
@@ -289,24 +294,11 @@ describe("Import/Export Module", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText("jobs")).toBeInTheDocument();
+        expect(screen.getByText(/jobs/)).toBeInTheDocument();
       });
     });
 
     it("useExportJobs should fetch export jobs", async () => {
-      const apiClient = mockApiClient;
-      (apiClient.get as any).mockResolvedValue({
-        data: {
-          data: [mockExportJob],
-          meta: {
-            total: 1,
-            page: 1,
-            page_size: 20,
-          },
-          error: null,
-        },
-      });
-
       const TestComponent = () => {
         const { data, isLoading } = useExportJobs();
         
@@ -321,25 +313,11 @@ describe("Import/Export Module", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText("jobs")).toBeInTheDocument();
+        expect(screen.getByText(/jobs/)).toBeInTheDocument();
       });
     });
 
     it("useImportTemplates should fetch import templates", async () => {
-      const apiClient = mockApiClient;
-      (apiClient.get as any).mockResolvedValue({
-        data: {
-          data: [mockImportTemplate],
-          meta: {
-            total: 1,
-            page: 1,
-            page_size: 20,
-            total_pages: 1,
-          },
-          error: null,
-        },
-      });
-
       const TestComponent = () => {
         const { data, isLoading } = useImportTemplates();
         
@@ -354,7 +332,7 @@ describe("Import/Export Module", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText("templates")).toBeInTheDocument();
+        expect(screen.getByText(/templates/)).toBeInTheDocument();
       });
     });
 
@@ -373,7 +351,7 @@ describe("Import/Export Module", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText("imports")).toBeInTheDocument();
+        expect(screen.getByText(/imports/)).toBeInTheDocument();
       });
     });
 
@@ -392,19 +370,11 @@ describe("Import/Export Module", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText("modules")).toBeInTheDocument();
+        expect(screen.getByText(/modules/)).toBeInTheDocument();
       });
     });
 
     it("useCreateImportJob should create import job", async () => {
-      const apiClient = mockApiClient;
-      (apiClient.post as any).mockResolvedValue({
-        data: {
-          data: mockImportJob,
-          error: null,
-        },
-      });
-
       const TestComponent = () => {
         const createImportJob = useCreateImportJob();
         const [success, setSuccess] = useState(false);
@@ -442,14 +412,6 @@ describe("Import/Export Module", () => {
     });
 
     it("useCreateExportJob should create export job", async () => {
-      const apiClient = mockApiClient;
-      (apiClient.post as any).mockResolvedValue({
-        data: {
-          data: mockExportJob,
-          error: null,
-        },
-      });
-
       const TestComponent = () => {
         const createExportJob = useCreateExportJob();
         const [success, setSuccess] = useState(false);

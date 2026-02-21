@@ -206,7 +206,10 @@ describe("Templates Module", () => {
       }
 
       await waitFor(() => {
-        expect(onRender).toHaveBeenCalledWith(mockTemplate);
+        expect(onRender).toHaveBeenCalledWith(
+          { templateId: mockTemplate.id, data: {} },
+          "html"
+        );
       });
     });
 
