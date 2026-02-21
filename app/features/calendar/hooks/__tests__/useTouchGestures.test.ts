@@ -31,6 +31,12 @@ describe("useTouchGestures", () => {
     vi.clearAllMocks();
     vi.useFakeTimers();
     rafCallback = null;
+    // Re-stub RAF after useFakeTimers() since fake timers override the global stub
+    vi.stubGlobal("requestAnimationFrame", (cb: () => void) => {
+      rafCallback = cb;
+      return 1;
+    });
+    vi.stubGlobal("cancelAnimationFrame", vi.fn());
   });
 
   afterEach(() => {
@@ -100,14 +106,14 @@ describe("useTouchGestures", () => {
 
     act(() => {
       result.current.touchHandlers.onTouchMove(createTouchEvent(120, 100));
+      // Execute the RAF callback synchronously within the same act
+      if (rafCallback) {
+        rafCallback();
+        rafCallback = null;
+      }
     });
 
     expect(onDragStart).toHaveBeenCalledWith(100, 100);
-
-    if (rafCallback) {
-      act(() => rafCallback!());
-    }
-
     expect(onDragMove).toHaveBeenCalledWith(20, 0);
   });
 

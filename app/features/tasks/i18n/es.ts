@@ -466,7 +466,7 @@ export const translations = {
       "title": "Titulo",
       "totalTracked": "Total rastreado"
     },
-    "title": "Titulo",
+    "title": "Tareas",
     "titlePlaceholder": "Titulo placeholder",
     "to": "To",
     "type": {

@@ -84,20 +84,31 @@ describe('useTasksStatistics', () => {
   });
 
   it('should handle API errors', async () => {
+    vi.useFakeTimers();
     const error = new Error('API Error');
     vi.mocked(tasksStatisticsApi.getStatistics).mockRejectedValue(error);
 
+    const errorQueryClient = new QueryClient({
+      defaultOptions: {
+        queries: { throwOnError: false },
+      },
+    });
+
     const { result } = renderHook(() => useTasksStatistics(), {
       wrapper: ({ children }) => (
-        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+        <QueryClientProvider client={errorQueryClient}>{children}</QueryClientProvider>
       ),
     });
 
+    // Fast-forward through all retry delays (1s + 2s + 4s = 7s)
+    await vi.advanceTimersByTimeAsync(10000);
+    vi.useRealTimers();
+
     await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
-      expect(result.current.data).toBeUndefined();
-      expect(result.current.error).toBeTruthy();
-    });
+      expect(result.current.isError).toBe(true);
+    }, { timeout: 3000 });
+
+    expect(result.current.data).toBeUndefined();
   });
 });
 

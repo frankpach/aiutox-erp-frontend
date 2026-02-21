@@ -2,8 +2,14 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { SearchResultsList } from "../SearchResultsList";
 import type { SearchResultItem } from "../../api/search.api";
-import { MemoryRouter } from "react-router";
 import { formatDistanceToNow } from "date-fns";
+
+vi.mock("react-router-dom", () => ({
+  useNavigate: () => vi.fn(),
+  Link: ({ children, to, ...props }: { children: React.ReactNode; to: string; [key: string]: unknown }) => (
+    <a href={to} {...props}>{children}</a>
+  ),
+}));
 
 // Mock the formatDistanceToNow function
 vi.mock('date-fns', () => ({
@@ -76,35 +82,23 @@ describe("SearchResultsList", () => {
   });
 
   it("renders loading state", () => {
-    render(
-      <MemoryRouter>
-        <SearchResultsList {...defaultProps} isLoading={true} />
-      </MemoryRouter>
-    );
+    render(<SearchResultsList {...defaultProps} isLoading={true} />);
     expect(screen.getByTestId("search-results-loading")).toBeInTheDocument();
   });
 
   it("renders empty state when no results", () => {
-    render(
-      <MemoryRouter>
-        <SearchResultsList {...defaultProps} results={[]} />
-      </MemoryRouter>
-    );
+    render(<SearchResultsList {...defaultProps} results={[]} />);
     expect(screen.getByTestId("no-results-message")).toBeInTheDocument();
   });
 
   it("renders search results with correct data", () => {
-    render(
-      <MemoryRouter>
-        <SearchResultsList {...defaultProps} results={mockResults} />
-      </MemoryRouter>
-    );
+    render(<SearchResultsList {...defaultProps} results={mockResults} />);
     
     // Check if all result items are rendered
     expect(screen.getByText("Test Document")).toBeInTheDocument();
     expect(screen.getByText("This is a test document")).toBeInTheDocument();
     expect(screen.getByText("Test User")).toBeInTheDocument();
-    expect(screen.getByText("Test User Description")).toBeInTheDocument();
+    expect(screen.getByText("This is a test user")).toBeInTheDocument();
     
     // Check if type badges are rendered with translated text
     expect(screen.getByText("search.types.document")).toBeInTheDocument();
@@ -117,14 +111,12 @@ describe("SearchResultsList", () => {
   it("calls onLoadMore when load more button is clicked", () => {
     const onLoadMore = vi.fn();
     render(
-      <MemoryRouter>
-        <SearchResultsList 
-          {...defaultProps} 
-          results={mockResults}
-          hasMore={true}
-          onLoadMore={onLoadMore}
-        />
-      </MemoryRouter>
+      <SearchResultsList 
+        {...defaultProps} 
+        results={mockResults}
+        hasMore={true}
+        onLoadMore={onLoadMore}
+      />
     );
     
     const loadMoreButton = screen.getByTestId("load-more-button");
@@ -137,13 +129,11 @@ describe("SearchResultsList", () => {
   it("calls onSearch when search query changes", async () => {
     const onSearch = vi.fn();
     render(
-      <MemoryRouter>
-        <SearchResultsList 
-          {...defaultProps} 
-          onSearch={onSearch}
-          searchQuery=""
-        />
-      </MemoryRouter>
+      <SearchResultsList 
+        {...defaultProps} 
+        onSearch={onSearch}
+        searchQuery=""
+      />
     );
     
     // Just verify the component renders and onSearch is provided
@@ -152,11 +142,7 @@ describe("SearchResultsList", () => {
   });
   
   it("handles keyboard navigation", () => {
-    render(
-      <MemoryRouter>
-        <SearchResultsList {...defaultProps} results={mockResults} />
-      </MemoryRouter>
-    );
+    render(<SearchResultsList {...defaultProps} results={mockResults} />);
     
     // Just verify the component renders with results
     expect(screen.getByText("Test Document")).toBeInTheDocument();
@@ -164,36 +150,26 @@ describe("SearchResultsList", () => {
   
   it("displays loading more indicator when fetching more results", () => {
     render(
-      <MemoryRouter>
-        <SearchResultsList
-          {...defaultProps}
-          results={mockResults}
-          isFetchingMore={true}
-          hasMore={true}
-        />
-      </MemoryRouter>
+      <SearchResultsList
+        {...defaultProps}
+        results={mockResults}
+        isFetchingMore={true}
+        hasMore={true}
+      />
     );
     
     expect(screen.getByTestId("loading-more-indicator")).toBeInTheDocument();
   });
   
   it("displays result metadata when available", () => {
-    render(
-      <MemoryRouter>
-        <SearchResultsList {...defaultProps} results={[mockResults[0]!]} />
-      </MemoryRouter>
-    );
+    render(<SearchResultsList {...defaultProps} results={[mockResults[0]!]} />);
     
     // Just verify the component renders
     expect(screen.getByText("Test Document")).toBeInTheDocument();
   });
   
   it("displays score when available", () => {
-    render(
-      <MemoryRouter>
-        <SearchResultsList {...defaultProps} results={[mockResults[0]!]} />
-      </MemoryRouter>
-    );
+    render(<SearchResultsList {...defaultProps} results={[mockResults[0]!]} />);
     
     // Verificar que el puntaje esté presente de alguna forma
     const scoreElements = screen.getAllByText((text) => 
@@ -203,15 +179,12 @@ describe("SearchResultsList", () => {
   });
   
   it("applies custom class name", () => {
-    // Render with a custom class name and some results
     const { container } = render(
-      <MemoryRouter>
-        <SearchResultsList 
-          {...defaultProps} 
-          results={mockResults} 
-          className="custom-class" 
-        />
-      </MemoryRouter>
+      <SearchResultsList 
+        {...defaultProps} 
+        results={mockResults} 
+        className="custom-class" 
+      />
     );
     
     // The custom class should be on the main container div

@@ -20,12 +20,16 @@ vi.mock("~/lib/i18n/useTranslation", () => ({
         "tasks.savedViews.sortDirection": "Dirección",
         "tasks.savedViews.ascending": "Ascendente",
         "tasks.savedViews.descending": "Descendente",
-        "tasks.savedViews.isDefault": "Vista predeterminada",
-        "tasks.savedViews.isPublic": "Vista pública",
+        "tasks.savedViews.setAsDefault": "Vista predeterminada",
+        "tasks.savedViews.makePublic": "Vista pública",
         "tasks.savedViews.save": "Guardar",
         "tasks.savedViews.cancel": "Cancelar",
         "tasks.savedViews.create": "Crear vista",
         "tasks.savedViews.edit": "Editar vista",
+        "common.save": "Guardar",
+        "common.cancel": "Cancelar",
+        "common.update": "Actualizar",
+        "common.saving": "Guardando...",
         "tasks.savedViews.sortFields.createdAt": "Fecha creación",
         "tasks.savedViews.sortFields.updatedAt": "Fecha actualización",
         "tasks.savedViews.sortFields.title": "Título",
@@ -58,8 +62,9 @@ describe("SavedViewForm", () => {
       <SavedViewForm onSubmit={onSubmit} onCancel={onCancel} />,
     );
 
-    expect(screen.getByText("Vista predeterminada")).toBeInTheDocument();
-    expect(screen.getByText("Vista pública")).toBeInTheDocument();
+    // Labels may be broken across elements — use function matcher
+    expect(screen.getByText((content) => content.includes("Vista predeterminada"))).toBeInTheDocument();
+    expect(screen.getByText((content) => content.includes("Vista p\u00fablica"))).toBeInTheDocument();
   });
 
   it("renderiza botones guardar y cancelar", () => {
@@ -67,8 +72,12 @@ describe("SavedViewForm", () => {
       <SavedViewForm onSubmit={onSubmit} onCancel={onCancel} />,
     );
 
-    expect(screen.getByText("Guardar")).toBeInTheDocument();
-    expect(screen.getByText("Cancelar")).toBeInTheDocument();
+    // Buttons have icons + text, use role query
+    const buttons = screen.getAllByRole("button");
+    const saveBtn = buttons.find((b) => /guardar/i.test(b.textContent ?? ""));
+    const cancelBtn = buttons.find((b) => /cancelar/i.test(b.textContent ?? ""));
+    expect(saveBtn).toBeInTheDocument();
+    expect(cancelBtn).toBeInTheDocument();
   });
 
   it("pre-llena datos cuando se pasa initialData", () => {
@@ -105,7 +114,9 @@ describe("SavedViewForm", () => {
       />,
     );
 
-    const saveButton = screen.getByText("Guardar").closest("button");
-    expect(saveButton).toBeDisabled();
+    // When isSubmitting, button shows t("common.saving") = "Guardando..."
+    const buttons = screen.getAllByRole("button");
+    const submitBtn = buttons.find((b) => b.getAttribute("type") === "submit");
+    expect(submitBtn).toBeDisabled();
   });
 });

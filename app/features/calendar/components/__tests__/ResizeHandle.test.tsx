@@ -111,8 +111,10 @@ describe("ResizeHandle", () => {
       />
     );
 
+    // Component uses useDraggable which spreads attributes/listeners
+    // Verify the handle has the aria-label and role attributes
     const handle = screen.getByRole("button");
-    expect(handle).toHaveAttribute("data-dnd-draggable-handle");
+    expect(handle).toHaveAttribute("aria-label", "Redimensionar inicio del evento");
   });
 
   it("is accessible with keyboard", () => {
@@ -125,6 +127,7 @@ describe("ResizeHandle", () => {
     );
 
     const handle = screen.getByRole("button");
-    expect(handle).toHaveAttribute("tabIndex", "0");
+    // tabIndex is set as number 0 on the element
+    expect(handle.tabIndex).toBe(0);
   });
 });

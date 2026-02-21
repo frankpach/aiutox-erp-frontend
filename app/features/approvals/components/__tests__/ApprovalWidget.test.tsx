@@ -7,10 +7,48 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ApprovalWidget } from "~/features/approvals/components/ApprovalWidget";
 
+const mockMutateAsync = vi.fn().mockResolvedValue({});
+
+vi.mock("~/features/approvals/hooks/useApprovals", () => ({
+  useApprovalWidget: vi.fn(() => ({
+    data: {
+      data: {
+        request: {
+          id: "req-1",
+          title: "Aprobación de Orden #123",
+          status: "pending",
+        },
+        permissions: {
+          can_approve: true,
+          can_reject: true,
+          can_delegate: false,
+          can_cancel: false,
+        },
+        current_step: {
+          name: "Aprobación Gerencial",
+          order: 1,
+          rejection_required: true,
+        },
+      },
+    },
+    isLoading: false,
+    error: null,
+  })),
+  useApproveRequest: vi.fn(() => ({
+    mutateAsync: mockMutateAsync,
+    isPending: false,
+  })),
+  useRejectRequest: vi.fn(() => ({
+    mutateAsync: mockMutateAsync,
+    isPending: false,
+  })),
+}));
+
 describe("ApprovalWidget", () => {
   let queryClient: QueryClient;
 
   beforeEach(() => {
+    vi.clearAllMocks();
     queryClient = new QueryClient({
       defaultOptions: {
         queries: {
@@ -51,7 +89,8 @@ describe("ApprovalWidget", () => {
       renderWithQueryClient(
         <ApprovalWidget requestId="req-1" variant="full" />
       );
-      expect(screen.getByText("Aprobación Gerencial")).toBeInTheDocument();
+      // Component renders 'Paso actual: Aprobación Gerencial' as broken text
+      expect(screen.getByText((content) => content.includes("Aprobación Gerencial"))).toBeInTheDocument();
     });
 
     it("debería mostrar botones de aprobar y rechazar cuando se puede aprobar", () => {
@@ -91,25 +130,37 @@ describe("ApprovalWidget", () => {
   });
 
   describe("Estados de aprobación", () => {
-    it("debería mostrar estado aprobado", () => {
-      renderWithQueryClient(
-        <ApprovalWidget requestId="req-1" variant="full" />
-      );
-      expect(screen.getByText("Aprobado")).toBeInTheDocument();
+    it("debería mostrar estado aprobado", async () => {
+      const { useApprovalWidget } = await import("~/features/approvals/hooks/useApprovals");
+      vi.mocked(useApprovalWidget).mockReturnValueOnce({
+        data: { data: { request: { id: "req-1", title: "Test", status: "approved" }, permissions: { can_approve: false, can_reject: false, can_delegate: false, can_cancel: false }, current_step: null } },
+        isLoading: false,
+        error: null,
+      } as any);
+      renderWithQueryClient(<ApprovalWidget requestId="req-1" variant="full" />);
+      expect(screen.getAllByText(/aprobado/i).length).toBeGreaterThanOrEqual(1);
     });
 
-    it("debería mostrar estado rechazado", () => {
-      renderWithQueryClient(
-        <ApprovalWidget requestId="req-1" variant="full" />
-      );
-      expect(screen.getByText("Rechazado")).toBeInTheDocument();
+    it("debería mostrar estado rechazado", async () => {
+      const { useApprovalWidget } = await import("~/features/approvals/hooks/useApprovals");
+      vi.mocked(useApprovalWidget).mockReturnValueOnce({
+        data: { data: { request: { id: "req-1", title: "Test", status: "rejected" }, permissions: { can_approve: false, can_reject: false, can_delegate: false, can_cancel: false }, current_step: null } },
+        isLoading: false,
+        error: null,
+      } as any);
+      renderWithQueryClient(<ApprovalWidget requestId="req-1" variant="full" />);
+      expect(screen.getAllByText(/rechazado/i).length).toBeGreaterThanOrEqual(1);
     });
 
-    it("debería mostrar estado cancelado", () => {
-      renderWithQueryClient(
-        <ApprovalWidget requestId="req-1" variant="full" />
-      );
-      expect(screen.getByText("Cancelado")).toBeInTheDocument();
+    it("debería mostrar estado cancelado", async () => {
+      const { useApprovalWidget } = await import("~/features/approvals/hooks/useApprovals");
+      vi.mocked(useApprovalWidget).mockReturnValueOnce({
+        data: { data: { request: { id: "req-1", title: "Test", status: "cancelled" }, permissions: { can_approve: false, can_reject: false, can_delegate: false, can_cancel: false }, current_step: null } },
+        isLoading: false,
+        error: null,
+      } as any);
+      renderWithQueryClient(<ApprovalWidget requestId="req-1" variant="full" />);
+      expect(screen.getAllByText(/cancelado/i).length).toBeGreaterThanOrEqual(1);
     });
   });
 

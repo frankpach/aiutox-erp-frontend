@@ -10,6 +10,7 @@ import { Input } from "~/components/ui/input";
 import { Badge } from "~/components/ui/badge";
 import { PlugIcon, DownloadIcon, UploadIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { useTranslation } from "~/lib/i18n/useTranslation";
 import type { ChecklistItem } from "~/features/tasks/types/task.types";
 
 interface TaskChecklistProps {
@@ -23,7 +24,7 @@ export function TaskChecklist({
   onChange,
   readonly = false,
 }: TaskChecklistProps) {
-  // const { t } = useTranslation(); // Unused for now
+  const { t } = useTranslation();
   const [newItemText, setNewItemText] = useState("");
 
   const toggleItem = (index: number) => {
@@ -88,7 +89,7 @@ export function TaskChecklist({
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>Checklist</CardTitle>
+          <CardTitle>{t("tasks.checklist.title")}</CardTitle>
           <div className="flex items-center gap-2">
             <Badge variant="outline">
               {completedCount}/{totalCount} completed
@@ -178,17 +179,18 @@ export function TaskChecklist({
               <Input
                 value={newItemText}
                 onChange={(e) => setNewItemText(e.target.value)}
-                placeholder="Add new checklist item..."
+                placeholder={t("tasks.checklist.placeholder")}
                 className="flex-1"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     addItem();
                   }
                 }}
+                disabled={readonly}
               />
-              <Button onClick={addItem} disabled={!newItemText.trim()}>
+              <Button onClick={addItem} disabled={readonly || !newItemText.trim()}>
                 <HugeiconsIcon icon={PlugIcon} size={16} className="mr-2" />
-                Add Item
+                {t("common.add")}
               </Button>
             </div>
           )}

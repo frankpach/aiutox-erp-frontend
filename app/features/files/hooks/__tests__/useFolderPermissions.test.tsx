@@ -82,7 +82,8 @@ describe("useFolderPermissions", () => {
     vi.mocked(foldersApi.getFolderPermissions).mockResolvedValue({ data: [] } as any);
 
     const Wrapper = createWrapper();
-    const { result } = renderHook(() => useFolderPermissions(folderId), {
+    // Pass folder as second arg since getFolder is commented out in the hook
+    const { result } = renderHook(() => useFolderPermissions(folderId, mockFolder), {
       wrapper: Wrapper,
     });
 

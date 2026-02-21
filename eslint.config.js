@@ -164,6 +164,7 @@ export default [
       "actions-runner/**",
       "**/*.config.js",
       "**/*.config.ts",
+      "scripts/**/*.mjs",
     ],
   },
 ];
