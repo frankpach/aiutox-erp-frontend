@@ -52,6 +52,7 @@ export function FilePreview({
         window.URL.revokeObjectURL(url);
       };
     }
+    return undefined;
   }, [previewBlob]);
 
   const handleDownload = () => {
